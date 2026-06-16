@@ -9,6 +9,7 @@
     "absences": "Attendance / Roll Call",
     "bulletins": "Report Cards",
     "payments": "Payments & Fees",
+    "payroll": "Teacher Payroll",
     "settings": "School Settings",
     "logout": "Sign Out",
     "portalParent": "Parent Portal",
@@ -138,5 +139,25 @@
   "classes": {
     "title": "Class Management",
     "addBtn": "Create Class"
+  },
+  "payroll": {
+    "title": "Teacher Payroll",
+    "subtitle": "Manage teacher hourly rates, completed hours, and payouts",
+    "stats": {
+      "totalPay": "Total Pay",
+      "totalHours": "Total Hours",
+      "avgRate": "Avg Hourly Rate"
+    },
+    "table": {
+      "teacher": "Teacher",
+      "subject": "Subject",
+      "class": "Class",
+      "hourlyRate": "Hourly Rate (FCFA/h)",
+      "hoursTaught": "Hours Taught",
+      "totalSalary": "Salary Due",
+      "actions": "Actions"
+    },
+    "configure": "Configure Payroll",
+    "save": "Save Changes"
   }
 }

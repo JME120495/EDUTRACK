@@ -9,6 +9,7 @@
     "absences": "Absences / Appel",
     "bulletins": "Bulletins",
     "payments": "Paiements & Scolarité",
+    "payroll": "Paie Enseignants",
     "settings": "Paramètres École",
     "logout": "Déconnexion",
     "portalParent": "Espace Parent",
@@ -138,5 +139,25 @@
   "classes": {
     "title": "Gestion des Classes",
     "addBtn": "Créer une classe"
+  },
+  "payroll": {
+    "title": "Paie des Enseignants",
+    "subtitle": "Gérer les taux horaires, les heures effectuées et les salaires des enseignants",
+    "stats": {
+      "totalPay": "Total à payer",
+      "totalHours": "Total d'heures",
+      "avgRate": "Taux horaire moyen"
+    },
+    "table": {
+      "teacher": "Enseignant",
+      "subject": "Matière",
+      "class": "Classe",
+      "hourlyRate": "Taux Horaire (FCFA/h)",
+      "hoursTaught": "Heures effectuées",
+      "totalSalary": "Salaire dû",
+      "actions": "Actions"
+    },
+    "configure": "Configurer la Paie",
+    "save": "Enregistrer les modifications"
   }
 }

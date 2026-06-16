@@ -30,6 +30,11 @@ export default function PaymentsPage() {
   const [broadcastingAnnouncement, setBroadcastingAnnouncement] = useState(false);
   const [announcementText, setAnnouncementText] = useState('');
 
+  // Tuition Config Modal
+  const [tuitionModalOpen, setTuitionModalOpen] = useState(false);
+  const [tuitionAmount, setTuitionAmount] = useState('');
+  const [updatingTuition, setUpdatingTuition] = useState(false);
+
   useEffect(() => {
     loadClasses();
   }, []);
@@ -55,42 +60,31 @@ export default function PaymentsPage() {
   async function loadPaymentsData(classId) {
     try {
       setLoading(true);
-      const [studentsData, paymentsData, feeData] = await Promise.all([
-        apiFetch(`/eleves?classId=${classId}`),
-        apiFetch(`/paiements?classId=${classId}`),
-        apiFetch(`/paiements/classe/${classId}`)
-      ]);
+      const data = await apiFetch(`/paiements/classe/${classId}`);
 
-      const baseTuition = feeData ? feeData.totalAmount : 150000;
+      const baseTuition = data.length > 0 ? data[0].totalTuition : 150000;
       setClassTuition(baseTuition);
 
-      // Match payments to students
       let collected = 0;
-      const studentsPayments = studentsData.map(student => {
-        const studentPayments = paymentsData.filter(p => p.eleveId === student.id && p.status === 'COMPLETED');
-        const paid = studentPayments.reduce((sum, p) => sum + p.amount, 0);
-        collected += paid;
-        const balance = baseTuition - paid;
-
-        let status = 'UNPAID';
-        if (paid >= baseTuition) status = 'PAID';
-        else if (paid > 0) status = 'PARTIAL';
-
+      const studentsPayments = data.map(item => {
+        collected += item.amountPaid;
         return {
-          ...student,
-          paid,
-          balance,
-          status
+          id: item.studentId,
+          name: item.studentName,
+          matricule: item.matricule,
+          paid: item.amountPaid,
+          balance: item.balance,
+          status: item.status
         };
       });
 
       setStudents(studentsPayments);
-      setTotalExpected(studentsData.length * baseTuition);
+      setTotalExpected(studentsPayments.length * baseTuition);
       setTotalCollected(collected);
-      setCollectionRate(studentsData.length > 0 ? Math.round((collected / (studentsData.length * baseTuition)) * 100) : 0);
+      setCollectionRate(studentsPayments.length > 0 ? Math.round((collected / (studentsPayments.length * baseTuition)) * 100) : 0);
 
-      if (studentsData.length > 0) {
-        setSelectedStudentId(studentsData[0].id);
+      if (studentsPayments.length > 0) {
+        setSelectedStudentId(studentsPayments[0].id);
       }
     } catch (e) {
       console.error('Failed to load payments data:', e);
@@ -132,27 +126,46 @@ export default function PaymentsPage() {
   const handleSendUnpaidAlerts = async () => {
     setSendingAlerts(true);
     try {
-      const unpaidStudents = students.filter(s => s.status !== 'PAID');
-      
-      // Request SMS reminders for all debtors
-      await Promise.all(
-        unpaidStudents.map(student => {
-          const parentPhone = student.parents?.[0]?.parent?.phone || '+237670000003';
-          return apiFetch('/paiements/send-reminder', {
-            method: 'POST',
-            body: {
-              phone: parentPhone,
-              message: `EduTrack: Cher parent, rappel pour la scolarité de ${student.name}. Solde restant: ${student.balance.toLocaleString()} FCFA.`
-            }
-          });
-        })
-      );
-
+      await apiFetch('/paiements/unpaid-alerts', {
+        method: 'POST',
+        body: { classId: selectedClassId }
+      });
       alert(t('dashboard.alerts.remindersSent'));
     } catch (e) {
       alert('Failed to send SMS reminders.');
     } finally {
       setSendingAlerts(false);
+    }
+  };
+
+  const handleConfigureTuition = async (e) => {
+    e.preventDefault();
+    if (!tuitionAmount || isNaN(tuitionAmount) || parseFloat(tuitionAmount) <= 0) {
+      alert("Veuillez entrer un montant valide.");
+      return;
+    }
+    setUpdatingTuition(true);
+    try {
+      const selectedClass = classes.find(c => c.id === selectedClassId);
+      const anneeScolaireId = selectedClass ? selectedClass.anneeScolaireId : null;
+      if (!anneeScolaireId) {
+        throw new Error("Impossible de trouver l'année scolaire active pour cette classe.");
+      }
+      await apiFetch('/paiements/frais', {
+        method: 'POST',
+        body: {
+          classId: selectedClassId,
+          anneeScolaireId,
+          totalAmount: parseFloat(tuitionAmount)
+        }
+      });
+      alert("Frais de scolarité configurés avec succès !");
+      setTuitionModalOpen(false);
+      loadPaymentsData(selectedClassId);
+    } catch (e) {
+      alert(e.message || "Échec de la configuration des frais.");
+    } finally {
+      setUpdatingTuition(false);
     }
   };
 
@@ -304,17 +317,28 @@ export default function PaymentsPage() {
       </div>
 
       {/* Class Selector Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between">
+      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Class</span>
-        <select
-          value={selectedClassId}
-          onChange={(e) => setSelectedClassId(e.target.value)}
-          className="w-48 px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] transition-all"
-        >
-          {classes.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <select
+            value={selectedClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+            className="flex-1 sm:flex-none w-48 px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] transition-all"
+          >
+            {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => {
+              setTuitionAmount(classTuition.toString());
+              setTuitionModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all shadow-sm"
+          >
+            {t('payments.tuitionSetup')}
+          </button>
+        </div>
       </div>
 
       {/* Payments Table */}
@@ -469,6 +493,70 @@ export default function PaymentsPage() {
                   className="flex-1 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all disabled:opacity-50"
                 >
                   Record Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Configure Tuition Modal */}
+      {tuitionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-[#1E3A5F]" />
+                <h3 className="font-bold text-[#1E3A5F] font-outfit">
+                  {t('payments.tuitionSetup')}
+                </h3>
+              </div>
+              <button onClick={() => setTuitionModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfigureTuition} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Classe
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={classes.find(c => c.id === selectedClassId)?.name || ''}
+                  className="w-full px-3 py-2 text-sm border border-slate-100 bg-slate-50 rounded-xl text-slate-500 font-semibold focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Frais de scolarité (FCFA)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={tuitionAmount}
+                  onChange={(e) => setTuitionAmount(e.target.value)}
+                  placeholder="e.g. 150000"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setTuitionModalOpen(false)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingTuition}
+                  className="flex-1 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all disabled:opacity-50"
+                >
+                  Configure
                 </button>
               </div>
             </form>

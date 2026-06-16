@@ -12,7 +12,8 @@ import {
   FileText, 
   CreditCard, 
   Settings,
-  GraduationCap
+  GraduationCap,
+  Coins
 } from 'lucide-react';
 
 export default function Sidebar({ mobileOpen, onClose }) {
@@ -72,6 +73,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
       path: '/payments',
       label: t('nav.payments'),
       icon: CreditCard,
+      roles: ['DIRECTOR']
+    },
+    {
+      path: '/payroll',
+      label: t('nav.payroll') || 'Paie Enseignants',
+      icon: Coins,
       roles: ['DIRECTOR']
     },
     {

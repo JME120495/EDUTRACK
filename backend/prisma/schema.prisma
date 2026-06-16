@@ -137,6 +137,8 @@ model EnseignantMatiereClasse {
   classId   String
   class     Classe   @relation(fields: [classId], references: [id])
   coefficient Float?
+  hourlyRate  Float    @default(0.0)
+  hoursTaught Float    @default(0.0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

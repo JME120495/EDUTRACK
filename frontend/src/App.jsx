@@ -12,6 +12,7 @@ import GradeEntryPage from './pages/Teacher/GradeEntryPage';
 import AbsencesPage from './pages/Teacher/AbsencesPage';
 import BulletinsPage from './pages/Director/BulletinsPage';
 import PaymentsPage from './pages/Director/PaymentsPage';
+import PayrollPage from './pages/Director/PayrollPage';
 import SettingsPage from './pages/Director/SettingsPage';
 import ParentPortal from './pages/Parent/ParentPortal';
 
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="/absences" element={<RoleRoute roles={['DIRECTOR', 'TEACHER']}><AbsencesPage /></RoleRoute>} />
           <Route path="/bulletins" element={<RoleRoute roles={['DIRECTOR', 'TEACHER']}><BulletinsPage /></RoleRoute>} />
           <Route path="/payments" element={<RoleRoute roles={['DIRECTOR']}><PaymentsPage /></RoleRoute>} />
+          <Route path="/payroll" element={<RoleRoute roles={['DIRECTOR']}><PayrollPage /></RoleRoute>} />
           <Route path="/settings" element={<RoleRoute roles={['DIRECTOR']}><SettingsPage /></RoleRoute>} />
           <Route path="/parent" element={<RoleRoute roles={['PARENT']}><ParentPortal /></RoleRoute>} />
         </Route>

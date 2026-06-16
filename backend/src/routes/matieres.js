@@ -137,10 +137,10 @@ router.get('/assignments', auth, async (req, res) => {
   }
 });
 
-// Update assignment (Director only) - e.g. update custom coefficient
+// Update assignment (Director only) - e.g. update custom coefficient, hourlyRate, hoursTaught
 router.put('/assignments/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
   const { id } = req.params;
-  const { coefficient } = req.body;
+  const { coefficient, hourlyRate, hoursTaught } = req.body;
   try {
     const assoc = await prisma.enseignantMatiereClasse.findUnique({
       where: { id },
@@ -150,11 +150,20 @@ router.put('/assignments/:id', auth, requireRole(['DIRECTOR']), async (req, res)
       return res.status(404).json({ message: 'Assignment not found' });
     }
 
+    const updateData = {};
+    if (coefficient !== undefined) {
+      updateData.coefficient = coefficient !== null && coefficient !== '' ? parseFloat(coefficient) : null;
+    }
+    if (hourlyRate !== undefined) {
+      updateData.hourlyRate = hourlyRate !== null && hourlyRate !== '' ? parseFloat(hourlyRate) : 0.0;
+    }
+    if (hoursTaught !== undefined) {
+      updateData.hoursTaught = hoursTaught !== null && hoursTaught !== '' ? parseFloat(hoursTaught) : 0.0;
+    }
+
     const updated = await prisma.enseignantMatiereClasse.update({
       where: { id },
-      data: {
-        coefficient: coefficient !== undefined && coefficient !== null && coefficient !== '' ? parseFloat(coefficient) : null
-      },
+      data: updateData,
       include: {
         teacher: { select: { id: true, name: true, email: true } },
         matiere: true,
