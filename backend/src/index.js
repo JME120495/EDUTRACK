@@ -54,3 +54,5 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`[EduTrack Backend] Server is running on port ${PORT}`);
 });
+
+module.exports = app;
