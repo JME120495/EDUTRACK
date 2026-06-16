@@ -1,0 +1,694 @@
+import React, { useState, useEffect, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
+import { apiFetch } from '../api';
+import { AuthContext } from '../context/AuthContext';
+import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette } from 'lucide-react';
+
+export default function SettingsPage() {
+  const { t } = useTranslation();
+  const { updateLanguage } = useContext(AuthContext);
+
+  const [school, setSchool] = useState({
+    name: 'Collège Saint-Michel de Yaoundé',
+    logo: '',
+    defaultLanguage: 'FR',
+    phone: '+237222334455',
+    address: 'Nlongkak, Yaoundé, Cameroun',
+    email: 'contact@saintmichel.edutrack.com',
+    pdfTheme: 'NAVY',
+    pdfPrimaryColor: '#1E3A5F',
+    pdfSecondaryColor: '#F5A623',
+    pdfShowBorder: true
+  });
+  const [studentCount, setStudentCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  
+  // Creneaux state
+  const [creneaux, setCreneaux] = useState([]);
+  const [selectedCreneau, setSelectedCreneau] = useState(null);
+  const [creneauModalOpen, setCreneauModalOpen] = useState(false);
+
+  // Creneau Form State
+  const [cLabel, setCLabel] = useState('');
+  const [cStartTime, setCStartTime] = useState('');
+  const [cEndTime, setCEndTime] = useState('');
+  const [cOrder, setCOrder] = useState(0);
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  async function loadSettings() {
+    try {
+      setLoading(true);
+      const [schoolData, studentsData, creneauxData] = await Promise.all([
+        apiFetch('/schools'),
+        apiFetch('/eleves'),
+        apiFetch('/creneaux').catch(() => [])
+      ]);
+      if (schoolData) {
+        setSchool(schoolData);
+      }
+      if (studentsData) {
+        setStudentCount(studentsData.length);
+      }
+      if (creneauxData) {
+        setCreneaux(creneauxData);
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleOpenAddCreneau = () => {
+    setSelectedCreneau(null);
+    setCLabel('');
+    setCStartTime('');
+    setCEndTime('');
+    setCOrder(creneaux.length + 1);
+    setCreneauModalOpen(true);
+  };
+
+  const handleOpenEditCreneau = (c) => {
+    setSelectedCreneau(c);
+    setCLabel(c.label || '');
+    setCStartTime(c.startTime);
+    setCEndTime(c.endTime);
+    setCOrder(c.order || 0);
+    setCreneauModalOpen(true);
+  };
+
+  const handleSaveCreneau = async (e) => {
+    e.preventDefault();
+    if (!cStartTime || !cEndTime || !cLabel) {
+      alert('Label, Heure de début et de fin sont requis');
+      return;
+    }
+
+    try {
+      if (selectedCreneau) {
+        // Edit mode
+        await apiFetch(`/creneaux/${selectedCreneau.id}`, {
+          method: 'PUT',
+          body: {
+            label: cLabel,
+            startTime: cStartTime,
+            endTime: cEndTime,
+            order: parseInt(cOrder)
+          }
+        });
+        alert('Créneau horaire mis à jour avec succès !');
+      } else {
+        // Add mode
+        await apiFetch('/creneaux', {
+          method: 'POST',
+          body: {
+            label: cLabel,
+            startTime: cStartTime,
+            endTime: cEndTime,
+            order: parseInt(cOrder)
+          }
+        });
+        alert('Créneau horaire ajouté avec succès !');
+      }
+      setCreneauModalOpen(false);
+      
+      // Reload creneaux
+      const creneauxData = await apiFetch('/creneaux');
+      setCreneaux(creneauxData);
+    } catch (err) {
+      alert(err.message || 'Erreur lors de la sauvegarde');
+    }
+  };
+
+  const handleDeleteCreneau = async (id) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce créneau ? Les cours affectés à cette heure seront également impactés.')) return;
+    try {
+      await apiFetch(`/creneaux/${id}`, { method: 'DELETE' });
+      setCreneaux(prev => prev.filter(c => c.id !== id));
+      alert('Créneau horaire supprimé avec succès.');
+    } catch (err) {
+      alert(err.message || 'Erreur lors de la suppression');
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setSchool(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("L'image est trop volumineuse. Veuillez choisir un fichier de moins de 2 Mo.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSchool(prev => ({ ...prev, logo: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleThemeChange = (e) => {
+    const theme = e.target.value;
+    let primary = '#1E3A5F';
+    let secondary = '#F5A623';
+    
+    if (theme === 'GREEN') {
+      primary = '#065F46';
+      secondary = '#F5A623';
+    } else if (theme === 'CRIMSON') {
+      primary = '#7F1D1D';
+      secondary = '#94A3B8';
+    } else if (theme === 'CHARCOAL') {
+      primary = '#1E293B';
+      secondary = '#3B82F6';
+    }
+    
+    setSchool(prev => ({
+      ...prev,
+      pdfTheme: theme,
+      ...(theme !== 'CUSTOM' ? { pdfPrimaryColor: primary, pdfSecondaryColor: secondary } : {})
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setSuccess(false);
+    try {
+      await apiFetch('/schools/settings', {
+        method: 'PUT',
+        body: school
+      });
+      // Sync local context language if changed
+      updateLanguage(school.defaultLanguage);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      alert(err.message || 'Failed to update settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="py-20 text-center text-slate-400">Loading school configurations...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-extrabold text-[#1E3A5F] font-outfit">
+          {t('settings.title')}
+        </h1>
+        <p className="text-slate-500 text-xs font-semibold">
+          Configure default bilingual formats, contact information, and terms
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Settings Form */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
+            <Settings className="h-5 w-5 text-[#1E3A5F]" />
+            <h3 className="font-bold text-[#1E3A5F] font-outfit">Institution Profile</h3>
+          </div>
+
+          {success && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs p-3 rounded-xl flex items-center gap-2">
+              <CheckCircle className="h-4.5 w-4.5 text-emerald-500" />
+              <span>{t('settings.title')} updated successfully!</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">School Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value={school.name}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Default Language</label>
+                <select
+                  name="defaultLanguage"
+                  value={school.defaultLanguage}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none"
+                >
+                  <option value="FR">French (FR)</option>
+                  <option value="EN">English (EN)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Phone Number</label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={school.phone || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={school.email || ''}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Physical Address</label>
+              <input
+                type="text"
+                name="address"
+                value={school.address || ''}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Logo de l'école (School Logo)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Option 1: File Upload */}
+                <div className="border border-dashed border-slate-300 rounded-xl p-4 flex flex-col justify-center items-center gap-2 hover:border-[#1E3A5F] transition-colors bg-slate-50/50">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Télécharger depuis votre appareil</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-xs text-slate-500
+                      file:mr-4 file:py-1.5 file:px-3
+                      file:rounded-full file:border-0
+                      file:text-xs file:font-semibold
+                      file:bg-blue-50 file:text-[#1E3A5F]
+                      hover:file:bg-blue-100 cursor-pointer"
+                  />
+                  <span className="text-[9px] text-slate-400">PNG, JPG, JPEG ou GIF, max 2Mo</span>
+                </div>
+
+                {/* Option 2: Image Link */}
+                <div className="border border-slate-200 rounded-xl p-4 flex flex-col justify-center gap-2 bg-slate-50/50">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Ou coller un lien d'image (URL)</span>
+                  <input
+                    type="text"
+                    name="logo"
+                    value={school.logo && !school.logo.startsWith('data:') ? school.logo : ''}
+                    onChange={handleChange}
+                    placeholder="https://example.com/logo.png"
+                    className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-medium text-slate-700"
+                  />
+                </div>
+              </div>
+
+              {/* Logo Preview & Reset */}
+              {school.logo && (
+                <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                  <img src={school.logo} alt="Preview Logo" className="h-12 w-12 object-contain rounded-lg border border-slate-200 bg-white" />
+                  <div className="flex-1 text-xs">
+                    <p className="font-bold text-[#1E3A5F]">Aperçu du Logo</p>
+                    <p className="text-[9px] text-slate-400 truncate max-w-[200px]">
+                      {school.logo.startsWith('data:') ? 'Image importée (Base64)' : school.logo}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSchool(prev => ({ ...prev, logo: '' }))}
+                    className="px-2.5 py-1 text-rose-600 hover:bg-rose-50 border border-rose-250 rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* PDF Theme & Color Customization Panel */}
+            <div className="border-t border-slate-100 pt-6 space-y-4">
+              <div className="flex items-center gap-2 pb-2">
+                <Palette className="h-5 w-5 text-[#1E3A5F]" />
+                <h3 className="font-bold text-[#1E3A5F] font-outfit">Personnalisation Visuelle des Bulletins (PDF)</h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Modèle de Thème</label>
+                  <select
+                    name="pdfTheme"
+                    value={school.pdfTheme || 'NAVY'}
+                    onChange={handleThemeChange}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-bold text-slate-700"
+                  >
+                    <option value="NAVY">Bleu Classique / Navy 🔵🟡</option>
+                    <option value="GREEN">Vert Académique / Green 🟢🟡</option>
+                    <option value="CRIMSON">Prestige Royal / Crimson 🔴⚪</option>
+                    <option value="CHARCOAL">Gris Moderne / Charcoal ⚫🔵</option>
+                    <option value="CUSTOM">Couleurs Personnalisées 🎨</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Couleur Principale</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      name="pdfPrimaryColor"
+                      disabled={school.pdfTheme !== 'CUSTOM'}
+                      value={school.pdfPrimaryColor || '#1E3A5F'}
+                      onChange={handleChange}
+                      className="h-9 w-12 border border-slate-200 rounded-lg cursor-pointer disabled:opacity-50"
+                    />
+                    <span className="text-xs font-mono font-bold text-slate-600 uppercase">{school.pdfPrimaryColor}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Couleur Secondaire</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      name="pdfSecondaryColor"
+                      disabled={school.pdfTheme !== 'CUSTOM'}
+                      value={school.pdfSecondaryColor || '#F5A623'}
+                      onChange={handleChange}
+                      className="h-9 w-12 border border-slate-200 rounded-lg cursor-pointer disabled:opacity-50"
+                    />
+                    <span className="text-xs font-mono font-bold text-slate-600 uppercase">{school.pdfSecondaryColor}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="pdfShowBorder"
+                  name="pdfShowBorder"
+                  checked={school.pdfShowBorder !== false}
+                  onChange={(e) => setSchool(prev => ({ ...prev, pdfShowBorder: e.target.checked }))}
+                  className="h-4 w-4 text-[#1E3A5F] border-slate-300 rounded focus:ring-[#1E3A5F] cursor-pointer"
+                />
+                <label htmlFor="pdfShowBorder" className="text-xs font-bold text-slate-600 cursor-pointer select-none">
+                  Afficher la double bordure décorative sur le contour du bulletin
+                </label>
+              </div>
+
+              {/* Live Preview Container Mockup */}
+              <div className="mt-4 border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-4 space-y-2">
+                <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block mb-2">Aperçu en direct de l'en-tête du Bulletin</span>
+                
+                <div 
+                  className="bg-white p-4 rounded-xl relative overflow-hidden transition-all duration-300 shadow-sm"
+                  style={{
+                    border: school.pdfShowBorder ? `3px double ${school.pdfSecondaryColor}` : '1px solid #E2E8F0',
+                  }}
+                >
+                  {/* Outer borders simulation */}
+                  {school.pdfShowBorder && (
+                    <div 
+                      className="absolute inset-0.5 border pointer-events-none" 
+                      style={{ borderColor: school.pdfPrimaryColor }}
+                    />
+                  )}
+                  
+                  <div className="flex justify-between items-start gap-3 relative z-10">
+                    <div className="flex items-center gap-3">
+                      {school.logo ? (
+                        <img src={school.logo} alt="Mockup Logo" className="h-9 w-9 object-contain rounded border border-slate-200" />
+                      ) : (
+                        <div className="h-9 w-9 rounded bg-slate-100 flex items-center justify-center border border-slate-200 font-bold text-slate-400 text-[10px]">LOGO</div>
+                      )}
+                      <div>
+                        <p 
+                          className="font-black text-xs transition-colors duration-300 tracking-wide"
+                          style={{ color: school.pdfPrimaryColor }}
+                        >
+                          {school.name.toUpperCase()}
+                        </p>
+                        <p className="text-[8px] text-slate-400 font-bold tracking-tight">{school.address || 'Adresse de l\'établissement'}</p>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="px-3 py-1.5 rounded text-[8px] text-white font-black transition-all duration-300 uppercase tracking-widest"
+                      style={{ backgroundColor: school.pdfPrimaryColor }}
+                    >
+                      SÉQUENCE 1 (2025-2026)
+                    </div>
+                  </div>
+                  
+                  {/* Table simulation preview */}
+                  <div className="mt-4 border rounded-lg overflow-hidden" style={{ borderColor: school.pdfPrimaryColor }}>
+                    <div className="grid grid-cols-4 text-[7px] font-black text-white p-1 px-2.5" style={{ backgroundColor: school.pdfPrimaryColor }}>
+                      <span>Matière / Subject</span>
+                      <span className="text-center">Note / Grade</span>
+                      <span className="text-center">Moy. Cl / Class Avg</span>
+                      <span className="text-right">Appréciation</span>
+                    </div>
+                    <div className="grid grid-cols-4 text-[7px] font-bold text-slate-600 p-1 px-2.5 bg-slate-50 border-t border-slate-100">
+                      <span>Mathématiques / Math</span>
+                      <span className="text-center font-extrabold" style={{ color: school.pdfPrimaryColor }}>18.50 / 20</span>
+                      <span className="text-center">12.30</span>
+                      <span className="text-right text-emerald-600">Excellent</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={saving}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md disabled:opacity-50"
+              >
+                <Save className="h-4.5 w-4.5" />
+                <span>{t('settings.save')}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Sidebar Info Panels */}
+        <div className="space-y-6">
+          {/* Time slot manager panel */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4.5 w-4.5 text-[#1E3A5F]" />
+                <h4 className="font-bold text-[#1E3A5F] text-sm font-outfit font-black">Configuration des Heures</h4>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenAddCreneau}
+                className="p-1 text-[#1E3A5F] hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors flex items-center justify-center"
+                title="Ajouter un créneau"
+              >
+                <Plus className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              </button>
+            </div>
+            {creneaux.length === 0 ? (
+              <p className="text-xs text-slate-400 italic text-center py-2">Aucun créneau configuré</p>
+            ) : (
+              <ul className="text-xs space-y-2.5 text-slate-600 font-medium">
+                {creneaux.map((c) => (
+                  <li key={c.id} className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <div className="space-y-0.5">
+                      <span className="font-bold text-[#1E3A5F] block">{c.label}</span>
+                      <span className="text-slate-500 text-[10px]">{c.startTime} - {c.endTime}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditCreneau(c)}
+                        className="p-1 rounded bg-white hover:bg-slate-100 text-[#1E3A5F] border border-slate-200 shadow-sm transition-colors"
+                        title="Modifier"
+                      >
+                        <Edit2 className="h-3 w-3 text-slate-500" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCreneau(c.id)}
+                        className="p-1 rounded bg-white hover:bg-rose-50 text-rose-500 border border-slate-200 shadow-sm transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Subjects coefficients metadata panel */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <BookOpen className="h-4.5 w-4.5 text-[#1E3A5F]" />
+              <h4 className="font-bold text-[#1E3A5F] text-sm font-outfit">Coefficients config</h4>
+            </div>
+            <ul className="text-xs space-y-2 text-slate-600 font-medium">
+              <li className="flex justify-between"><span>Mathematics (MATH)</span><span className="font-bold text-[#1E3A5F]">Coeff 4.0</span></li>
+              <li className="flex justify-between"><span>French (FRAN)</span><span className="font-bold text-[#1E3A5F]">Coeff 3.0</span></li>
+              <li className="flex justify-between"><span>English (ANGL)</span><span className="font-bold text-[#1E3A5F]">Coeff 3.0</span></li>
+              <li className="flex justify-between"><span>History-Geography (HIST)</span><span className="font-bold text-[#1E3A5F]">Coeff 2.0</span></li>
+              <li className="flex justify-between"><span>Physics-Chemistry (PHYS)</span><span className="font-bold text-[#1E3A5F]">Coeff 3.0</span></li>
+            </ul>
+          </div>
+
+          {/* Pricing & Billing Plan Info Panel */}
+          <div className="bg-[#1E3A5F] text-white rounded-2xl p-5 shadow-lg space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-3 bg-amber-400 text-slate-900 text-[9px] font-black rounded-bl-xl uppercase tracking-wider">
+              {studentCount < 200 ? 'Bronze' : studentCount <= 500 ? 'Argent' : studentCount <= 2000 ? 'Or' : 'Entreprise'}
+            </div>
+            
+            <div className="border-b border-white/20 pb-3">
+              <h4 className="font-bold text-sm font-outfit text-[#F5A623]">{t('billing.title') || "Abonnement & Licence"}</h4>
+              <p className="text-[10px] text-slate-300 font-semibold mt-0.5">EduTrack SaaS Commercial Plan</p>
+            </div>
+            
+            <div className="space-y-2.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-300 font-medium">Active Students:</span>
+                <span className="font-bold">{studentCount} Students</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-slate-300 font-medium">Monthly License:</span>
+                <span className="font-black text-[#F5A623]">
+                  {studentCount < 200 ? '35 000 FCFA / mois' : studentCount <= 500 ? '55 000 FCFA / mois' : studentCount <= 2000 ? '120 000 FCFA / mois' : 'Sur Mesure'}
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-white/10 text-[10px] text-slate-300 leading-relaxed space-y-1">
+              <p className="font-bold text-white uppercase text-[8px] tracking-wider text-[#F5A623]">Pricing Matrix / Grille de Prix :</p>
+              <div className="grid grid-cols-2 gap-y-1 text-[9px]">
+                <span>&lt; 200 élèves :</span><span className="text-right font-semibold text-white">35 000 FCFA / mois</span>
+                <span>200 - 500 élèves :</span><span className="text-right font-semibold text-white">55 000 FCFA / mois</span>
+                <span>500 - 2 000 élèves :</span><span className="text-right font-semibold text-white">120 000 FCFA / mois</span>
+                <span>&gt; 2 000 élèves :</span><span className="text-right font-semibold text-[#F5A623]">Sur mesure</span>
+              </div>
+            </div>
+            
+            {studentCount > 2000 && (
+              <button className="w-full mt-2 py-1.5 bg-[#F5A623] hover:bg-amber-500 text-slate-900 rounded-xl text-[10px] font-black tracking-wide uppercase transition-colors">
+                Contact EduTrack Team
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Creneau Modal */}
+      {creneauModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-[#1E3A5F]" />
+                <h3 className="font-bold text-[#1E3A5F] font-outfit font-black">
+                  {selectedCreneau ? 'Modifier le Créneau' : 'Ajouter un Créneau'}
+                </h3>
+              </div>
+              <button onClick={() => setCreneauModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg transition-colors">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCreneau} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Libellé (ex: M1, PAUSE, A1)</label>
+                <input
+                  type="text"
+                  required
+                  value={cLabel}
+                  onChange={(e) => setCLabel(e.target.value)}
+                  placeholder="ex: M1 ou PAUSE"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-bold text-slate-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Heure de Début</label>
+                  <input
+                    type="text"
+                    required
+                    value={cStartTime}
+                    onChange={(e) => setCStartTime(e.target.value)}
+                    placeholder="ex: 08:00"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-bold text-slate-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Heure de Fin</label>
+                  <input
+                    type="text"
+                    required
+                    value={cEndTime}
+                    onChange={(e) => setCEndTime(e.target.value)}
+                    placeholder="ex: 10:00"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-bold text-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ordre d'affichage</label>
+                <input
+                  type="number"
+                  required
+                  value={cOrder}
+                  onChange={(e) => setCOrder(e.target.value)}
+                  placeholder="ex: 1"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-bold text-slate-800"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCreneauModalOpen(false)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md"
+                >
+                  Sauvegarder
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

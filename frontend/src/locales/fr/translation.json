@@ -1,0 +1,142 @@
+{
+  "nav": {
+    "dashboard": "Tableau de Bord",
+    "students": "Gestion Élèves",
+    "classes": "Gestion Classes",
+    "teachers": "Gestion Enseignants",
+    "timetable": "Emploi du Temps",
+    "grades": "Saisie des Notes",
+    "absences": "Absences / Appel",
+    "bulletins": "Bulletins",
+    "payments": "Paiements & Scolarité",
+    "settings": "Paramètres École",
+    "logout": "Déconnexion",
+    "portalParent": "Espace Parent",
+    "portalTeacher": "Espace Enseignant",
+    "portalDirector": "Espace Direction"
+  },
+  "auth": {
+    "title": "Connexion EduTrack",
+    "subtitle": "Portail Scolaire Bilingue",
+    "email": "Email ou Numéro de Téléphone",
+    "password": "Mot de passe",
+    "loginBtn": "Se Connecter",
+    "parentLoginTab": "Parent (Accès SMS)",
+    "staffLoginTab": "Direction / Enseignant",
+    "phone": "Numéro de Téléphone (ex: +237...)",
+    "requestOtp": "Demander le code de connexion",
+    "enterOtp": "Saisir le code OTP reçu par SMS",
+    "verifyOtp": "Vérifier et se connecter",
+    "otpSent": "Code envoyé par SMS avec succès !",
+    "error": "Identifiants incorrects"
+  },
+  "dashboard": {
+    "welcome": "Bienvenue,",
+    "stats": {
+      "students": "Élèves Actifs",
+      "teachers": "Enseignants",
+      "paymentRate": "Taux de Recouvrement",
+      "totalRevenue": "Total Recouvré"
+    },
+    "alerts": {
+      "title": "Alertes et Retards de Paiements",
+      "none": "Aucun retard de paiement signalé.",
+      "sendReminder": "Envoyer Rappel SMS",
+      "remindersSent": "Rappels SMS envoyés avec succès !"
+    },
+    "recentActions": "Actions Rapides"
+  },
+  "students": {
+    "title": "Gestion des Élèves",
+    "add": "Ajouter un Élève",
+    "import": "Importer depuis CSV",
+    "table": {
+      "name": "Nom complet",
+      "matricule": "Matricule",
+      "gender": "Genre",
+      "class": "Classe",
+      "status": "Statut",
+      "actions": "Actions"
+    },
+    "csvPlaceholder": "Nom complet,Matricule,Genre,Adresse\nJean Ndongo,MAT-202601,M,Yaoundé\nMarie Tate,MAT-202602,F,Yaoundé",
+    "csvHelp": "Veuillez coller les lignes au format CSV (sans en-tête ou avec en-tête contenant 'name' / 'nom'). Séparez les colonnes par des virgules."
+  },
+  "timetable": {
+    "title": "Emploi du temps de la classe",
+    "conflict": "Détection de Conflit !",
+    "exportPdf": "Exporter en PDF",
+    "room": "Salle",
+    "teacher": "Enseignant",
+    "subject": "Matière",
+    "day": "Jour",
+    "addSession": "Ajouter un cours",
+    "days": {
+      "LUNDI": "Lundi",
+      "MARDI": "Mardi",
+      "MERCREDI": "Mercredi",
+      "JEUDI": "Jeudi",
+      "VENDREDI": "Vendredi",
+      "SAMEDI": "Samedi"
+    }
+  },
+  "grades": {
+    "title": "Saisie des Notes Séquentielles",
+    "draftSaved": "Brouillon sauvegardé !",
+    "validated": "Notes validées et verrouillées !",
+    "modeOffline": "Mode Hors-ligne (Modifications locales temporaires)",
+    "saveDraft": "Sauvegarder Brouillon",
+    "validate": "Valider définitivement",
+    "student": "Élève",
+    "value": "Note / 20",
+    "behavior": "Comportement"
+  },
+  "bulletins": {
+    "title": "Génération de Bulletins",
+    "generateSeq": "Générer Bulletins de Séquence",
+    "generateTerm": "Générer Bulletins Trimestriels",
+    "table": {
+      "student": "Élève",
+      "average": "Moyenne",
+      "rank": "Rang",
+      "pdf": "Bulletins PDF",
+      "whatsapp": "WhatsApp"
+    },
+    "sendMassWhatsapp": "Envoyer à tous les Parents par WhatsApp",
+    "signed": "Signé électroniquement",
+    "signDirector": "Signer en tant que Directeur",
+    "signTeacher": "Signer en tant que Prof. Principal",
+    "signParent": "Signer en tant que Parent"
+  },
+  "payments": {
+    "title": "Suivi Financier",
+    "record": "Enregistrer un Paiement",
+    "tuitionSetup": "Configurer les Frais par Classe",
+    "table": {
+      "student": "Élève",
+      "paid": "Payé (FCFA)",
+      "balance": "Reste à payer (FCFA)",
+      "status": "Statut"
+    },
+    "statusPaid": "Scolarité Réglée",
+    "statusPartial": "Paiement Partiel",
+    "statusUnpaid": "Impayé"
+  },
+  "settings": {
+    "title": "Configuration de l'Établissement",
+    "language": "Langue par défaut",
+    "schoolName": "Nom de l'école",
+    "save": "Enregistrer les modifications"
+  },
+  "billing": {
+    "title": "Abonnement & Facturation"
+  },
+  "absences": {
+    "title": "Registre des Absences & Appel",
+    "saveSuccess": "Feuille d'appel enregistrée avec succès !",
+    "saveBtn": "Sauvegarder l'Appel"
+  },
+  "classes": {
+    "title": "Gestion des Classes",
+    "addBtn": "Créer une classe"
+  }
+}

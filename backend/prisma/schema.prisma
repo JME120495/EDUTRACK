@@ -1,0 +1,284 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model School {
+  id              String          @id @default(uuid())
+  name            String
+  logo            String?
+  defaultLanguage String          @default("FR")
+  phone           String?
+  address         String?
+  email           String?
+  pdfTheme          String          @default("NAVY")
+  pdfPrimaryColor   String          @default("#1E3A5F")
+  pdfSecondaryColor String          @default("#F5A623")
+  pdfShowBorder     Boolean         @default(true)
+  subscriptionExpiresAt DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  users           User[]
+  classes         Classe[]
+  matieres        Matiere[]
+  creneaux        CreneauHoraire[]
+  anneesScolaires AnneeScolaire[]
+}
+
+model User {
+  id              String                    @id @default(uuid())
+  schoolId        String
+  school          School                    @relation(fields: [schoolId], references: [id])
+  name            String
+  email           String                    @unique
+  passwordHash    String
+  role            String                    // "DIRECTOR", "TEACHER", "PARENT"
+  phone           String?
+  language        String                    @default("FR")
+  otpCode         String?
+  otpExpires      DateTime?
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  principalClasses Classe[]                 @relation("PrincipalTeacher")
+  taughtSubjects  EnseignantMatiereClasse[]
+  children        ParentEleve[]
+  timetables      EmploiDuTemps[]
+  notes           Note[]
+}
+
+model AnneeScolaire {
+  id             String           @id @default(uuid())
+  schoolId       String
+  school         School           @relation(fields: [schoolId], references: [id])
+  label          String           // e.g. "2025-2026"
+  active         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  classes        Classe[]
+  sequences      Sequence[]
+  fraisScolarite FraisScolarite[]
+}
+
+model Classe {
+  id                 String                    @id @default(uuid())
+  schoolId           String
+  school             School                    @relation(fields: [schoolId], references: [id])
+  anneeScolaireId    String
+  anneeScolaire      AnneeScolaire             @relation(fields: [anneeScolaireId], references: [id])
+  name               String                    // e.g. "6ème A"
+  principalTeacherId String?
+  principalTeacher   User?                     @relation("PrincipalTeacher", fields: [principalTeacherId], references: [id])
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  eleves             Eleve[]
+  taughtSubjects     EnseignantMatiereClasse[]
+  timetables         EmploiDuTemps[]
+  fraisScolarite     FraisScolarite[]
+}
+
+model Eleve {
+  id          String        @id @default(uuid())
+  name        String
+  matricule   String        @unique
+  dateOfBirth DateTime?
+  gender      String?
+  address     String?
+  photoUrl    String?
+  status      String        @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  classId     String
+  class       Classe        @relation(fields: [classId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  parents     ParentEleve[]
+  notes       Note[]
+  absences    Absence[]
+  bulletins   Bulletin[]
+  paiements   Paiement[]
+}
+
+model ParentEleve {
+  parentId     String
+  parent       User     @relation(fields: [parentId], references: [id])
+  eleveId      String
+  eleve        Eleve    @relation(fields: [eleveId], references: [id])
+  relationship String?  // "FATHER", "MOTHER", "GUARDIAN"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@id([parentId, eleveId])
+}
+
+model Matiere {
+  id              String                    @id @default(uuid())
+  schoolId        String
+  school          School                    @relation(fields: [schoolId], references: [id])
+  nameFr          String
+  nameEn          String
+  code            String                    // e.g. "MATH"
+  coefficient     Float                     @default(1.0)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  taughtBy        EnseignantMatiereClasse[]
+  timetables      EmploiDuTemps[]
+  notes           Note[]
+  bulletinDetails BulletinDetail[]
+}
+
+model EnseignantMatiereClasse {
+  id        String   @id @default(uuid())
+  teacherId String
+  teacher   User     @relation(fields: [teacherId], references: [id])
+  matiereId String
+  matiere   Matiere  @relation(fields: [matiereId], references: [id])
+  classId   String
+  class     Classe   @relation(fields: [classId], references: [id])
+  coefficient Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CreneauHoraire {
+  id        String          @id @default(uuid())
+  schoolId  String
+  school    School          @relation(fields: [schoolId], references: [id])
+  startTime String          // e.g. "08:00"
+  endTime   String          // e.g. "10:00"
+  label     String?         // e.g. "M1"
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  timetables EmploiDuTemps[]
+}
+
+model EmploiDuTemps {
+  id        String         @id @default(uuid())
+  classId   String
+  class     Classe         @relation(fields: [classId], references: [id])
+  teacherId String
+  teacher   User           @relation(fields: [teacherId], references: [id])
+  matiereId String
+  matiere   Matiere        @relation(fields: [matiereId], references: [id])
+  creneauId String
+  creneau   CreneauHoraire @relation(fields: [creneauId], references: [id])
+  dayOfWeek String         // "LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI"
+  room      String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Sequence {
+  id              String        @id @default(uuid())
+  anneeScolaireId String
+  anneeScolaire   AnneeScolaire @relation(fields: [anneeScolaireId], references: [id])
+  name            String        // e.g. "Séquence 1"
+  term            Int           // 1, 2, or 3
+  startDate       DateTime?
+  endDate         DateTime?
+  active          Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  notes           Note[]
+  absences        Absence[]
+  bulletins       Bulletin[]
+}
+
+model Note {
+  id         String   @id @default(uuid())
+  eleveId    String
+  eleve      Eleve    @relation(fields: [eleveId], references: [id])
+  sequenceId String
+  sequence   Sequence @relation(fields: [sequenceId], references: [id])
+  matiereId  String
+  matiere    Matiere  @relation(fields: [matiereId], references: [id])
+  teacherId  String
+  teacher    User     @relation(fields: [teacherId], references: [id])
+  value      Float    // Grade out of 20
+  isDraft    Boolean  @default(true)
+  remarks    String?  // Behaviour / evaluation remarks
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Absence {
+  id         String   @id @default(uuid())
+  eleveId    String
+  eleve      Eleve    @relation(fields: [eleveId], references: [id])
+  sequenceId String
+  sequence   Sequence @relation(fields: [sequenceId], references: [id])
+  date       DateTime @default(now())
+  hours      Float    @default(1.0)
+  justified  Boolean  @default(false)
+  reason     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Bulletin {
+  id                 String           @id @default(uuid())
+  eleveId            String
+  eleve              Eleve            @relation(fields: [eleveId], references: [id])
+  sequenceId         String?
+  sequence           Sequence?        @relation(fields: [sequenceId], references: [id])
+  term               Int?             // If type == "TERM"
+  type               String           // "SEQUENCE" or "TERM"
+  average            Float
+  rank               Int?
+  absencesJustified  Float            @default(0)
+  absencesUnjustified Float           @default(0)
+  remarks            String?
+  signedDirector     Boolean          @default(false)
+  signedTeacher      Boolean          @default(false)
+  signedParent       Boolean          @default(false)
+  pdfUrl             String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  details            BulletinDetail[]
+}
+
+model BulletinDetail {
+  id           String   @id @default(uuid())
+  bulletinId   String
+  bulletin     Bulletin @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
+  matiereId    String
+  matiere      Matiere  @relation(fields: [matiereId], references: [id])
+  noteValue    Float
+  classAverage Float?
+  minNote      Float?
+  maxNote      Float?
+  rank         Int?
+  appreciation String?
+  remarks      String?
+  coefficient  Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model FraisScolarite {
+  id              String        @id @default(uuid())
+  classId         String
+  class           Classe        @relation(fields: [classId], references: [id])
+  anneeScolaireId String
+  anneeScolaire   AnneeScolaire @relation(fields: [anneeScolaireId], references: [id])
+  totalAmount     Float
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Paiement {
+  id                   String   @id @default(uuid())
+  eleveId              String
+  eleve                Eleve    @relation(fields: [eleveId], references: [id])
+  amount               Float
+  paymentDate          DateTime @default(now())
+  paymentMethod        String   // "MOBILE_MONEY", "WAVE", "CASH", "BANK"
+  status               String   @default("COMPLETED") // "COMPLETED", "PENDING", "FAILED"
+  transactionReference String?
+  payerPhone           String?
+  remarks              String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

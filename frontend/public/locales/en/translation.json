@@ -1,0 +1,126 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "students": "Student Management",
+    "timetable": "Timetable",
+    "grades": "Grade Entry",
+    "bulletins": "Report Cards",
+    "payments": "Payments & Fees",
+    "settings": "School Settings",
+    "logout": "Sign Out",
+    "portalParent": "Parent Portal",
+    "portalTeacher": "Teacher Portal",
+    "portalDirector": "Director's Office"
+  },
+  "auth": {
+    "title": "EduTrack Login",
+    "subtitle": "Bilingual School Portal",
+    "email": "Email Address",
+    "password": "Password",
+    "loginBtn": "Sign In",
+    "parentLoginTab": "Parent (SMS Access)",
+    "staffLoginTab": "Staff / Director",
+    "phone": "Phone Number (e.g. +237...)",
+    "requestOtp": "Request Login Code",
+    "enterOtp": "Enter the OTP code received by SMS",
+    "verifyOtp": "Verify and Sign In",
+    "otpSent": "Code sent by SMS successfully!",
+    "error": "Invalid credentials"
+  },
+  "dashboard": {
+    "welcome": "Welcome,",
+    "stats": {
+      "students": "Active Students",
+      "teachers": "Teachers",
+      "paymentRate": "Collection Rate",
+      "totalRevenue": "Total Collected"
+    },
+    "alerts": {
+      "title": "Payment Alerts & Overdue Fees",
+      "none": "No overdue payments reported.",
+      "sendReminder": "Send SMS Reminder",
+      "remindersSent": "SMS reminders sent successfully!"
+    },
+    "recentActions": "Quick Actions"
+  },
+  "students": {
+    "title": "Student Management",
+    "add": "Add Student",
+    "import": "Import from CSV",
+    "table": {
+      "name": "Full Name",
+      "matricule": "Matricule",
+      "gender": "Gender",
+      "class": "Class",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "csvPlaceholder": "Full Name,Matricule,Gender,Address\nJohn Smith,MAT-202601,M,Yaoundé\nJane Doe,MAT-202602,F,Yaoundé",
+    "csvHelp": "Paste CSV lines (with or without header containing 'name'). Separate columns with commas."
+  },
+  "timetable": {
+    "title": "Class Timetable",
+    "conflict": "Conflict Detected!",
+    "exportPdf": "Export as PDF",
+    "room": "Room",
+    "teacher": "Teacher",
+    "subject": "Subject",
+    "day": "Day",
+    "addSession": "Add Session",
+    "days": {
+      "LUNDI": "Monday",
+      "MARDI": "Tuesday",
+      "MERCREDI": "Wednesday",
+      "JEUDI": "Thursday",
+      "VENDREDI": "Friday",
+      "SAMEDI": "Saturday"
+    }
+  },
+  "grades": {
+    "title": "Sequential Grade Entry",
+    "draftSaved": "Draft saved!",
+    "validated": "Grades validated and locked!",
+    "modeOffline": "Offline Mode (Temporary local changes)",
+    "saveDraft": "Save Draft",
+    "validate": "Validate & Lock",
+    "student": "Student",
+    "value": "Grade / 20"
+  },
+  "bulletins": {
+    "title": "Report Card Generation",
+    "generateSeq": "Generate Sequence Report Cards",
+    "generateTerm": "Generate Term Report Cards",
+    "table": {
+      "student": "Student",
+      "average": "Average",
+      "rank": "Rank",
+      "pdf": "PDF Report",
+      "whatsapp": "WhatsApp"
+    },
+    "sendMassWhatsapp": "Send to All Parents via WhatsApp",
+    "signed": "Electronically Signed",
+    "signDirector": "Sign as Director",
+    "signTeacher": "Sign as Form Teacher",
+    "signParent": "Sign as Parent"
+  },
+  "payments": {
+    "title": "Financial Tracking",
+    "record": "Record Payment",
+    "tuitionSetup": "Configure Class Fees",
+    "table": {
+      "student": "Student",
+      "paid": "Paid (FCFA)",
+      "balance": "Balance Due (FCFA)",
+      "status": "Status"
+    },
+    "statusPaid": "Fully Paid",
+    "statusPartial": "Partial Payment",
+    "statusUnpaid": "Unpaid"
+  },
+  "settings": {
+    "title": "School Configuration",
+    "language": "Default Language",
+    "schoolName": "School Name",
+    "save": "Save Changes"
+  }
+}
