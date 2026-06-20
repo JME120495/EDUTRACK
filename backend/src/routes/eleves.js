@@ -1,14 +1,69 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const prisma = require('../db');
-const { auth, requireRole } = require('../middlewares/authMiddleware');
+
+function getCountrySlug(countryName) {
+  if (!countryName) return 'cm';
+  const name = countryName.toLowerCase().trim();
+  const map = {
+    'cameroun': 'cm', 'cameroon': 'cm',
+    'france': 'fr',
+    'congo': 'cg', 'rdc': 'cd', 'république démocratique du congo': 'cd',
+    'senegal': 'sn', 'sénégal': 'sn',
+    'mali': 'ml',
+    'cote d\'ivoire': 'ci', 'côte d\'ivoire': 'ci',
+    'togo': 'tg',
+    'benin': 'bj', 'bénin': 'bj',
+    'gabon': 'ga',
+    'nigeria': 'ng', 'niger': 'ne',
+    'tchad': 'td', 'chad': 'td',
+    'guinee': 'gn', 'guinée': 'gn',
+    'maroc': 'ma', 'morocco': 'ma',
+    'afrique du sud': 'za', 'south africa': 'za',
+    'kenya': 'ke',
+    'rwanda': 'rw',
+    'burkina faso': 'bf'
+  };
+  return map[name] || name.substring(0, 2);
+}
+
+const { auth, requireRole, requirePlan } = require('../middlewares/authMiddleware');
+const { ensureParentAccess } = require('../middlewares/securityMiddleware');
+const bcrypt = require('bcryptjs');
+
+// Multer config for student photo uploads
+const photoStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = path.join(__dirname, '..', '..', 'public', 'photos');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `${req.params.id}${ext}`);
+  }
+});
+const uploadPhoto = multer({
+  storage: photoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp/;
+    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowed.test(file.mimetype);
+    if (ext && mime) return cb(null, true);
+    cb(new Error('Only image files (jpg, png, webp) are allowed'));
+  }
+});
 
 // Get all students
 router.get('/', auth, async (req, res) => {
   try {
     const eleves = await prisma.eleve.findMany({
       where: { class: { schoolId: req.user.schoolId } },
-      include: { class: true }
+      include: { class: true, user: { select: { email: true } } }
     });
     res.json(eleves);
   } catch (err) {
@@ -17,7 +72,9 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get a single student's complete profile
-router.get('/:id', auth, async (req, res) => {
+// V-006 FIX: Verify student belongs to user's school
+// V-007 FIX: Parents can only access their own children
+router.get('/:id', auth, ensureParentAccess('id'), async (req, res) => {
   const { id } = req.params;
   try {
     const eleve = await prisma.eleve.findUnique({
@@ -48,11 +105,31 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Create student (Director only)
-router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
-  const { name, matricule, dateOfBirth, gender, address, photoUrl, classId } = req.body;
+router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  let { name, matricule, dateOfBirth, placeOfBirth, gender, address, photoUrl, classId, createPortalAccount, email: providedEmail } = req.body;
   try {
-    if (!name || !matricule || !classId) {
-      return res.status(400).json({ message: 'Name, matricule, and classId are required' });
+    if (!name || !classId) {
+      return res.status(400).json({ message: 'Name and classId are required' });
+    }
+
+    // --- Subscription Plan Check ---
+    const schoolId = req.user.schoolId;
+    const currentPlan = req.user.school.subscriptionPlan || 'PREMIUM';
+    const currentStudentsCount = await prisma.eleve.count({ where: { class: { schoolId } } });
+
+    if (currentPlan === 'ESSENTIAL' && currentStudentsCount >= 300) {
+      return res.status(403).json({ message: 'Quota atteint. Le pack Essentiel est limité à 300 élèves. Veuillez mettre à niveau votre abonnement.' });
+    }
+    if (currentPlan === 'STANDARD' && currentStudentsCount >= 1000) {
+      return res.status(403).json({ message: 'Quota atteint. Le pack Standard est limité à 1000 élèves. Veuillez passer au pack Premium.' });
+    }
+    // --------------------------------
+
+    // Generate matricule if not provided
+    if (!matricule) {
+      const year = new Date().getFullYear();
+      const count = await prisma.eleve.count();
+      matricule = `${year}-${String(count + 1).padStart(4, '0')}`;
     }
 
     // Check if matricule already exists
@@ -63,15 +140,65 @@ router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
       return res.status(400).json({ message: 'A student with this matricule already exists' });
     }
 
+    let userId = null;
+
+    if (createPortalAccount) {
+      // Create User account for the student
+      const school = await prisma.school.findUnique({ where: { id: req.user.schoolId } });
+      const words = school.name.trim().split(/[\s-]+/);
+      let schoolSlug = '';
+      if (words.length > 1) {
+        schoolSlug = words.map(w => w.charAt(0)).join('').toLowerCase().replace(/[^a-z0-9]/g, '');
+      } else {
+        schoolSlug = school.name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 3);
+      }
+      if (!schoolSlug) schoolSlug = 'school';
+      const countrySlug = getCountrySlug(school.country);
+      const firstName = name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+      const lastName = name.split(' ').slice(1).join('').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const passwordHash = await bcrypt.hash(matricule, 10); // default password is the matricule
+
+      let finalEmail = providedEmail;
+      
+      if (!finalEmail || finalEmail.trim() === '') {
+        const baseName = lastName ? `${firstName}.${lastName}` : firstName;
+        finalEmail = `${baseName}@${schoolSlug}.edutrack.${countrySlug}`;
+        let counter = 1;
+        while (await prisma.user.findUnique({ where: { email: finalEmail } })) {
+          finalEmail = `${baseName}${counter}@${schoolSlug}.edutrack.${countrySlug}`;
+          counter++;
+        }
+      } else {
+        // Check if provided email exists
+        const exists = await prisma.user.findUnique({ where: { email: finalEmail } });
+        if (exists) {
+          return res.status(400).json({ message: 'Cet email est déjà utilisé par un autre utilisateur.' });
+        }
+      }
+
+      const newUser = await prisma.user.create({
+        data: {
+          schoolId: req.user.schoolId,
+          name: name,
+          email: finalEmail,
+          passwordHash,
+          role: 'STUDENT',
+        }
+      });
+      userId = newUser.id;
+    }
+
     const newStudent = await prisma.eleve.create({
       data: {
         name,
         matricule,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+        placeOfBirth: placeOfBirth || null,
         gender,
         address,
         photoUrl,
-        classId
+        classId,
+        userId
       },
       include: { class: true }
     });
@@ -82,8 +209,8 @@ router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Update student (Director only)
-router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
-  const { name, matricule, dateOfBirth, gender, address, photoUrl, classId, status } = req.body;
+router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { name, matricule, dateOfBirth, placeOfBirth, gender, address, photoUrl, classId, status } = req.body;
   const { id } = req.params;
   try {
     const updated = await prisma.eleve.update({
@@ -92,6 +219,7 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
         name,
         matricule,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+        placeOfBirth: placeOfBirth || null,
         gender,
         address,
         photoUrl,
@@ -107,25 +235,53 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Delete student (Director only)
-router.delete('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   try {
-    // Delete parent links first (or relies on cascade)
-    await prisma.parentEleve.deleteMany({
-      where: { eleveId: id }
-    });
+    const eleve = await prisma.eleve.findUnique({ where: { id } });
+    if (!eleve) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Cascade deletions
+    await prisma.parentEleve.deleteMany({ where: { eleveId: id } });
+    await prisma.note.deleteMany({ where: { eleveId: id } });
+    await prisma.absence.deleteMany({ where: { eleveId: id } });
+    await prisma.sanction.deleteMany({ where: { eleveId: id } });
+    await prisma.bookLoan.deleteMany({ where: { eleveId: id } });
+    await prisma.paiement.deleteMany({ where: { eleveId: id } });
+    await prisma.moratoire.deleteMany({ where: { eleveId: id } });
+    await prisma.bulletin.deleteMany({ where: { eleveId: id } });
     
-    await prisma.eleve.delete({
-      where: { id }
-    });
+    await prisma.eleve.delete({ where: { id } });
+    
+    if (eleve.userId) {
+      await prisma.user.delete({ where: { id: eleve.userId } }).catch(() => {});
+    }
+
     res.json({ message: 'Student deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// Toggle student council status (Director/Censeur only)
+router.patch('/:id/council', auth, requireRole(['DIRECTOR', 'CENSEUR']), requirePlan(['PREMIUM', 'CUSTOM']), async (req, res) => {
+  const { id } = req.params;
+  const { isStudentCouncil } = req.body;
+  try {
+    const updated = await prisma.eleve.update({
+      where: { id },
+      data: { isStudentCouncil }
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Import students from CSV (Director only)
-router.post('/import-csv', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/import-csv', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { csvText, classId } = req.body;
   try {
     if (!csvText || !classId) {
@@ -157,6 +313,21 @@ router.post('/import-csv', auth, requireRole(['DIRECTOR']), async (req, res) => 
         continue;
       }
 
+      // --- Subscription Plan Check ---
+      const schoolId = req.user.schoolId;
+      const currentPlan = req.user.school.subscriptionPlan || 'PREMIUM';
+      const currentStudentsCount = await prisma.eleve.count({ where: { class: { schoolId } } });
+
+      if (currentPlan === 'ESSENTIAL' && currentStudentsCount >= 300) {
+        skipped.push({ name, matricule, reason: 'Quota Essentiel atteint (Max 300)' });
+        continue;
+      }
+      if (currentPlan === 'STANDARD' && currentStudentsCount >= 1000) {
+        skipped.push({ name, matricule, reason: 'Quota Standard atteint (Max 1000)' });
+        continue;
+      }
+      // --------------------------------
+
       const newStudent = await prisma.eleve.create({
         data: {
           name,
@@ -176,6 +347,105 @@ router.post('/import-csv', auth, requireRole(['DIRECTOR']), async (req, res) => 
       imported,
       skipped
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Upload student photo (Director only)
+router.post('/:id/photo', auth, requireRole(['DIRECTOR', 'CENSEUR']), uploadPhoto.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No photo file uploaded' });
+    }
+
+    const photoUrl = `/photos/${req.file.filename}`;
+
+    const updated = await prisma.eleve.update({
+      where: { id: req.params.id },
+      data: { photoUrl },
+      include: { class: true }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete student photo (Director only)
+router.delete('/:id/photo', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  try {
+    const student = await prisma.eleve.findUnique({ where: { id: req.params.id } });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+
+    // Delete file from disk
+    if (student.photoUrl) {
+      const filePath = path.join(__dirname, '..', '..', 'public', student.photoUrl);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
+    const updated = await prisma.eleve.update({
+      where: { id: req.params.id },
+      data: { photoUrl: null },
+      include: { class: true }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Bulk transfer students (Promotion / Class change)
+router.post('/bulk-transfer', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { studentIds, targetClassId } = req.body;
+  try {
+    if (!studentIds || !Array.isArray(studentIds) || !targetClassId) {
+      return res.status(400).json({ message: 'studentIds array and targetClassId are required' });
+    }
+
+    const updated = await prisma.eleve.updateMany({
+      where: {
+        id: { in: studentIds }
+      },
+      data: {
+        classId: targetClassId
+      }
+    });
+
+    res.json({ message: 'Students transferred successfully', count: updated.count });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get student's own profile (For STUDENT portal)
+router.get('/me/profile', auth, requireRole(['STUDENT']), async (req, res) => {
+  try {
+    const eleve = await prisma.eleve.findUnique({
+      where: { userId: req.user.id },
+      include: {
+        class: true,
+        notes: {
+          include: { sequence: true, matiere: true }
+        },
+        absences: {
+          include: { sequence: true }
+        },
+        paiements: true,
+        bookLoans: {
+          include: { book: true }
+        },
+        sanctions: true
+      }
+    });
+
+    if (!eleve) {
+      return res.status(404).json({ message: 'Student profile not found for this account' });
+    }
+
+    res.json(eleve);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

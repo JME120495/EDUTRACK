@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../db');
 const { auth, requireRole } = require('../middlewares/authMiddleware');
+const { ensureParentAccess } = require('../middlewares/securityMiddleware');
 
 // Get absences for a student
-router.get('/eleve/:eleveId', auth, async (req, res) => {
+// V-007 FIX: Parents can only see their own children's absences
+router.get('/eleve/:eleveId', auth, ensureParentAccess('eleveId'), async (req, res) => {
   const { eleveId } = req.params;
   try {
     const absences = await prisma.absence.findMany({
@@ -19,7 +21,7 @@ router.get('/eleve/:eleveId', auth, async (req, res) => {
 });
 
 // Register absence
-router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res) => {
+router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { eleveId, sequenceId, date, hours, justified, reason } = req.body;
   try {
     if (!eleveId || !sequenceId || !hours) {
@@ -44,7 +46,7 @@ router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res) =>
 });
 
 // Update absence justification
-router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR', 'TEACHER']), async (req, res) => {
   const { justified, reason } = req.body;
   const { id } = req.params;
   try {
@@ -86,7 +88,7 @@ router.get('/classe/:classId/date/:dateString', auth, async (req, res) => {
 });
 
 // Bulk register absences for a class (roll call)
-router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res) => {
+router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { classId, sequenceId, date, absences } = req.body; // absences: Array of { eleveId, hours, reason }
   try {
     if (!classId || !sequenceId || !date || !Array.isArray(absences)) {

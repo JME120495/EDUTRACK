@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
 import { Plus, X, GraduationCap, School, BookOpen, AlertCircle, RefreshCw } from 'lucide-react';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function ClassesPage() {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [years, setYears] = useState([]);
@@ -61,7 +63,8 @@ export default function ClassesPage() {
         body: {
           name: className,
           principalTeacherId: selectedTeacherId || null,
-          anneeScolaireId: selectedYearId
+          anneeScolaireId: selectedYearId,
+          censeurId: user.role === 'CENSEUR' ? user.id : null // Automatically assign if censeur creates
         }
       });
 
@@ -91,13 +94,15 @@ export default function ClassesPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md shrink-0"
-        >
-          <Plus className="h-4.5 w-4.5" />
-          <span>{t('classes.addBtn') || "Créer une classe"}</span>
-        </button>
+        {user.role === 'DIRECTOR' && (
+          <button
+            onClick={() => setModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md shrink-0"
+          >
+            <Plus className="h-4.5 w-4.5" />
+            <span>{t('classes.addBtn') || "Créer une classe"}</span>
+          </button>
+        )}
       </div>
 
       {/* Stats Cards */}

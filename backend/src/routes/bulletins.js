@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../db');
-const { generateSequenceBulletins, generateTermBulletins } = require('../services/bulletinService');
+const { generateSequenceBulletins, generateTermBulletins, generateAnnualBulletins } = require('../services/bulletinService');
 const { generateBulletinPDF } = require('../services/pdfService');
 const { sendWhatsAppReport } = require('../services/notifService');
 const { auth, requireRole } = require('../middlewares/authMiddleware');
@@ -29,6 +29,9 @@ router.get('/', auth, async (req, res) => {
           include: {
             parents: {
               include: { parent: true }
+            },
+            sanctions: {
+              orderBy: { date: 'desc' }
             }
           }
         },
@@ -44,7 +47,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Generate sequence bulletins for a class (Director only)
-router.post('/generate-sequence', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/generate-sequence', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { classId, sequenceId } = req.body;
   try {
     if (!classId || !sequenceId) {
@@ -61,7 +64,7 @@ router.post('/generate-sequence', auth, requireRole(['DIRECTOR']), async (req, r
 });
 
 // Alias /generate -> /generate-sequence
-router.post('/generate', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/generate', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { classId, sequenceId } = req.body;
   try {
     if (!classId || !sequenceId) {
@@ -78,7 +81,7 @@ router.post('/generate', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Generate term bulletins for a class (Director only)
-router.post('/generate-term', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/generate-term', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { classId, term } = req.body;
   try {
     if (!classId || !term) {
@@ -244,7 +247,7 @@ router.post('/:id/sign', auth, async (req, res) => {
 });
 
 // Mass WhatsApp PDF reports dispatch (Director only)
-router.post('/send-whatsapp', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/send-whatsapp', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { bulletinIds } = req.body;
   try {
     if (!bulletinIds || !Array.isArray(bulletinIds)) {
@@ -304,6 +307,137 @@ router.post('/send-whatsapp', auth, requireRole(['DIRECTOR']), async (req, res) 
       sent,
       failed
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Generate annual bulletins for a class (Director only)
+router.post('/generate-annual', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { classId } = req.body;
+  try {
+    if (!classId) {
+      return res.status(400).json({ message: 'Class ID is required' });
+    }
+    const result = await generateAnnualBulletins(classId);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get annual bulletins for class
+router.get('/classe/:classId/annual', auth, async (req, res) => {
+  const { classId } = req.params;
+  try {
+    const bulletins = await prisma.bulletin.findMany({
+      where: {
+        type: 'ANNUAL',
+        eleve: { classId }
+      },
+      include: {
+        eleve: {
+          include: {
+            parents: {
+              include: { parent: true }
+            }
+          }
+        },
+        details: { include: { matiere: true } }
+      }
+    });
+    res.json(bulletins);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update student behavior and council remarks for a bulletin
+router.put('/:id/behavior', auth, requireRole(['DIRECTOR', 'TEACHER']), async (req, res) => {
+  const { id } = req.params;
+  const { conduct, disciplinaryAction, classCouncilDecision } = req.body;
+  try {
+    const bulletin = await prisma.bulletin.findUnique({
+      where: { id },
+      include: { eleve: { include: { class: true } } }
+    });
+    
+    if (!bulletin || bulletin.eleve.class.schoolId !== req.user.schoolId) {
+      return res.status(404).json({ message: 'Bulletin not found' });
+    }
+
+    // Update bulletin details
+    const updated = await prisma.bulletin.update({
+      where: { id },
+      data: {
+        conduct: conduct !== undefined ? conduct : null,
+        disciplinaryAction: disciplinaryAction !== undefined ? disciplinaryAction : null,
+        classCouncilDecision: classCouncilDecision !== undefined ? classCouncilDecision : null
+      }
+    });
+
+    // Regenerate PDF automatically
+    const pdfUrl = await generateBulletinPDF(id);
+    await prisma.bulletin.update({
+      where: { id },
+      data: { pdfUrl }
+    });
+
+    res.json({ message: 'Behavior and class council comments updated', bulletin: updated, pdfUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const archiver = require('archiver');
+const fs = require('fs');
+
+// Bulk Export Bulletins as ZIP
+router.get('/export-zip', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { classId, type, parameter } = req.query;
+  try {
+    if (!classId || !type) {
+      return res.status(400).json({ message: 'Missing classId or type' });
+    }
+
+    const where = { type, eleve: { classId } };
+    if (type === 'SEQUENCE' && parameter) where.sequenceId = parameter;
+    if (type === 'TERM' && parameter) where.term = parseInt(parameter);
+
+    const bulletins = await prisma.bulletin.findMany({
+      where,
+      include: { eleve: true }
+    });
+
+    if (bulletins.length === 0) {
+      return res.status(404).json({ message: 'Aucun bulletin trouvé pour cette sélection.' });
+    }
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename=bulletins_classe_${classId}_${type}.zip`);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.pipe(res);
+
+    for (const b of bulletins) {
+      let pdfPath;
+      if (b.pdfUrl) {
+        pdfPath = path.join(__dirname, '..', '..', 'public', b.pdfUrl.replace('/api/', ''));
+      } else {
+        // Fallback to default path
+        pdfPath = path.join(__dirname, '..', '..', 'public', 'bulletins', `${b.id}.pdf`);
+      }
+      
+      if (fs.existsSync(pdfPath)) {
+        const studentName = b.eleve.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+        archive.file(pdfPath, { name: `${studentName}_Bulletin.pdf` });
+      }
+    }
+
+    await archive.finalize();
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

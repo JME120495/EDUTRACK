@@ -13,7 +13,15 @@ import {
   CreditCard, 
   Settings,
   GraduationCap,
-  Coins
+  Coins,
+  Briefcase,
+  QrCode,
+  MessageSquare,
+  LogOut,
+  User,
+  Shield,
+  Book,
+  Lock
 } from 'lucide-react';
 
 export default function Sidebar({ mobileOpen, onClose }) {
@@ -28,57 +36,113 @@ export default function Sidebar({ mobileOpen, onClose }) {
       roles: ['DIRECTOR']
     },
     {
+      path: '/censeur/dashboard',
+      label: t('nav.dashboard') || 'Tableau de Bord',
+      icon: LayoutDashboard,
+      roles: ['CENSEUR']
+    },
+    {
+      path: '/intendant/dashboard',
+      label: t('nav.dashboard') || 'Tableau de Bord',
+      icon: LayoutDashboard,
+      roles: ['INTENDANT']
+    },
+    {
+      path: '/teacher/dashboard',
+      label: t('nav.dashboard') || 'Tableau de Bord',
+      icon: LayoutDashboard,
+      roles: ['TEACHER']
+    },
+    {
+      path: '/admin-staff',
+      label: 'Personnel Administratif',
+      icon: Briefcase,
+      roles: ['DIRECTOR']
+    },
+    {
+      path: '/support-staff',
+      label: t('supportStaff.title') || "Personnel d'Appui",
+      icon: Shield,
+      roles: ['DIRECTOR']
+    },
+    {
       path: '/students',
       label: t('nav.students'),
       icon: Users,
-      roles: ['DIRECTOR']
+      roles: ['DIRECTOR', 'CENSEUR']
     },
     {
       path: '/classes',
       label: t('nav.classes'),
       icon: School,
-      roles: ['DIRECTOR']
+      roles: ['DIRECTOR', 'CENSEUR']
     },
     {
       path: '/teachers',
       label: t('nav.teachers') || 'Gestion Enseignants',
       icon: GraduationCap,
-      roles: ['DIRECTOR']
+      roles: ['DIRECTOR', 'CENSEUR']
     },
     {
-      path: '/timetable',
-      label: t('nav.timetable'),
+      path: '/director/timetable',
+      label: 'Emplois du Temps',
       icon: Calendar,
-      roles: ['DIRECTOR']
+      roles: ['DIRECTOR', 'CENSEUR']
+    },
+    {
+      path: '/director/library',
+      label: 'Bibliothèque',
+      icon: Book,
+      roles: ['DIRECTOR', 'CENSEUR']
     },
     {
       path: '/grades',
       label: t('nav.grades'),
       icon: FileSpreadsheet,
-      roles: ['DIRECTOR', 'TEACHER']
+      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
     },
     {
       path: '/absences',
       label: t('nav.absences'),
       icon: ClipboardCheck,
-      roles: ['DIRECTOR', 'TEACHER']
+      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
     },
     {
       path: '/bulletins',
       label: t('nav.bulletins'),
       icon: FileText,
-      roles: ['DIRECTOR', 'TEACHER']
+      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
     },
     {
       path: '/payments',
       label: t('nav.payments'),
       icon: CreditCard,
-      roles: ['DIRECTOR']
+      roles: ['DIRECTOR', 'INTENDANT'],
+      requiredPlans: ['STANDARD', 'PREMIUM', 'CUSTOM']
     },
     {
-      path: '/payroll',
-      label: t('nav.payroll') || 'Paie Enseignants',
+      path: '/hr',
+      label: t('nav.hr') || 'Ressources Humaines',
+      icon: Briefcase,
+      roles: ['DIRECTOR', 'INTENDANT'],
+      requiredPlans: ['PREMIUM', 'CUSTOM']
+    },
+    {
+      path: '/documents',
+      label: t('nav.documents') || 'Documents & Badges',
+      icon: QrCode,
+      roles: ['DIRECTOR', 'CENSEUR']
+    },
+    {
+      path: '/teacher/payroll',
+      label: t('nav.teacherPayroll') || 'Ma Paie',
       icon: Coins,
+      roles: ['TEACHER']
+    },
+    {
+      path: '/billing',
+      label: t('billing.title') || 'Abonnement & Facturation',
+      icon: CreditCard,
       roles: ['DIRECTOR']
     },
     {
@@ -92,6 +156,18 @@ export default function Sidebar({ mobileOpen, onClose }) {
       label: t('nav.portalParent'),
       icon: GraduationCap,
       roles: ['PARENT']
+    },
+    {
+      path: '/student',
+      label: 'Portail Élève',
+      icon: GraduationCap,
+      roles: ['STUDENT']
+    },
+    {
+      path: '/messages',
+      label: 'Messagerie',
+      icon: MessageSquare,
+      roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT']
     }
   ];
 
@@ -108,17 +184,23 @@ export default function Sidebar({ mobileOpen, onClose }) {
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-slate-200 w-64 px-4 py-6 shadow-sm">
       <div className="space-y-1.5 flex-1">
-        {filteredItems.map(item => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            onClick={onClose}
-            className={linkClass}
-          >
-            <item.icon className="h-5 w-5 shrink-0" />
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+        {filteredItems.map(item => {
+          const currentPlan = user?.subscriptionPlan || 'PREMIUM';
+          const isLocked = item.requiredPlans && !item.requiredPlans.includes(currentPlan);
+
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onClose}
+              className={linkClass}
+            >
+              <item.icon className="h-5 w-5 shrink-0" />
+              <span className="flex-1">{item.label}</span>
+              {isLocked && <Lock className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
+            </NavLink>
+          );
+        })}
       </div>
       <div className="border-t border-slate-150 pt-4 px-2 text-center">
         <p className="text-[10px] text-slate-400 font-bold tracking-wide uppercase">

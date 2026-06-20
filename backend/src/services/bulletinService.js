@@ -47,8 +47,7 @@ async function generateSequenceBulletins(classId, sequenceId) {
   const allNotes = await prisma.note.findMany({
     where: {
       sequenceId,
-      eleve: { classId },
-      isDraft: false
+      eleve: { classId }
     }
   });
 
@@ -149,8 +148,8 @@ async function generateSequenceBulletins(classId, sequenceId) {
     }
   });
 
-  // Write to DB
-  for (const student of students) {
+  // Write to DB concurrently to avoid N+1 bottlenecks
+  await Promise.all(students.map(async (student) => {
     const studentAvg = overallAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
 
@@ -224,7 +223,7 @@ async function generateSequenceBulletins(classId, sequenceId) {
         data: detailsData
       });
     }
-  }
+  }));
 
   return { success: true, count: students.length };
 }
@@ -371,8 +370,8 @@ async function generateTermBulletins(classId, term) {
     }
   });
 
-  // Save term bulletins
-  for (const student of students) {
+  // Save term bulletins concurrently
+  await Promise.all(students.map(async (student) => {
     const studentAvg = overallTermAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
 
@@ -445,7 +444,198 @@ async function generateTermBulletins(classId, term) {
         data: detailsData
       });
     }
+  }));
+
+  return { success: true, count: students.length };
+}
+
+async function generateAnnualBulletins(classId) {
+  // Get active students and subjects
+  const students = await prisma.eleve.findMany({
+    where: { classId, status: "ACTIVE" },
+  });
+
+  if (students.length === 0) {
+    return { success: false, message: "Aucun élève actif n'est inscrit dans cette classe." };
   }
+
+  const associations = await prisma.enseignantMatiereClasse.findMany({
+    where: { classId },
+    include: { matiere: true },
+  });
+  
+  const subjectsMap = {};
+  associations.forEach(a => {
+    const coeff = a.coefficient !== null && a.coefficient !== undefined ? a.coefficient : a.matiere.coefficient;
+    subjectsMap[a.matiere.id] = {
+      ...a.matiere,
+      coefficient: coeff
+    };
+  });
+  const subjects = Object.values(subjectsMap);
+
+  // Fetch all term bulletins for this class
+  const termBulletins = await prisma.bulletin.findMany({
+    where: {
+      type: "TERM",
+      eleve: { classId }
+    },
+    include: { details: true }
+  });
+
+  // Calculate annual subject grades for each student
+  const studentAnnualGrades = {}; // eleveId -> { matiereId -> annualGrade }
+  students.forEach(student => {
+    studentAnnualGrades[student.id] = {};
+    const sBulletins = termBulletins.filter(b => b.eleveId === student.id);
+
+    subjects.forEach(subject => {
+      const grades = [];
+      sBulletins.forEach(b => {
+        const d = b.details.find(det => det.matiereId === subject.id);
+        if (d && d.noteValue !== null && d.noteValue !== undefined) {
+          grades.push(d.noteValue);
+        }
+      });
+
+      studentAnnualGrades[student.id][subject.id] = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
+    });
+  });
+
+  // Calculate subject stats
+  const subjectStats = {};
+  subjects.forEach(subject => {
+    let min = 20;
+    let max = 0;
+    let sum = 0;
+    let count = 0;
+
+    students.forEach(student => {
+      const val = studentAnnualGrades[student.id][subject.id];
+      if (val !== null) {
+        if (val < min) min = val;
+        if (val > max) max = val;
+        sum += val;
+        count++;
+      }
+    });
+
+    subjectStats[subject.id] = {
+      min: count > 0 ? min : 0,
+      max: count > 0 ? max : 0,
+      average: count > 0 ? sum / count : 0,
+    };
+  });
+
+  // Student overall annual averages: average of their term averages
+  const overallAnnualAverages = [];
+  students.forEach(student => {
+    const sBulletins = termBulletins.filter(b => b.eleveId === student.id);
+    const termAverages = sBulletins.map(b => b.average);
+    const average = termAverages.length > 0 ? termAverages.reduce((a, b) => a + b, 0) / termAverages.length : 0;
+    overallAnnualAverages.push({ eleveId: student.id, average });
+  });
+
+  // Ranks
+  overallAnnualAverages.sort((a, b) => b.average - a.average);
+  const ranks = {};
+  let currentRank = 1;
+  for (let i = 0; i < overallAnnualAverages.length; i++) {
+    if (i > 0 && overallAnnualAverages[i].average < overallAnnualAverages[i - 1].average) {
+      currentRank = i + 1;
+    }
+    ranks[overallAnnualAverages[i].eleveId] = currentRank;
+  }
+
+  // Subject ranks
+  const subjectRanks = {};
+  subjects.forEach(subject => {
+    subjectRanks[subject.id] = {};
+    const sorted = students
+      .map(s => ({ eleveId: s.id, value: studentAnnualGrades[s.id][subject.id] }))
+      .filter(s => s.value !== null)
+      .sort((a, b) => b.value - a.value);
+
+    let currentSubRank = 1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i].value < sorted[i - 1].value) {
+        currentSubRank = i + 1;
+      }
+      subjectRanks[subject.id][sorted[i].eleveId] = currentSubRank;
+    }
+  });
+
+  // Save annual bulletins concurrently
+  await Promise.all(students.map(async (student) => {
+    const studentAvg = overallAnnualAverages.find(a => a.eleveId === student.id).average;
+    const studentRank = ranks[student.id];
+
+    // Cumulate absences across all terms
+    const sBulletins = termBulletins.filter(b => b.eleveId === student.id);
+    const justified = sBulletins.reduce((sum, b) => sum + b.absencesJustified, 0);
+    const unjustified = sBulletins.reduce((sum, b) => sum + b.absencesUnjustified, 0);
+
+    let bulletin = await prisma.bulletin.findFirst({
+      where: {
+        eleveId: student.id,
+        type: "ANNUAL"
+      }
+    });
+
+    if (bulletin) {
+      bulletin = await prisma.bulletin.update({
+        where: { id: bulletin.id },
+        data: {
+          average: studentAvg,
+          rank: studentRank,
+          absencesJustified: justified,
+          absencesUnjustified: unjustified,
+        }
+      });
+      await prisma.bulletinDetail.deleteMany({
+        where: { bulletinId: bulletin.id }
+      });
+    } else {
+      bulletin = await prisma.bulletin.create({
+        data: {
+          eleveId: student.id,
+          type: "ANNUAL",
+          average: studentAvg,
+          rank: studentRank,
+          absencesJustified: justified,
+          absencesUnjustified: unjustified,
+        }
+      });
+    }
+
+    const detailsData = [];
+    for (const subject of subjects) {
+      const val = studentAnnualGrades[student.id][subject.id];
+      if (val !== null) {
+        const stats = subjectStats[subject.id];
+        const subRank = subjectRanks[subject.id][student.id] || null;
+        const app = getAppreciation(val);
+
+        detailsData.push({
+          bulletinId: bulletin.id,
+          matiereId: subject.id,
+          noteValue: val,
+          classAverage: stats.average,
+          minNote: stats.min,
+          maxNote: stats.max,
+          rank: subRank,
+          appreciation: `${app.fr} / ${app.en}`,
+          coefficient: subject.coefficient,
+        });
+      }
+    }
+
+    if (detailsData.length > 0) {
+      await prisma.bulletinDetail.createMany({
+        data: detailsData
+      });
+    }
+  }));
 
   return { success: true, count: students.length };
 }
@@ -453,4 +643,5 @@ async function generateTermBulletins(classId, term) {
 module.exports = {
   generateSequenceBulletins,
   generateTermBulletins,
+  generateAnnualBulletins
 };

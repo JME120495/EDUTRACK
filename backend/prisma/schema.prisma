@@ -1,6 +1,7 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -15,10 +16,17 @@ model School {
   phone           String?
   address         String?
   email           String?
+  country         String?         @default("Cameroun")
+  currency        String          @default("XAF")
+  sector          String?
+  levels          String?
+  city            String?
+  studentCount    Int?
   pdfTheme          String          @default("NAVY")
   pdfPrimaryColor   String          @default("#1E3A5F")
   pdfSecondaryColor String          @default("#F5A623")
   pdfShowBorder     Boolean         @default(true)
+  subscriptionPlan  String          @default("PREMIUM") // ESSENTIAL, STANDARD, PREMIUM, CUSTOM
   subscriptionExpiresAt DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -27,6 +35,9 @@ model School {
   matieres        Matiere[]
   creneaux        CreneauHoraire[]
   anneesScolaires AnneeScolaire[]
+  transactions    Transaction[]
+  documentTemplates DocumentTemplate[]
+  books           Book[]
 }
 
 model User {
@@ -36,18 +47,30 @@ model User {
   name            String
   email           String                    @unique
   passwordHash    String
-  role            String                    // "DIRECTOR", "TEACHER", "PARENT"
+  role            String                    // "DIRECTOR", "TEACHER", "PARENT", "SUPPORT", "CENSEUR", "INTENDANT"
+  profession      String?                   // e.g. "Gardien", "Chauffeur", "Secrétaire"
   phone           String?
+  city            String?
+  neighborhood    String?
   language        String                    @default("FR")
   otpCode         String?
   otpExpires      DateTime?
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
   principalClasses Classe[]                 @relation("PrincipalTeacher")
+  supervisedClasses Classe[]                @relation("CenseurClasses")
   taughtSubjects  EnseignantMatiereClasse[]
   children        ParentEleve[]
   timetables      EmploiDuTemps[]
   notes           Note[]
+  contracts       Contract[]
+  payslips        Payslip[]
+  advances        SalaryAdvance[]
+  leaves          StaffLeave[]
+  sentMessages    Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  sanctionsIssued Sanction[] @relation("CenseurSanctions")
+  studentProfile  Eleve?
 }
 
 model AnneeScolaire {
@@ -72,6 +95,8 @@ model Classe {
   name               String                    // e.g. "6ème A"
   principalTeacherId String?
   principalTeacher   User?                     @relation("PrincipalTeacher", fields: [principalTeacherId], references: [id])
+  censeurId          String?
+  censeur            User?                     @relation("CenseurClasses", fields: [censeurId], references: [id])
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   eleves             Eleve[]
@@ -83,13 +108,14 @@ model Classe {
 model Eleve {
   id          String        @id @default(uuid())
   name        String
-  matricule   String        @unique
-  dateOfBirth DateTime?
-  gender      String?
-  address     String?
-  photoUrl    String?
-  status      String        @default("ACTIVE") // "ACTIVE", "INACTIVE"
-  classId     String
+  matricule    String        @unique
+  dateOfBirth  DateTime?
+  placeOfBirth String?
+  gender       String?
+  address      String?
+  photoUrl     String?
+  status       String        @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  classId      String
   class       Classe        @relation(fields: [classId], references: [id])
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -98,6 +124,12 @@ model Eleve {
   absences    Absence[]
   bulletins   Bulletin[]
   paiements   Paiement[]
+  moratoires  Moratoire[]
+  sanctions   Sanction[]
+  bookLoans   BookLoan[]
+  userId      String?       @unique
+  user        User?         @relation(fields: [userId], references: [id])
+  isStudentCouncil Boolean  @default(false)
 }
 
 model ParentEleve {
@@ -236,6 +268,9 @@ model Bulletin {
   signedTeacher      Boolean          @default(false)
   signedParent       Boolean          @default(false)
   pdfUrl             String?
+  conduct            String?
+  disciplinaryAction String?
+  classCouncilDecision String?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   details            BulletinDetail[]
@@ -268,6 +303,7 @@ model FraisScolarite {
   totalAmount     Float
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  installments    InstallmentConfig[]
 }
 
 model Paiement {
@@ -283,4 +319,186 @@ model Paiement {
   remarks              String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  installmentId        String?
+  installment          InstallmentConfig? @relation(fields: [installmentId], references: [id])
 }
+
+model InstallmentConfig {
+  id               String         @id @default(uuid())
+  fraisScolariteId String
+  fraisScolarite   FraisScolarite @relation(fields: [fraisScolariteId], references: [id], onDelete: Cascade)
+  name             String         // e.g. "Tranche 1", "Inscription"
+  amount           Float
+  dueDate          DateTime
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  payments         Paiement[]
+}
+
+model Moratoire {
+  id          String   @id @default(uuid())
+  eleveId     String
+  eleve       Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  amount      Float
+  dueDate     DateTime
+  status      String   @default("PENDING") // "PENDING", "COMPLETED", "EXPIRED"
+  remarks     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  schoolId      String
+  school        School   @relation(fields: [schoolId], references: [id])
+  type          String   // "INCOME" or "EXPENSE"
+  category      String   // e.g. "TUITION", "SALARY", "RENT", "EQUIPMENT", "UTILITIES", "OTHER"
+  amount        Float
+  date          DateTime @default(now())
+  description   String
+  reference     String?
+  paymentMethod String   // "CASH", "BANK", "MOBILE_MONEY", "WAVE", etc.
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Contract {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       String    // "CDI", "CDD", "PRESTATAIRE"
+  startDate  DateTime
+  endDate    DateTime?
+  baseSalary Float     @default(0.0)
+  hourlyRate Float     @default(0.0)
+  status     String    @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  terms      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Payslip {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month            Int       // 1 - 12
+  year             Int       // e.g. 2026
+  baseSalary       Float     @default(0.0)
+  hourlyRate       Float     @default(0.0)
+  hoursWorked      Float     @default(0.0)
+  bonuses          Float     @default(0.0) // primes
+  deductions       Float     @default(0.0) // retenues
+  advancesDeducted Float     @default(0.0) // advances deducted
+  netSalary        Float     // net salary paid
+  status           String    @default("PENDING") // "PENDING", "PAID"
+  paymentDate      DateTime?
+  paymentMethod    String    @default("CASH") // "CASH", "BANK", "MOBILE_MONEY"
+  pdfUrl           String?
+  remarks          String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model SalaryAdvance {
+  id             String   @id @default(uuid())
+  userId         String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount         Float
+  requestDate    DateTime @default(now())
+  status         String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED", "REPAID"
+  repaymentMonth Int      // Month to repay
+  repaymentYear  Int      // Year to repay
+  remarks        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model StaffLeave {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "ANNUAL_LEAVE" (Congé), "PERMISSION" (Permission), "SICK_LEAVE" (Maladie), "OTHER"
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentTemplate {
+  id        String   @id @default(uuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title     String   // e.g. "Attestation de Scolarité"
+  content   String   // template body with placeholders
+  language  String   @default("FR") // "FR", "EN"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// V-023 FIX: Audit trail for security-sensitive actions
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  // null for unauthenticated actions (failed login)
+  action     String   // "LOGIN", "LOGIN_FAILED", "CREATE", "UPDATE", "DELETE", "ACCESS"
+  resource   String   // "User", "Note", "Paiement", "Eleve", etc.
+  resourceId String?  // ID of the affected resource
+  details    String?  // JSON string with additional context
+  ip         String?  // Request IP address
+  userAgent  String?  // Request User-Agent
+  createdAt  DateTime @default(now())
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  title      String?
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Sanction {
+  id          String   @id @default(uuid())
+  eleveId     String
+  eleve       Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  censeurId   String
+  censeur     User     @relation("CenseurSanctions", fields: [censeurId], references: [id])
+  type        String   // "AVERTISSEMENT", "BLAME", "EXCLUSION_TEMP", "EXCLUSION_DEF"
+  motif       String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Book {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  title       String
+  author      String?
+  isbn        String?
+  quantity    Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  loans       BookLoan[]
+}
+
+model BookLoan {
+  id          String   @id @default(uuid())
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  eleveId     String
+  eleve       Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  dateEmprunt DateTime @default(now())
+  dateRetour  DateTime?
+  status      String   @default("ACTIVE") // "ACTIVE", "RETURNED", "LOST"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

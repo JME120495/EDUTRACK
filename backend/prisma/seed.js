@@ -21,7 +21,9 @@ async function main() {
   });
 
   // 2. Hash default passwords
-  const passwordHash = await bcrypt.hash('password123', 10);
+  // V-011 FIX: Load default password from environment variable if defined
+  const defaultPassword = process.env.SEED_DEFAULT_PASSWORD || 'password123';
+  const passwordHash = await bcrypt.hash(defaultPassword, 10);
 
   // 3. Create Users (Director, Teachers, Parents)
   const director = await prisma.user.upsert({

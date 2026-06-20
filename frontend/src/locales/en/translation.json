@@ -10,11 +10,41 @@
     "bulletins": "Report Cards",
     "payments": "Payments & Fees",
     "payroll": "Teacher Payroll",
+    "teacherPayroll": "My Payroll",
     "settings": "School Settings",
     "logout": "Sign Out",
     "portalParent": "Parent Portal",
     "portalTeacher": "Teacher Portal",
-    "portalDirector": "Director's Office"
+    "portalDirector": "Director's Office",
+    "hr": "Human Resources",
+    "documents": "Documents & Badges"
+  },
+  "teachers": {
+    "title": "Teacher Management",
+    "subtitle": "Manage permanent and temporary teacher accounts and assign them to subjects by class",
+    "createBtn": "Create Teacher Account",
+    "assignBtn": "Assign Teacher",
+    "tabs": {
+      "list": "Teacher List",
+      "assignments": "Subject Assignments"
+    },
+    "total": "Total Teachers",
+    "searchPlaceholder": "Search by name or phone number...",
+    "table": {
+      "name": "Teacher Name",
+      "phone": "Phone (Login)",
+      "email": "Email",
+      "date": "Registration Date",
+      "actions": "Actions"
+    },
+    "empty": "No teachers found."
+  },
+  "library": {
+    "title": "Library & Borrowing",
+    "subtitle": "Manage the stock of novels/reading books and track loans to students",
+    "addBtn": "Add Book",
+    "searchPlaceholder": "Search by title, author...",
+    "empty": "No books found."
   },
   "auth": {
     "title": "EduTrack Login",
@@ -37,40 +67,50 @@
       "students": "Active Students",
       "teachers": "Teachers",
       "paymentRate": "Collection Rate",
-      "totalRevenue": "Total Collected"
+      "totalRevenue": "Total Revenue"
     },
     "alerts": {
-      "title": "Payment Alerts & Overdue Fees",
-      "none": "No overdue payments reported.",
+      "title": "Alerts & Unpaid Tuition Fees",
+      "none": "No overdue tuition fees recorded.",
       "sendReminder": "Send SMS Reminder",
-      "remindersSent": "SMS reminders sent successfully!"
+      "remindersSent": "SMS Reminders sent successfully!"
     },
     "recentActions": "Quick Actions"
   },
   "students": {
     "title": "Student Management",
+    "subtitle": "View, add, and link student profiles with parent credentials",
+    "createParent": "Create Parent Account",
+    "linkParent": "Link Parent",
+    "allClasses": "All classes",
+    "allStatuses": "All statuses",
+    "searchPlaceholder": "Search by name or matricule...",
+    "tabs": {
+      "students": "Students",
+      "parents": "Parent Accounts & Links"
+    },
     "add": "Add Student",
     "import": "Import from CSV",
     "table": {
-      "name": "Full Name",
-      "matricule": "Matricule",
+      "name": "Full name",
+      "matricule": "ID Number",
       "gender": "Gender",
       "class": "Class",
       "status": "Status",
       "actions": "Actions"
     },
-    "csvPlaceholder": "Full Name,Matricule,Gender,Address\nJohn Smith,MAT-202601,M,Yaoundé\nJane Doe,MAT-202602,F,Yaoundé",
-    "csvHelp": "Paste CSV lines (with or without header containing 'name'). Separate columns with commas."
+    "csvPlaceholder": "Full name,ID Number,Gender,Address\nJean Ndongo,MAT-202601,M,Yaounde\nMarie Tate,MAT-202602,F,Yaounde",
+    "csvHelp": "Paste CSV lines (without header, or with header columns containing 'name' or 'nom'). Separate columns using commas."
   },
   "timetable": {
     "title": "Class Timetable",
     "conflict": "Conflict Detected!",
-    "exportPdf": "Export as PDF",
+    "exportPdf": "Export to PDF",
     "room": "Room",
     "teacher": "Teacher",
     "subject": "Subject",
     "day": "Day",
-    "addSession": "Add Session",
+    "addSession": "Add course session",
     "days": {
       "LUNDI": "Monday",
       "MARDI": "Tuesday",
@@ -82,41 +122,104 @@
   },
   "grades": {
     "title": "Sequential Grade Entry",
+    "entryTitle": "Sequential Grade Entry",
+    "entrySubtitle": "Enter grades and behavior remarks by class, subject, and sequence",
     "draftSaved": "Draft saved!",
     "validated": "Grades validated and locked!",
-    "modeOffline": "Offline Mode (Temporary local changes)",
+    "modeOffline": "Offline Mode (Local temporary changes)",
+    "status": {
+      "online": "Online"
+    },
     "saveDraft": "Save Draft",
-    "validate": "Validate & Lock",
+    "btn": {
+      "saveDraft": "Save Draft",
+      "submitFinal": "Submit Final"
+    },
+    "validate": "Submit Final",
     "student": "Student",
     "value": "Grade / 20",
-    "behavior": "Behavior"
+    "behavior": "Behavior remarks",
+    "filters": {
+      "class": "CLASS",
+      "subject": "SUBJECT",
+      "add": "+ ADD / AJOUTER",
+      "sequence": "ACADEMIC SEQUENCE"
+    },
+    "progress": {
+      "title": "Grading Entry Progress",
+      "graded": "Students Graded"
+    },
+    "table": {
+      "student": "STUDENT",
+      "matricule": "MATRICULE",
+      "grade": "GRADE / 20",
+      "remarks": "BEHAVIOR REMARKS",
+      "status": "STATUS",
+      "chooseRemark": "-- Choose remark --"
+    },
+    "statusLabel": {
+      "draft": "DRAFT"
+    }
   },
   "bulletins": {
-    "title": "Report Card Generation",
+    "title": "Generate Report Cards",
     "generateSeq": "Generate Sequence Report Cards",
     "generateTerm": "Generate Term Report Cards",
     "table": {
       "student": "Student",
       "average": "Average",
       "rank": "Rank",
-      "pdf": "PDF Report",
+      "pdf": "PDF Report Cards",
       "whatsapp": "WhatsApp"
     },
     "sendMassWhatsapp": "Send to All Parents via WhatsApp",
     "signed": "Electronically Signed",
     "signDirector": "Sign as Director",
     "signTeacher": "Sign as Form Teacher",
-    "signParent": "Sign as Parent"
+    "signParent": "Sign as Parent",
+    "generateAnnual": "Generate Annual Report Cards",
+    "sequential": "Sequential",
+    "trimestrial": "Trimestrial",
+    "annual": "Annual",
+    "editCouncil": "Edit Decisions/Conduct",
+    "modalTitle": "Class Council & Behavior",
+    "conduct": "Conduct / Behavior",
+    "disciplinaryAction": "Disciplinary Actions (e.g. warning, suspension, blame)",
+    "classCouncilDecision": "Council Decision (e.g. Honours, Promoted, Repeat)"
   },
   "payments": {
     "title": "Financial Tracking",
+    "subtitle": "Tuition management, installment plans, moratoriums, and financial reports",
     "record": "Record Payment",
     "tuitionSetup": "Configure Class Fees",
+    "tabs": {
+      "tuition": "Tuition Recovery",
+      "plans": "Plans & Installments",
+      "moratoriums": "Moratoriums",
+      "cashbook": "Cashbook",
+      "reports": "Summary & Reports"
+    },
+    "summary": {
+      "configuredFees": "Configured fees for class:"
+    },
+    "btn": {
+      "editFees": "Edit Fees",
+      "sendReminders": "Send Class Reminders",
+      "addPayment": "+ Enter Payment"
+    },
+    "stats": {
+      "expected": "EXPECTED IN CLASS",
+      "collected": "COLLECTED",
+      "rate": "RECOVERY RATE"
+    },
     "table": {
-      "student": "Student",
-      "paid": "Paid (FCFA)",
+      "student": "STUDENT",
+      "matricule": "MATRICULE",
+      "paid": "PAID",
       "balance": "Balance Due (FCFA)",
-      "status": "Status"
+      "remaining": "REMAINING",
+      "status": "STATUS",
+      "actions": "ACTIONS"
     },
     "statusPaid": "Fully Paid",
     "statusPartial": "Partial Payment",
@@ -129,7 +232,60 @@
     "save": "Save Changes"
   },
   "billing": {
-    "title": "Subscription & Billing"
+    "title": "Subscription & Billing",
+    "subtitle": "Manage your EduTrack subscription and discover our offers.",
+    "chooseOffer": "Choose the right plan for your school",
+    "pricingDesc": "Transparent pricing adapted to the African context.",
+    "specialOffer": "Special Offer: Pay for 10 months, get the full year (12 months)!",
+    "demoBanner": "Free Demo: 2 months free (100% features) starting September 10th!",
+    "month": "/month",
+    "btnContact": "Contact Us",
+    "btnChangePlan": "Change Plan",
+    "btnCurrentPlan": "Current Plan ✓",
+    "btnStartTrial": "Start Trial",
+    "btnUpgrade": "Upgrade",
+    "btnContactSales": "Contact Sales",
+    "footerSetup": "*Setup fees: <strong>50,000 FCFA</strong> the first year (configuration, data import, initial training).",
+    "footerHelp": "Need help choosing? Contact us on WhatsApp: <strong>+237 6 91 00 33 92</strong> or <strong>+237 6 81 62 55 20</strong>",
+    "packs": {
+      "essential": {
+        "name": "Essential",
+        "desc": "Quick start for small schools.",
+        "f1": "Up to 300 students",
+        "f2": "All features included",
+        "f3": "All roles included",
+        "f4": "Cloud hosting",
+        "f5": "Basic support"
+      },
+      "standard": {
+        "popular": "Most popular",
+        "name": "Pro",
+        "desc": "Ideal for engaging parents and tracking payments.",
+        "f1": "From 301 to 800 students",
+        "f2": "All features included",
+        "f3": "All roles included",
+        "f4": "Cloud hosting",
+        "f5": "Priority support"
+      },
+      "premium": {
+        "name": "Premium",
+        "desc": "For large groups and full automation.",
+        "f1": "From 801 to 2000 students",
+        "f2": "All features included",
+        "f3": "All roles included",
+        "f4": "Cloud hosting",
+        "f5": "Dedicated assistance"
+      },
+      "custom": {
+        "name": "Custom",
+        "desc": "Beyond 2000 students, school networks or specific needs.",
+        "price": "On Quote",
+        "f1": "White Label (your logo/domain)",
+        "f2": "Exclusive dedicated server",
+        "f3": "Accounting integration on demand",
+        "f4": "On-site training"
+      }
+    }
   },
   "absences": {
     "title": "Attendance & Roll Call Register",
@@ -159,5 +315,167 @@
     },
     "configure": "Configure Payroll",
     "save": "Save Changes"
+  },
+  "hr": {
+    "title": "Human Resources",
+    "subtitle": "Staff records, contracts, salary advances, and leave requests",
+    "tabs": {
+      "staff": "Staff & Contracts",
+      "payslips": "Payslips",
+      "advances": "Salary Advances",
+      "leaves": "Leave & Absences"
+    },
+    "contracts": {
+      "add": "Create Contract",
+      "type": "Contract type",
+      "baseSalary": "Base Salary (FCFA)",
+      "hourlyRate": "Hourly rate (FCFA)",
+      "startDate": "Start date",
+      "endDate": "End date (optional)"
+    },
+    "advances": {
+      "request": "Request Advance",
+      "amount": "Amount (FCFA)",
+      "month": "Deduction month",
+      "year": "Deduction year",
+      "status": "Status",
+      "repaid": "Repaid"
+    },
+    "leaves": {
+      "request": "Request Leave",
+      "type": "Leave type",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "reason": "Reason"
+    },
+    "payroll": {
+      "generate": "Generate Monthly Payroll",
+      "payslips": "Generated Payslips",
+      "netSalary": "Net to Pay",
+      "deductions": "Deductions",
+      "bonuses": "Bonuses",
+      "advancesDeducted": "Advance Deducted",
+      "payBtn": "Mark as Paid"
+    }
+  },
+  "documents": {
+    "title": "Documents & Badges",
+    "subtitle": "Mass-print access cards with QR codes and student certificates",
+    "tabs": {
+      "templates": "Certificate Templates",
+      "generate": "Generate Certificate",
+      "cards": "Cards & Badges"
+    },
+    "templates": {
+      "add": "Create Template",
+      "title": "Document title",
+      "content": "Document text (placeholders: {NOM_ELEVE}, {CLASSE}, {MATRICULE}, {ANNEE_SCOLAIRE}, {DATE_JOUR})",
+      "variablesHelp": "Supported tags: {NOM_ELEVE}, {CLASSE}, {MATRICULE}, {DATE_NAISSANCE}, {ANNEE_SCOLAIRE}, {DATE_JOUR}"
+    },
+    "generate": {
+      "selectTemplate": "Choose a template",
+      "selectStudent": "Choose a student",
+      "customContent": "Custom text (optional)",
+      "btn": "Generate PDF"
+    },
+    "cards": {
+      "selectClass": "Select a class",
+      "studentCardsBtn": "Download Student Cards Grid (A4)",
+      "parentCardsBtn": "Download Parent Access Cards Grid (A4)"
+    }
+  },
+  "messages": {
+    "title": "Messages",
+    "inbox": "Inbox",
+    "newMessage": "New Message",
+    "selectAll": "Select All",
+    "sendMessageTo": "Send a message to",
+    "noMessages": "No messages received",
+    "writeMessage": "Write your message here...",
+    "send": "Send"
+  },
+  "portal": {
+    "student": {
+      "todayClasses": "Today's Classes",
+      "noClasses": "No classes scheduled today.",
+      "discipline": "Discipline & Absences",
+      "absences": "Absences",
+      "sanctions": "Sanctions",
+      "justified": "Justified",
+      "unjustified": "Unjustified",
+      "noAbsences": "No absences",
+      "noSanctions": "No sanctions"
+    },
+    "parent": {
+      "linkedChildren": "Linked Children",
+      "reportCards": "Report Cards",
+      "timetable": "Timetable",
+      "payments": "Tuition Payments",
+      "onlinePayment": "Online Payment",
+      "signReportCard": "Sign Report Card",
+      "signedSuccess": "Report card signed successfully!"
+    }
+  },
+  "studentCouncil": {
+    "nominate": "Nominate to Council",
+    "remove": "Remove from Council",
+    "member": "Student Council Member",
+    "success": "Council status updated successfully."
+  },
+  "supportStaff": {
+    "title": "Support Staff",
+    "subtitle": "Manage security guards, cleaners, secretaries, and other support employees",
+    "createBtn": "Add Support Staff",
+    "total": "Total Staff",
+    "searchPlaceholder": "Search by name or phone...",
+    "table": {
+      "name": "Name",
+      "profession": "Profession / Role",
+      "phone": "Phone",
+      "email": "Email",
+      "date": "Date Added",
+      "actions": "Actions"
+    },
+    "empty": "No support staff found.",
+    "addModal": {
+      "title": "Add Support Staff",
+      "nameLabel": "Full Name",
+      "professionLabel": "Role (e.g., Guard, Cleaner)",
+      "phoneLabel": "Phone",
+      "emailLabel": "Email (Optional)",
+      "passwordLabel": "Default Password"
+    },
+    "editModal": {
+      "title": "Edit Information",
+      "nameLabel": "Full Name",
+      "professionLabel": "Role",
+      "phoneLabel": "Phone",
+      "emailLabel": "Email"
+    }
+  },
+  "landing": {
+    "heroTitle": "Fully digitize your school management.",
+    "heroSubtitle": "Allow parents to track their children's education in real time. Designed specifically for private schools in Africa.",
+    "btnDemo": "Request a free demo",
+    "btnPricing": "View pricing",
+    "problemTitle": "Your daily challenges? We know them.",
+    "problemDesc": "Endless paper management, manually filled report cards with risk of errors, parents with no visibility over their children's education, tedious tracking of tuition payments, and complicated, costly school-parent communication (paid SMS).<br/><br/>It is time to move to the next level.",
+    "featuresTitle": "A complete and integrated solution",
+    "featuresBadge": "Real-time tracking & Messaging included in ALL plans!",
+    "pricingTitle": "Pricing adapted to your school",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "saveMonths": "Save 2 months",
+    "whyTitle": "Why choose EduTrack?",
+    "whySubtitle": "The ideal local alternative to European solutions like Pronote.",
+    "testimonialsTitle": "They trust us",
+    "faqTitle": "Frequently Asked Questions",
+    "ctaTitle": "Ready to modernize your school?",
+    "ctaSubtitle": "Leave us your contact details, and our team will contact you shortly for a free demonstration.",
+    "footerDesc": "The #1 bilingual school management system designed for private schools in Africa.",
+    "quickLinks": "Quick Links",
+    "contact": "Contact",
+    "followUs": "Follow us",
+    "login": "Login"
   }
 }

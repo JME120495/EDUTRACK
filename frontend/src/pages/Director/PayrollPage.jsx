@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { AuthContext } from '../../context/AuthContext';
+import React, { useContext, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
 import { Coins, Edit2, X } from 'lucide-react';
 
 export default function PayrollPage() {
+  const { user } = useContext(AuthContext);
+  const currency = user?.currency || 'XAF';
+
   const { t, i18n } = useTranslation();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -104,9 +108,9 @@ export default function PayrollPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {[
-          { label: t('payroll.stats.totalPay') || 'Total à payer', value: `${totalPay.toLocaleString()} FCFA`, color: 'text-emerald-600' },
+          { label: t('payroll.stats.totalPay') || 'Total à payer', value: `${totalPay.toLocaleString()} {currency}`, color: 'text-emerald-600' },
           { label: t('payroll.stats.totalHours') || "Total d'heures", value: `${totalHours.toLocaleString()} h`, color: 'text-blue-600' },
-          { label: t('payroll.stats.avgRate') || 'Taux horaire moyen', value: `${avgRate.toLocaleString()} FCFA/h`, color: 'text-amber-500' }
+          { label: t('payroll.stats.avgRate') || 'Taux horaire moyen', value: `${avgRate.toLocaleString()} {currency}/h`, color: 'text-amber-500' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
             <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider block">
@@ -156,9 +160,9 @@ export default function PayrollPage() {
                         <td className="px-6 py-4 font-bold text-slate-800">{item.teacher?.name}</td>
                         <td className="px-6 py-4 font-semibold text-slate-600">{subjectName}</td>
                         <td className="px-6 py-4 font-bold text-slate-500">{item.class?.name}</td>
-                        <td className="px-6 py-4 font-bold text-[#1E3A5F]">{rate.toLocaleString()} FCFA</td>
+                        <td className="px-6 py-4 font-bold text-[#1E3A5F]">{rate.toLocaleString()} {currency}</td>
                         <td className="px-6 py-4 font-bold text-slate-500">{hours} h</td>
-                        <td className="px-6 py-4 font-black font-outfit text-emerald-600">{due.toLocaleString()} FCFA</td>
+                        <td className="px-6 py-4 font-black font-outfit text-emerald-600">{due.toLocaleString()} {currency}</td>
                         <td className="px-6 py-4">
                           <button
                             onClick={() => handleOpenEditModal(item)}
@@ -233,7 +237,7 @@ export default function PayrollPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  {t('payroll.table.hourlyRate') || 'Taux Horaire (FCFA/h)'}
+                  {t('payroll.table.hourlyRate') || 'Taux Horaire ({currency}/h)'}
                 </label>
                 <input
                   type="number"

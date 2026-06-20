@@ -16,6 +16,7 @@ export default function Layout() {
   const [schoolLoading, setSchoolLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -43,7 +44,8 @@ export default function Layout() {
     setPaying(true);
     try {
       const res = await apiFetch('/schools/pay-subscription', {
-        method: 'POST'
+        method: 'POST',
+        body: { months: isAnnual ? 12 : 1 }
       });
       setPaymentSuccess(true);
       setTimeout(() => {
@@ -86,10 +88,10 @@ export default function Layout() {
 
   // Calculate dynamic price
   const getPricing = (count) => {
-    if (count < 200) return { name: 'Bronze', price: '35 000 FCFA', range: 'Moins de 200 élèves' };
-    if (count <= 500) return { name: 'Argent', price: '55 000 FCFA', range: '200 à 500 élèves' };
-    if (count <= 2000) return { name: 'Or', price: '120 000 FCFA', range: '500 à 2 000 élèves' };
-    return { name: 'Entreprise', price: 'Sur Mesure', range: 'Plus de 2 000 élèves' };
+    if (count <= 300) return { name: 'Essentiel', monthly: '25 000 FCFA', annual: '250 000 FCFA', range: '0 à 300 élèves' };
+    if (count <= 800) return { name: 'Pro', monthly: '54 000 FCFA', annual: '540 000 FCFA', range: '301 à 800 élèves' };
+    if (count <= 2000) return { name: 'Premium', monthly: '99 000 FCFA', annual: '990 000 FCFA', range: '801 à 2 000 élèves' };
+    return { name: 'Entreprise', monthly: 'Sur Devis', annual: 'Sur Devis', range: 'Plus de 2 000 élèves' };
   };
   const pricing = getPricing(studentsCount);
 
@@ -152,14 +154,30 @@ export default function Layout() {
                 Pack {pricing.name}
               </span>
             </div>
+
+            {/* Toggle Mensuel / Annuel */}
+            <div className="flex items-center justify-between py-2 border-b border-white/10">
+              <span className="text-xs text-slate-400 font-medium">Fréquence de paiement :</span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-bold uppercase ${!isAnnual ? 'text-white' : 'text-slate-500'}`}>Mensuel</span>
+                <button 
+                  onClick={() => setIsAnnual(!isAnnual)}
+                  className="relative inline-flex h-5 w-10 items-center rounded-full bg-slate-700 transition-colors focus:outline-none"
+                >
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-amber-500 transition-transform ${isAnnual ? 'translate-x-5' : 'translate-x-1'}`} />
+                </button>
+                <span className={`text-[10px] font-bold uppercase ${isAnnual ? 'text-white' : 'text-slate-500'}`}>Annuel</span>
+              </div>
+            </div>
+
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-slate-400 font-medium">Élèves enregistrés :</span>
                 <span className="font-bold">{studentsCount} élèves</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400 font-medium">Tarif mensuel :</span>
-                <span className="font-black text-[#F5A623]">{pricing.price} / mois</span>
+                <span className="text-slate-400 font-medium">Tarif {isAnnual ? 'annuel' : 'mensuel'} :</span>
+                <span className="font-black text-[#F5A623]">{isAnnual ? pricing.annual : pricing.monthly} / {isAnnual ? 'an' : 'mois'}</span>
               </div>
             </div>
           </div>
@@ -191,7 +209,7 @@ export default function Layout() {
                   disabled={paying}
                   className="w-full py-3 bg-[#F5A623] hover:bg-amber-500 text-slate-950 rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-amber-500/10 active:scale-95 disabled:opacity-50"
                 >
-                  {paying ? 'Traitement en cours...' : `Activer ma licence (${pricing.price})`}
+                  {paying ? 'Traitement en cours...' : `Activer ma licence (${isAnnual ? pricing.annual : pricing.monthly})`}
                 </button>
               </>
             )}

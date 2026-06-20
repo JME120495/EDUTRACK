@@ -25,3 +25,7 @@ yarn-error.log*
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Test scripts
+backend/test_endpoints.js
+

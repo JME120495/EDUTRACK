@@ -10,7 +10,8 @@ import {
   Link2, 
   Trash2, 
   Search, 
-  AlertCircle 
+  AlertCircle,
+  Edit2
 } from 'lucide-react';
 
 export default function TeachersPage() {
@@ -36,6 +37,15 @@ export default function TeachersPage() {
   const [teacherEmail, setTeacherEmail] = useState('');
   const [teacherSubjectId, setTeacherSubjectId] = useState('');
   const [selectedClasses, setSelectedClasses] = useState([]);
+
+  // Edit Teacher Form State
+  const [editTeacherModalOpen, setEditTeacherModalOpen] = useState(false);
+  const [editTeacherId, setEditTeacherId] = useState('');
+  const [editTeacherName, setEditTeacherName] = useState('');
+  const [editTeacherPhone, setEditTeacherPhone] = useState('');
+  const [editTeacherEmail, setEditTeacherEmail] = useState('');
+  const [editTeacherSubjectId, setEditTeacherSubjectId] = useState('');
+  const [editSelectedClasses, setEditSelectedClasses] = useState([]);
 
   // Assignment Form State
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
@@ -83,7 +93,7 @@ export default function TeachersPage() {
     }
 
     try {
-      const emailVal = teacherEmail || `teacher.${teacherPhone.replace('+', '')}@edutrack.com`;
+      const emailVal = teacherEmail || '';
       const newTeacher = await apiFetch('/users', {
         method: 'POST',
         body: {
@@ -132,7 +142,80 @@ export default function TeachersPage() {
       alert(err.message || 'Erreur lors de la création de l\'enseignant');
     }
   };
+  const openEditTeacherModal = (teacher) => {
+    setEditTeacherId(teacher.id);
+    setEditTeacherName(teacher.name);
+    setEditTeacherPhone(teacher.phone || '');
+    setEditTeacherEmail(teacher.email || '');
+    
+    // Find teacher's current assignments
+    const teacherAssignments = assignments.filter(a => a.teacherId === teacher.id);
+    if (teacherAssignments.length > 0) {
+      setEditTeacherSubjectId(teacherAssignments[0].matiereId);
+      setEditSelectedClasses(teacherAssignments.map(a => a.classId));
+    } else {
+      setEditTeacherSubjectId(subjects.length > 0 ? subjects[0].id : '');
+      setEditSelectedClasses([]);
+    }
+    setEditTeacherModalOpen(true);
+  };
 
+  const handleUpdateTeacher = async (e) => {
+    e.preventDefault();
+    if (!editTeacherName || !editTeacherPhone) {
+      alert('Nom et Téléphone sont requis');
+      return;
+    }
+
+    try {
+      const updatedTeacher = await apiFetch(`/users/${editTeacherId}`, {
+        method: 'PUT',
+        body: {
+          name: editTeacherName,
+          phone: editTeacherPhone,
+          email: editTeacherEmail
+        }
+      });
+
+      // Update assignments
+      const teacherAssignments = assignments.filter(a => a.teacherId === editTeacherId);
+      const currentClassIds = teacherAssignments.map(a => a.classId);
+      
+      const classesToAdd = editSelectedClasses.filter(id => !currentClassIds.includes(id));
+      const assignmentsToRemove = teacherAssignments.filter(a => !editSelectedClasses.includes(a.classId));
+
+      // Remove unchecked classes
+      if (assignmentsToRemove.length > 0) {
+        await Promise.all(
+          assignmentsToRemove.map(a => 
+            apiFetch(`/matieres/assignments/${a.id}`, { method: 'DELETE' }).catch(err => console.error(err))
+          )
+        );
+      }
+
+      // Add newly checked classes
+      if (editTeacherSubjectId && classesToAdd.length > 0) {
+        await Promise.all(
+          classesToAdd.map(classId => 
+            apiFetch('/matieres/affecter', {
+              method: 'POST',
+              body: {
+                teacherId: editTeacherId,
+                matiereId: editTeacherSubjectId,
+                classId
+              }
+            }).catch(err => console.error(err))
+          )
+        );
+      }
+
+      alert('Enseignant mis à jour avec succès !');
+      setEditTeacherModalOpen(false);
+      loadAllData();
+    } catch (err) {
+      alert(err.message || 'Erreur lors de la mise à jour de l\'enseignant');
+    }
+  };
   const handleAssignTeacher = async (e) => {
     e.preventDefault();
     if (!selectedTeacherId || !selectedMatiereId || !selectedClassId) {
@@ -210,10 +293,10 @@ export default function TeachersPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-[#1E3A5F] font-outfit">
-            Gestion des Enseignants
+            {t('teachers.title')}
           </h1>
           <p className="text-slate-500 text-xs font-semibold">
-            Gérez les comptes des enseignants titulaires et vacataires et affectez-les aux matières par classe
+            {t('teachers.subtitle')}
           </p>
         </div>
 
@@ -223,7 +306,7 @@ export default function TeachersPage() {
             className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md shrink-0"
           >
             <UserPlus className="h-4.5 w-4.5" />
-            <span>Créer Compte Enseignant</span>
+            <span>{t('teachers.createBtn')}</span>
           </button>
         ) : (
           <button
@@ -231,7 +314,7 @@ export default function TeachersPage() {
             className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md shrink-0"
           >
             <Link2 className="h-4.5 w-4.5" />
-            <span>Affecter Enseignant</span>
+            <span>{t('teachers.assignBtn')}</span>
           </button>
         )}
       </div>
@@ -246,7 +329,7 @@ export default function TeachersPage() {
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
-          📋 Liste des Enseignants
+          📋 {t('teachers.tabs.list')}
         </button>
         <button
           onClick={() => setActiveTab('assignments')}
@@ -256,7 +339,7 @@ export default function TeachersPage() {
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
-          🔗 Affectations des Matières ({assignments.length})
+          🔗 {t('teachers.tabs.assignments')} ({assignments.length})
         </button>
       </div>
 
@@ -266,7 +349,7 @@ export default function TeachersPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center justify-between col-span-1">
               <div className="space-y-0.5">
-                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">Total Enseignants</span>
+                <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{t('teachers.total')}</span>
                 <span className="text-xl font-black text-[#1E3A5F] font-outfit">{teachers.length}</span>
               </div>
               <div className="h-10 w-10 rounded-xl bg-blue-50 text-[#1E3A5F] flex items-center justify-center">
@@ -280,7 +363,7 @@ export default function TeachersPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher par nom ou numéro de téléphone..."
+                placeholder={t('teachers.searchPlaceholder')}
                 className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition-all bg-white"
               />
             </div>
@@ -289,24 +372,24 @@ export default function TeachersPage() {
           {/* Teachers List Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-200">
             {loading ? (
-              <div className="py-20 text-center text-slate-400">Chargement de la liste...</div>
+              <div className="py-20 text-center text-slate-400">Chargement...</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left text-sm text-slate-600">
                   <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 uppercase text-xs font-semibold tracking-wider">
                     <tr>
-                      <th className="px-6 py-4">Nom de l'Enseignant</th>
-                      <th className="px-6 py-4">Téléphone (Login)</th>
-                      <th className="px-6 py-4">Email</th>
-                      <th className="px-6 py-4">Date d'inscription</th>
-                      <th className="px-6 py-4 text-right">Actions</th>
+                      <th className="px-6 py-4">{t('teachers.table.name')}</th>
+                      <th className="px-6 py-4">{t('teachers.table.phone')}</th>
+                      <th className="px-6 py-4">{t('teachers.table.email')}</th>
+                      <th className="px-6 py-4">{t('teachers.table.date')}</th>
+                      <th className="px-6 py-4 text-right">{t('teachers.table.actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredTeachers.length === 0 ? (
                       <tr>
                         <td colSpan="5" className="px-6 py-10 text-center text-slate-400">
-                          Aucun enseignant trouvé.
+                          {t('teachers.empty')}
                         </td>
                       </tr>
                     ) : (
@@ -318,7 +401,14 @@ export default function TeachersPage() {
                           <td className="px-6 py-4 text-slate-400 text-xs">
                             {new Date(teacher.createdAt).toLocaleDateString()}
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEditTeacherModal(teacher)}
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
+                              title="Modifier l'Enseignant"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={() => handleDeleteTeacher(teacher.id)}
                               className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors"
@@ -457,16 +547,7 @@ export default function TeachersPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email (Optionnel)</label>
-                <input
-                  type="email"
-                  value={teacherEmail}
-                  onChange={(e) => setTeacherEmail(e.target.value)}
-                  placeholder="enseignant@example.com"
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none font-semibold text-slate-800"
-                />
-              </div>
+              {/* Email is auto-generated by the backend */}
 
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Matière Affectée (Optionnel)</label>
@@ -525,6 +606,124 @@ export default function TeachersPage() {
                   className="flex-1 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md"
                 >
                   Créer le Compte
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Teacher Modal */}
+      {editTeacherModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5 text-[#1E3A5F]" />
+                <h3 className="font-bold text-[#1E3A5F] font-outfit">Modifier l'Enseignant</h3>
+              </div>
+              <button onClick={() => setEditTeacherModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg transition-colors">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateTeacher} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nom Complet</label>
+                <input
+                  type="text"
+                  required
+                  value={editTeacherName}
+                  onChange={(e) => setEditTeacherName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Téléphone (Login)</label>
+                <input
+                  type="text"
+                  required
+                  value={editTeacherPhone}
+                  onChange={(e) => setEditTeacherPhone(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email</label>
+                <input
+                  type="email"
+                  value={editTeacherEmail}
+                  onChange={(e) => setEditTeacherEmail(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Matière Principale</label>
+                <select
+                  value={editTeacherSubjectId}
+                  onChange={(e) => {
+                    setEditTeacherSubjectId(e.target.value);
+                    setEditSelectedClasses([]);
+                  }}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none font-bold text-[#1E3A5F]"
+                >
+                  <option value="">Sélectionnez une matière...</option>
+                  {subjects.map(s => (
+                    <option key={s.id} value={s.id}>{s.nameFr}</option>
+                  ))}
+                </select>
+              </div>
+
+              {editTeacherSubjectId && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Classes Affectées (Cochez pour modifier)</label>
+                  {classes.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic">Aucune classe disponible</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-slate-100 rounded-xl bg-slate-50/50">
+                      {classes.map(c => {
+                        const isChecked = editSelectedClasses.includes(c.id);
+                        return (
+                          <label key={c.id} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
+                            isChecked ? 'border-[#1E3A5F] bg-[#1E3A5F]/5' : 'border-slate-200 bg-white hover:border-slate-300'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditSelectedClasses(prev => [...prev, c.id]);
+                                } else {
+                                  setEditSelectedClasses(prev => prev.filter(id => id !== c.id));
+                                }
+                              }}
+                              className="rounded text-[#1E3A5F] focus:ring-[#1E3A5F]"
+                            />
+                            <span className={`text-sm ${isChecked ? 'font-bold text-[#1E3A5F]' : 'text-slate-600'}`}>{c.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditTeacherModalOpen(false)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md"
+                >
+                  Mettre à jour
                 </button>
               </div>
             </form>

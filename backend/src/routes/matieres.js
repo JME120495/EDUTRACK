@@ -15,8 +15,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Create subject (Director and Teacher)
-router.post('/', auth, requireRole(['DIRECTOR', 'TEACHER']), async (req, res) => {
+// Create subject (Director and Censeur)
+router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { nameFr, nameEn, code, coefficient, classId, teacherId } = req.body;
   try {
     if (!nameFr || !nameEn || !code) {
@@ -55,7 +55,7 @@ router.post('/', auth, requireRole(['DIRECTOR', 'TEACHER']), async (req, res) =>
 });
 
 // Update subject (Director only)
-router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { nameFr, nameEn, code, coefficient } = req.body;
   const { id } = req.params;
   try {
@@ -75,20 +75,26 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Delete subject (Director only)
-router.delete('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+// V-006 FIX: Verify subject belongs to user's school
+router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   try {
+    const matiere = await prisma.matiere.findUnique({ where: { id } });
+    if (!matiere || matiere.schoolId !== req.user.schoolId) {
+      return res.status(404).json({ message: 'Subject not found' });
+    }
     await prisma.matiere.delete({
       where: { id }
     });
     res.json({ message: 'Subject deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Subjects] Delete error:', err);
+    res.status(500).json({ message: 'An internal error occurred' });
   }
 });
 
 // Assign teacher to subject and class
-router.post('/affecter', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/affecter', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { teacherId, matiereId, classId } = req.body;
   try {
     if (!teacherId || !matiereId || !classId) {
@@ -118,13 +124,17 @@ router.post('/affecter', auth, requireRole(['DIRECTOR']), async (req, res) => {
   }
 });
 
-// Get all teacher assignments
+// Get all teacher assignments (filtered by teacherId if requester is a teacher)
 router.get('/assignments', auth, async (req, res) => {
   try {
+    const whereClause = {
+      class: { schoolId: req.user.schoolId }
+    };
+    if (req.user.role === 'TEACHER') {
+      whereClause.teacherId = req.user.id;
+    }
     const assignments = await prisma.enseignantMatiereClasse.findMany({
-      where: {
-        class: { schoolId: req.user.schoolId }
-      },
+      where: whereClause,
       include: {
         teacher: { select: { id: true, name: true, email: true } },
         matiere: true,
@@ -138,7 +148,7 @@ router.get('/assignments', auth, async (req, res) => {
 });
 
 // Update assignment (Director only) - e.g. update custom coefficient, hourlyRate, hoursTaught
-router.put('/assignments/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.put('/assignments/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   const { coefficient, hourlyRate, hoursTaught } = req.body;
   try {
@@ -178,7 +188,7 @@ router.put('/assignments/:id', auth, requireRole(['DIRECTOR']), async (req, res)
 });
 
 // Delete assignment (Director only)
-router.delete('/assignments/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.delete('/assignments/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   try {
     const assoc = await prisma.enseignantMatiereClasse.findUnique({

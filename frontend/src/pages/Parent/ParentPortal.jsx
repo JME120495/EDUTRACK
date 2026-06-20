@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { apiFetch } from '../../api';
+import MessageInbox from '../../components/MessageInbox';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -13,16 +14,20 @@ import {
   Clock,
   Smartphone,
   X,
-  Lock
+  Lock,
+  Bell
 } from 'lucide-react';
 
 export default function ParentPortal() {
   const { user } = useContext(AuthContext);
+  const currency = user?.currency || 'XAF';
+
   const { t } = useTranslation();
 
   const [children, setChildren] = useState([]);
   const [selectedChildId, setSelectedChildId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeView, setActiveView] = useState('children'); // 'children' or 'messages'
 
   // Child data details
   const [grades, setGrades] = useState([]);
@@ -128,7 +133,7 @@ export default function ParentPortal() {
         method: 'POST',
         body: { role: 'PARENT' }
       });
-      alert('Bulletin signé électroniquement avec succès !');
+      alert(t('portal.parent.signedSuccess'));
       loadChildData(selectedChildId);
     } catch (e) {
       alert(e.message || 'Erreur lors de la signature');
@@ -143,7 +148,7 @@ export default function ParentPortal() {
     }
     setPaying(true);
     try {
-      await apiFetch('/paiements/webhook', {
+      await apiFetch('/paiements/simulate', {
         method: 'POST',
         body: {
           event: 'payment.success',
@@ -174,38 +179,74 @@ export default function ParentPortal() {
     return <div className="py-20 text-center text-slate-400">Loading parent portal...</div>;
   }
 
-  if (children.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center max-w-md mx-auto space-y-3">
-        <GraduationCap className="h-12 w-12 text-[#1E3A5F] mx-auto" />
-        <h3 className="font-bold text-[#1E3A5F]">No Linked Children</h3>
-        <p className="text-xs text-slate-500">Contact the School Administration to link your phone number to your child's registry record.</p>
-      </div>
-    );
-  }
-
   const selectedChild = children.find(c => c.id === selectedChildId);
 
   return (
     <div className="space-y-6">
-      {/* Child Selector Tabs */}
-      <div className="flex border-b border-slate-200 overflow-x-auto gap-2 pb-1">
-        {children.map(child => (
-          <button
-            key={child.id}
-            onClick={() => setSelectedChildId(child.id)}
-            className={`px-4 py-2.5 rounded-t-xl text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
-              selectedChildId === child.id
-                ? 'border-amber-400 text-[#1E3A5F] bg-white shadow-sm'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            👧👦 {child.name} ({child.class?.name || 'Class'})
-          </button>
-        ))}
+      {/* Child Selector Tabs & Messages */}
+      <div className="flex border-b border-slate-200 overflow-x-auto gap-2 pb-1 justify-between">
+        <div className="flex gap-2">
+          {children.length > 0 ? (
+            children.map(child => (
+              <button
+                key={child.id}
+                onClick={() => {
+                  setSelectedChildId(child.id);
+                  setActiveView('children');
+                }}
+                className={`px-4 py-2.5 rounded-t-xl text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+                  activeView === 'children' && selectedChildId === child.id
+                    ? 'border-[#1E3A5F] text-[#1E3A5F] bg-slate-50'
+                    : 'border-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {child.name}
+              </button>
+            ))
+          ) : (
+            <div className="px-4 py-2.5 text-sm font-bold text-slate-400">{t('portal.parent.noChildrenLinked')}</div>
+          )}
+        </div>
+        <button
+          onClick={() => setActiveView('messages')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+            activeView === 'messages'
+              ? 'border-amber-400 text-[#1E3A5F] bg-white shadow-sm'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Bell className="h-4 w-4" />
+          Messagerie
+        </button>
       </div>
 
-      {/* Grid: Grades & Bulletins */}
+      {activeView === 'messages' ? (
+        <MessageInbox />
+      ) : children.length === 0 ? (
+        <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm text-center max-w-md mx-auto space-y-3 mt-10">
+          <GraduationCap className="h-12 w-12 text-[#1E3A5F] mx-auto opacity-50" />
+          <h3 className="font-bold text-[#1E3A5F]">Aucun élève lié</h3>
+          <p className="text-xs text-slate-500">
+            Contactez l'administration de l'école pour lier votre numéro de téléphone au dossier de votre enfant.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Selected Child Large Header */}
+          <div className="bg-gradient-to-r from-[#1E3A5F] to-[#2A5288] rounded-2xl p-6 md:p-8 shadow-lg text-white mb-6 flex items-center gap-4">
+            <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
+              <GraduationCap className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <p className="text-blue-100 font-bold uppercase tracking-widest text-xs mb-1">Dossier Scolaire de</p>
+              <h1 className="text-3xl md:text-4xl font-black font-outfit text-white tracking-tight">{selectedChild?.name}</h1>
+              <p className="text-blue-50 text-sm mt-1 font-semibold opacity-90">
+                Matricule: {selectedChild?.matricule} • Classe: {selectedChild?.class?.name || 'Non assignée'}
+              </p>
+            </div>
+          </div>
+
+          {/* Grid: Grades & Bulletins */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Sequence Grades */}
@@ -321,18 +362,18 @@ export default function ParentPortal() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs font-semibold">
           <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
             <span className="text-slate-400 block uppercase font-bold text-[10px] tracking-wider mb-1">Total Tuition</span>
-            <span className="text-base font-black text-slate-800">150,000 FCFA</span>
+            <span className="text-base font-black text-slate-800">150,000 {currency}</span>
           </div>
           <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl">
             <span className="text-emerald-600 block uppercase font-bold text-[10px] tracking-wider mb-1">Amount Paid</span>
             <span className="text-base font-black text-emerald-700">
-              {payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()} FCFA
+              {payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()} {currency}
             </span>
           </div>
           <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl">
             <span className="text-rose-600 block uppercase font-bold text-[10px] tracking-wider mb-1">Remaining Balance</span>
             <span className="text-base font-black text-rose-700">
-              {(150000 - payments.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()} FCFA
+              {(150000 - payments.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()} {currency}
             </span>
           </div>
         </div>
@@ -344,7 +385,7 @@ export default function ParentPortal() {
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Reference</th>
                 <th className="px-4 py-3">Method</th>
-                <th className="px-4 py-3 text-right">Amount (FCFA)</th>
+                <th className="px-4 py-3 text-right">Amount ({currency})</th>
                 <th className="px-4 py-3 text-center">Status</th>
               </tr>
             </thead>
@@ -476,7 +517,7 @@ export default function ParentPortal() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Montant (FCFA)</label>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Montant ({currency})</label>
                       <input
                         type="number"
                         required
@@ -524,6 +565,8 @@ export default function ParentPortal() {
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

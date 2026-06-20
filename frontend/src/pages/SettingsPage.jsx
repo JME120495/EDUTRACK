@@ -2,9 +2,12 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette } from 'lucide-react';
+import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette, Calendar } from 'lucide-react';
 
 export default function SettingsPage() {
+  const { user } = useContext(AuthContext);
+  const currency = user?.currency || 'XAF';
+
   const { t } = useTranslation();
   const { updateLanguage } = useContext(AuthContext);
 
@@ -36,6 +39,14 @@ export default function SettingsPage() {
   const [cEndTime, setCEndTime] = useState('');
   const [cOrder, setCOrder] = useState(0);
 
+  // Annee Scolaire State
+  const [annees, setAnnees] = useState([]);
+  const [selectedAnnee, setSelectedAnnee] = useState(null);
+  const [anneeModalOpen, setAnneeModalOpen] = useState(false);
+  const [aLabel, setALabel] = useState('');
+  const [aActive, setAActive] = useState(false);
+
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -43,10 +54,11 @@ export default function SettingsPage() {
   async function loadSettings() {
     try {
       setLoading(true);
-      const [schoolData, studentsData, creneauxData] = await Promise.all([
+      const [schoolData, studentsData, creneauxData, anneesData] = await Promise.all([
         apiFetch('/schools'),
         apiFetch('/eleves'),
-        apiFetch('/creneaux').catch(() => [])
+        apiFetch('/creneaux').catch(() => []),
+        apiFetch('/annees').catch(() => [])
       ]);
       if (schoolData) {
         setSchool(schoolData);
@@ -56,6 +68,12 @@ export default function SettingsPage() {
       }
       if (creneauxData) {
         setCreneaux(creneauxData);
+      }
+      if (anneesData) {
+        setAnnees(anneesData);
+      }
+      if (arguments[0] && arguments[0][3]) {
+        setAnnees(arguments[0][3]);
       }
     } catch (e) {
       console.error('Failed to load settings:', e);
@@ -135,6 +153,54 @@ export default function SettingsPage() {
       alert(err.message || 'Erreur lors de la suppression');
     }
   };
+
+  const handleOpenAddAnnee = () => {
+    setSelectedAnnee(null);
+    setALabel('');
+    setAActive(false);
+    setAnneeModalOpen(true);
+  };
+
+  const handleOpenEditAnnee = (a) => {
+    setSelectedAnnee(a);
+    setALabel(a.label);
+    setAActive(a.active);
+    setAnneeModalOpen(true);
+  };
+
+  const handleSaveAnnee = async (e) => {
+    e.preventDefault();
+    if (!aLabel) return;
+    try {
+      if (selectedAnnee) {
+        await apiFetch(`/annees/${selectedAnnee.id}`, {
+          method: 'PUT',
+          body: { label: aLabel, active: aActive }
+        });
+      } else {
+        await apiFetch('/annees', {
+          method: 'POST',
+          body: { label: aLabel, active: aActive }
+        });
+      }
+      setAnneeModalOpen(false);
+      const data = await apiFetch('/annees');
+      setAnnees(data);
+    } catch (err) {
+      alert(err.message || 'Erreur lors de la sauvegarde');
+    }
+  };
+
+  const handleDeleteAnnee = async (id) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette année scolaire ?')) return;
+    try {
+      await apiFetch(`/annees/${id}`, { method: 'DELETE' });
+      setAnnees(prev => prev.filter(a => a.id !== id));
+    } catch (err) {
+      alert(err.message || 'Erreur lors de la suppression');
+    }
+  };
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -232,7 +298,7 @@ export default function SettingsPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">School Name</label>
                 <input
@@ -255,6 +321,27 @@ export default function SettingsPage() {
                 >
                   <option value="FR">French (FR)</option>
                   <option value="EN">English (EN)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Devise / Currency</label>
+                <select
+                  name="currency"
+                  value={school.currency || 'XAF'}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none"
+                >
+                  <option value="XAF">FCFA (CEMAC)</option>
+                  <option value="XOF">FCFA (UEMOA)</option>
+                  <option value="NGN">Naira (NGN)</option>
+                  <option value="KES">Shilling Kényan (KES)</option>
+                  <option value="ZAR">Rand (ZAR)</option>
+                  <option value="MAD">Dirham Marocain (MAD)</option>
+                  <option value="CDF">Franc Congolais (CDF)</option>
+                  <option value="GHS">Cedi Ghanéen (GHS)</option>
+                  <option value="USD">Dollar US ($)</option>
+                  <option value="EUR">Euro (€)</option>
                 </select>
               </div>
             </div>
@@ -547,24 +634,48 @@ export default function SettingsPage() {
           </div>
 
           {/* Subjects coefficients metadata panel */}
+          
+          {/* Annees Scolaires metadata panel */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <BookOpen className="h-4.5 w-4.5 text-[#1E3A5F]" />
-              <h4 className="font-bold text-[#1E3A5F] text-sm font-outfit">Coefficients config</h4>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4.5 w-4.5 text-[#1E3A5F]" />
+                <h4 className="font-bold text-[#1E3A5F] text-sm font-outfit">Années Scolaires</h4>
+              </div>
+              <button
+                type="button"
+                onClick={handleOpenAddAnnee}
+                className="p-1 text-[#1E3A5F] hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors flex items-center justify-center"
+                title="Ajouter une année"
+              >
+                <Plus className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+              </button>
             </div>
-            <ul className="text-xs space-y-2 text-slate-600 font-medium">
-              <li className="flex justify-between"><span>Mathematics (MATH)</span><span className="font-bold text-[#1E3A5F]">Coeff 4.0</span></li>
-              <li className="flex justify-between"><span>French (FRAN)</span><span className="font-bold text-[#1E3A5F]">Coeff 3.0</span></li>
-              <li className="flex justify-between"><span>English (ANGL)</span><span className="font-bold text-[#1E3A5F]">Coeff 3.0</span></li>
-              <li className="flex justify-between"><span>History-Geography (HIST)</span><span className="font-bold text-[#1E3A5F]">Coeff 2.0</span></li>
-              <li className="flex justify-between"><span>Physics-Chemistry (PHYS)</span><span className="font-bold text-[#1E3A5F]">Coeff 3.0</span></li>
-            </ul>
+            {annees.length === 0 ? (
+              <p className="text-xs text-slate-400 italic text-center py-2">Aucune année configurée</p>
+            ) : (
+              <ul className="text-xs space-y-2.5 text-slate-600 font-medium">
+                {annees.map((a) => (
+                  <li key={a.id} className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <div className="space-y-0.5">
+                      <span className="font-bold text-[#1E3A5F] block">{a.label}</span>
+                      {a.active && <span className="text-[9px] text-emerald-600 font-bold uppercase">Actif</span>}
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button type="button" onClick={() => handleOpenEditAnnee(a)} className="p-1 rounded bg-white hover:bg-slate-100 text-[#1E3A5F] border border-slate-200 shadow-sm transition-colors"><Edit2 className="h-3 w-3 text-slate-500" /></button>
+                      <button type="button" onClick={() => handleDeleteAnnee(a.id)} className="p-1 rounded bg-white hover:bg-rose-50 text-rose-500 border border-slate-200 shadow-sm transition-colors"><Trash2 className="h-3 w-3" /></button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
+
 
           {/* Pricing & Billing Plan Info Panel */}
           <div className="bg-[#1E3A5F] text-white rounded-2xl p-5 shadow-lg space-y-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 bg-amber-400 text-slate-900 text-[9px] font-black rounded-bl-xl uppercase tracking-wider">
-              {studentCount < 200 ? 'Bronze' : studentCount <= 500 ? 'Argent' : studentCount <= 2000 ? 'Or' : 'Entreprise'}
+              {studentCount <= 300 ? 'Essentiel' : studentCount <= 800 ? 'Pro' : studentCount <= 2000 ? 'Premium' : 'Entreprise'}
             </div>
             
             <div className="border-b border-white/20 pb-3">
@@ -580,19 +691,19 @@ export default function SettingsPage() {
               <div className="flex justify-between text-xs">
                 <span className="text-slate-300 font-medium">Monthly License:</span>
                 <span className="font-black text-[#F5A623]">
-                  {studentCount < 200 ? '35 000 FCFA / mois' : studentCount <= 500 ? '55 000 FCFA / mois' : studentCount <= 2000 ? '120 000 FCFA / mois' : 'Sur Mesure'}
+                  {studentCount <= 300 ? '25 000 FCFA / mois' : studentCount <= 800 ? '54 000 FCFA / mois' : studentCount <= 2000 ? '99 000 FCFA / mois' : 'Sur Devis'}
                 </span>
               </div>
             </div>
 
             <div className="pt-2 border-t border-white/10 text-[10px] text-slate-300 leading-relaxed space-y-1">
               <p className="font-bold text-white uppercase text-[8px] tracking-wider text-[#F5A623]">Pricing Matrix / Grille de Prix :</p>
-              <div className="grid grid-cols-2 gap-y-1 text-[9px]">
-                <span>&lt; 200 élèves :</span><span className="text-right font-semibold text-white">35 000 FCFA / mois</span>
-                <span>200 - 500 élèves :</span><span className="text-right font-semibold text-white">55 000 FCFA / mois</span>
-                <span>500 - 2 000 élèves :</span><span className="text-right font-semibold text-white">120 000 FCFA / mois</span>
-                <span>&gt; 2 000 élèves :</span><span className="text-right font-semibold text-[#F5A623]">Sur mesure</span>
-              </div>
+              <ul className="space-y-1 mt-1 opacity-90">
+                <li className="flex justify-between"><span>Essentiel (0-300)</span><span className="text-white font-bold">25 000 FCFA / mo</span></li>
+                <li className="flex justify-between"><span>Pro (301-800)</span><span className="text-white font-bold">54 000 FCFA / mo</span></li>
+                <li className="flex justify-between"><span>Premium (801-2000)</span><span className="text-white font-bold">99 000 FCFA / mo</span></li>
+                <li className="flex justify-between"><span>Entreprise (&gt;2000)</span><span className="text-white font-bold">Sur Devis</span></li>
+              </ul>
             </div>
             
             {studentCount > 2000 && (
@@ -674,6 +785,68 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setCreneauModalOpen(false)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md"
+                >
+                  Sauvegarder
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Annee Modal */}
+      {anneeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-[#1E3A5F]" />
+                <h3 className="font-bold text-[#1E3A5F] font-outfit font-black">
+                  {selectedAnnee ? 'Modifier Année' : 'Ajouter Année'}
+                </h3>
+              </div>
+              <button onClick={() => setAnneeModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg transition-colors">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAnnee} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Année Scolaire</label>
+                <input
+                  type="text"
+                  required
+                  value={aLabel}
+                  onChange={(e) => setALabel(e.target.value)}
+                  placeholder="ex: 2025-2026"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-bold text-slate-800"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="activeAnnee"
+                  checked={aActive}
+                  onChange={(e) => setAActive(e.target.checked)}
+                  className="w-4 h-4 text-[#1E3A5F] border-slate-300 rounded focus:ring-[#1E3A5F]"
+                />
+                <label htmlFor="activeAnnee" className="text-sm font-semibold text-slate-700">
+                  Définir comme année en cours
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 italic">Attention: Activer cette année désactivera automatiquement l'année précédente.</p>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAnneeModalOpen(false)}
                   className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
                 >
                   Annuler

@@ -74,21 +74,30 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
       return res.status(400).json({ message: 'Sequence ID, Subject ID, and grades list are required' });
     }
 
+    // Optimize: fetch all existing notes at once
+    const eleveIds = grades.map(g => g.eleveId).filter(Boolean);
+    const existingNotesList = await prisma.note.findMany({
+      where: {
+        eleveId: { in: eleveIds },
+        sequenceId,
+        matiereId
+      }
+    });
+
+    const existingNotesMap = new Map();
+    for (const note of existingNotesList) {
+      existingNotesMap.set(note.eleveId, note);
+    }
+
     const saved = [];
+    // We can use Promise.all to run ops concurrently, but batch them to avoid connection exhaustion
     for (const item of grades) {
       if (item.value === '' || item.value === null || item.value === undefined) continue;
 
       const val = parseFloat(item.value);
       if (isNaN(val) || val < 0 || val > 20) continue;
 
-      // Upsert grade
-      const existing = await prisma.note.findFirst({
-        where: {
-          eleveId: item.eleveId,
-          sequenceId,
-          matiereId
-        }
-      });
+      const existing = existingNotesMap.get(item.eleveId);
 
       let note;
       if (existing) {
@@ -131,6 +140,21 @@ router.post('/save-draft', auth, requireRole(['TEACHER', 'DIRECTOR']), async (re
       return res.status(400).json({ message: 'Sequence ID, Subject ID, and grades list are required' });
     }
 
+    // Optimize: fetch all existing notes at once
+    const eleveIds = grades.map(g => g.studentId).filter(Boolean);
+    const existingNotesList = await prisma.note.findMany({
+      where: {
+        eleveId: { in: eleveIds },
+        sequenceId,
+        matiereId
+      }
+    });
+
+    const existingNotesMap = new Map();
+    for (const note of existingNotesList) {
+      existingNotesMap.set(note.eleveId, note);
+    }
+
     const saved = [];
     for (const item of grades) {
       if (item.value === '' || item.value === null || item.value === undefined) continue;
@@ -138,13 +162,7 @@ router.post('/save-draft', auth, requireRole(['TEACHER', 'DIRECTOR']), async (re
       const val = parseFloat(item.value);
       if (isNaN(val) || val < 0 || val > 20) continue;
 
-      const existing = await prisma.note.findFirst({
-        where: {
-          eleveId: item.studentId,
-          sequenceId,
-          matiereId
-        }
-      });
+      const existing = existingNotesMap.get(item.studentId);
 
       let note;
       if (existing) {
@@ -185,6 +203,21 @@ router.post('/validate', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req,
       return res.status(400).json({ message: 'Sequence ID, Subject ID, and grades list are required' });
     }
 
+    // Optimize: fetch all existing notes at once
+    const eleveIds = grades.map(g => g.studentId).filter(Boolean);
+    const existingNotesList = await prisma.note.findMany({
+      where: {
+        eleveId: { in: eleveIds },
+        sequenceId,
+        matiereId
+      }
+    });
+
+    const existingNotesMap = new Map();
+    for (const note of existingNotesList) {
+      existingNotesMap.set(note.eleveId, note);
+    }
+
     const validated = [];
     for (const item of grades) {
       if (item.value === '' || item.value === null || item.value === undefined) continue;
@@ -194,13 +227,7 @@ router.post('/validate', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req,
         return res.status(400).json({ message: `Invalid grade value ${item.value} for student ID ${item.studentId}` });
       }
 
-      const existing = await prisma.note.findFirst({
-        where: {
-          eleveId: item.studentId,
-          sequenceId,
-          matiereId
-        }
-      });
+      const existing = existingNotesMap.get(item.studentId);
 
       let note;
       if (existing) {

@@ -1,7 +1,11 @@
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'edutrack_secret_key_12345';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error("Error: JWT_SECRET env variable must be set to run test_endpoints.js");
+  process.exit(1);
+}
 
 async function test() {
   console.log('--- Testing API Backend Queries ---');

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import * as XLSX from 'xlsx';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
+import { AuthContext } from '../../context/AuthContext';
 import { 
   Search, 
   Plus, 
@@ -12,18 +14,35 @@ import {
   FileText,
   Link2,
   Users,
-  CheckCircle
+  CheckCircle,
+  Camera,
+  RefreshCw,
+  AlertCircle,
+  Crown
 } from 'lucide-react';
+import SanctionsModal from '../../components/Shared/SanctionsModal';
 
 export default function StudentsPage() {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Search & Filter
+  const [sanctionsModalOpen, setSanctionsModalOpen] = useState(false);
+  const [sanctionStudent, setSanctionStudent] = useState(null);
+  
   const [search, setSearch] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+
+  const isCenseurAllowed = (classObj) => {
+    if (user.role === 'DIRECTOR') return true;
+    if (user.role === 'CENSEUR') {
+      if (!classObj) return false;
+      return classObj.censeur?.id === user.id || classObj.censeurId === user.id;
+    }
+    return false;
+  };
 
   // Modals
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -35,6 +54,30 @@ export default function StudentsPage() {
   const [newGender, setNewGender] = useState('M');
   const [newClassId, setNewClassId] = useState('');
   const [newAddress, setNewAddress] = useState('');
+  const [newDateOfBirth, setNewDateOfBirth] = useState('');
+  const [newPlaceOfBirth, setNewPlaceOfBirth] = useState('');
+  const [createPortalAccount, setCreatePortalAccount] = useState(true);
+  const [newEmail, setNewEmail] = useState('');
+
+  // Bulk transfer state
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [bulkTransferModalOpen, setBulkTransferModalOpen] = useState(false);
+  const [bulkTargetClassId, setBulkTargetClassId] = useState('');
+
+  // Filter state
+  const [selectedStatus, setSelectedStatus] = useState('');
+
+  // Edit Form state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editStudentId, setEditStudentId] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editMatricule, setEditMatricule] = useState('');
+  const [editGender, setEditGender] = useState('M');
+  const [editClassId, setEditClassId] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editDateOfBirth, setEditDateOfBirth] = useState('');
+  const [editPlaceOfBirth, setEditPlaceOfBirth] = useState('');
+  const [editStatus, setEditStatus] = useState('ACTIVE');
 
   // CSV Import state
   const [csvText, setCsvText] = useState('');
@@ -61,6 +104,10 @@ export default function StudentsPage() {
   const [selectedParentId, setSelectedParentId] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedRelationship, setSelectedRelationship] = useState('GUARDIAN');
+
+  // Photo upload
+  const photoInputRef = useRef(null);
+  const [uploadingPhotoId, setUploadingPhotoId] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -181,25 +228,80 @@ export default function StudentsPage() {
 
   const handleAddStudent = async (e) => {
     e.preventDefault();
+    if (!newName || !newClassId) {
+      alert('Name and Class are required');
+      return;
+    }
     try {
-      const newStudent = await apiFetch('/eleves', {
+      const added = await apiFetch('/eleves', {
         method: 'POST',
         body: {
           name: newName,
           matricule: newMatricule,
           gender: newGender,
           classId: newClassId,
-          address: newAddress
+          address: newAddress,
+          dateOfBirth: newDateOfBirth || null,
+          placeOfBirth: newPlaceOfBirth || null,
+          createPortalAccount,
+          email: newEmail
         }
       });
-      setStudents([newStudent, ...students]);
+      setStudents(prev => [added, ...prev]);
       setAddModalOpen(false);
-      // Reset form
       setNewName('');
       setNewMatricule('');
+      setNewGender('M');
+      setNewClassId(classes.length > 0 ? classes[0].id : '');
       setNewAddress('');
-    } catch (e) {
-      alert(e.message || 'Failed to add student');
+      setNewDateOfBirth('');
+      setNewPlaceOfBirth('');
+      setNewEmail('');
+      setCreatePortalAccount(true);
+      alert('Student added successfully!');
+    } catch (err) {
+      alert(err.message || 'Error adding student');
+    }
+  };
+
+  const openEditStudentModal = (student) => {
+    setEditStudentId(student.id);
+    setEditName(student.name);
+    setEditMatricule(student.matricule);
+    setEditGender(student.gender || 'M');
+    setEditClassId(student.classId);
+    setEditAddress(student.address || '');
+    setEditDateOfBirth(student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '');
+    setEditPlaceOfBirth(student.placeOfBirth || '');
+    setEditStatus(student.status || 'ACTIVE');
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateStudent = async (e) => {
+    e.preventDefault();
+    if (!editName || !editMatricule || !editClassId) {
+      alert('Name, Matricule, and Class are required');
+      return;
+    }
+    try {
+      const updated = await apiFetch(`/eleves/${editStudentId}`, {
+        method: 'PUT',
+        body: {
+          name: editName,
+          matricule: editMatricule,
+          gender: editGender,
+          classId: editClassId,
+          address: editAddress,
+          dateOfBirth: editDateOfBirth || null,
+          placeOfBirth: editPlaceOfBirth || null,
+          status: editStatus
+        }
+      });
+      setStudents(prev => prev.map(s => s.id === editStudentId ? updated : s));
+      setEditModalOpen(false);
+      alert('Student updated successfully!');
+    } catch (err) {
+      alert(err.message || 'Error updating student');
     }
   };
 
@@ -219,6 +321,51 @@ export default function StudentsPage() {
     }
   };
 
+  const handleExcelUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const csv = XLSX.utils.sheet_to_csv(ws);
+        setCsvText(csv);
+        alert('Fichier Excel importé avec succès ! Vérifiez les données ci-dessous avant de cliquer sur "Import Students".');
+      } catch (err) {
+        console.error(err);
+        alert('Erreur lors de la lecture du fichier Excel.');
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const handleBulkTransfer = async (e) => {
+    e.preventDefault();
+    if (!bulkTargetClassId || selectedStudents.length === 0) {
+      alert('Veuillez sélectionner une classe de destination et au moins un élève.');
+      return;
+    }
+    try {
+      const res = await apiFetch('/eleves/bulk-transfer', {
+        method: 'POST',
+        body: {
+          studentIds: selectedStudents,
+          targetClassId: bulkTargetClassId
+        }
+      });
+      alert(res.message);
+      setBulkTransferModalOpen(false);
+      setSelectedStudents([]);
+      loadData();
+    } catch (e) {
+      alert(e.message || 'Erreur lors du transfert en masse');
+    }
+  };
+
   const handleDeleteStudent = async (id) => {
     if (!window.confirm('Are you sure you want to delete this student?')) return;
     try {
@@ -229,16 +376,74 @@ export default function StudentsPage() {
     }
   };
 
+  // Photo upload handler
+  const handleToggleCouncil = async (studentId, currentStatus) => {
+    try {
+      const updated = await apiFetch(`/eleves/${studentId}/council`, {
+        method: 'PATCH',
+        body: { isStudentCouncil: !currentStatus }
+      });
+      setStudents(prev => prev.map(s => s.id === studentId ? updated : s));
+      alert(t('studentCouncil.success'));
+    } catch (e) {
+      alert(e.message || 'Erreur lors de la mise à jour du statut');
+    }
+  };
+
+  const handlePhotoUpload = async (studentId, file) => {
+    if (!file) return;
+    setUploadingPhotoId(studentId);
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const token = localStorage.getItem('edutrack_token');
+      const res = await fetch(`/api/eleves/${studentId}/photo`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Upload failed');
+      }
+      const updated = await res.json();
+      setStudents(prev => prev.map(s => s.id === studentId ? updated : s));
+    } catch (e) {
+      alert(e.message || 'Failed to upload photo');
+    } finally {
+      setUploadingPhotoId(null);
+    }
+  };
+
+  const triggerPhotoInput = (studentId) => {
+    setUploadingPhotoId(studentId);
+    photoInputRef.current.click();
+  };
+
   // Filter logic
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
                           s.matricule.toLowerCase().includes(search.toLowerCase());
     const matchesClass = selectedClass ? s.classId === selectedClass : true;
-    return matchesSearch && matchesClass;
+    const matchesStatus = selectedStatus ? s.status === selectedStatus : true;
+    return matchesSearch && matchesClass && matchesStatus;
   });
 
   return (
     <div className="space-y-6">
+      {/* Hidden file input for photo uploads */}
+      <input
+        type="file"
+        ref={photoInputRef}
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files[0] && uploadingPhotoId) {
+            handlePhotoUpload(uploadingPhotoId, e.target.files[0]);
+          }
+          e.target.value = '';
+        }}
+      />
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -246,26 +451,39 @@ export default function StudentsPage() {
             {t('students.title')}
           </h1>
           <p className="text-slate-500 text-xs font-semibold">
-            View, add, and link student profiles with parent credentials
+            {t('students.subtitle')}
           </p>
         </div>
 
         {activeTab === 'students' ? (
           <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap justify-end">
-            <button
-              onClick={() => setCreateParentModalOpen(true)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all shadow-sm"
-            >
-              <UserPlus className="h-3.5 w-3.5 text-[#1E3A5F]" />
-              <span>Créer Compte Parent</span>
-            </button>
-            <button
-              onClick={() => openLinkModal()}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all shadow-sm"
-            >
-              <Link2 className="h-3.5 w-3.5 text-amber-500" />
-              <span>Lier un Parent</span>
-            </button>
+            {user.role === 'DIRECTOR' && (
+              <>
+                <button
+                  onClick={() => setCreateParentModalOpen(true)}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all shadow-sm"
+                >
+                  <UserPlus className="h-3.5 w-3.5 text-[#1E3A5F]" />
+                  <span>{t('students.createParent')}</span>
+                </button>
+                <button
+                  onClick={() => openLinkModal()}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all shadow-sm"
+                >
+                  <Link2 className="h-3.5 w-3.5 text-amber-500" />
+                  <span>{t('students.linkParent')}</span>
+                </button>
+              </>
+            )}
+            {selectedStudents.length > 0 && (
+              <button
+                onClick={() => setBulkTransferModalOpen(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all shadow-md"
+              >
+                <Users className="h-4 w-4" />
+                <span>Transférer ({selectedStudents.length})</span>
+              </button>
+            )}
             <button
               onClick={() => setImportModalOpen(true)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all shadow-sm"
@@ -283,19 +501,22 @@ export default function StudentsPage() {
           </div>
         ) : (
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={() => setCreateParentModalOpen(true)}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all shadow-sm"
-            >
-              <UserPlus className="h-4.5 w-4.5" />
-              <span>Créer Compte Parent</span>
-            </button>
+            {user.role === 'DIRECTOR' && (
+              <button
+                onClick={() => setCreateParentModalOpen(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all shadow-sm"
+              >
+                <UserPlus className="h-4.5 w-4.5" />
+                <span>{t('students.createParent')}</span>
+              </button>
+            )}
+            {/* Censeur can link parents, but only to their students (handled in modal) */}
             <button
               onClick={() => openLinkModal()}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md"
             >
               <Link2 className="h-4.5 w-4.5" />
-              <span>Lier à un élève</span>
+              <span>{t('students.linkParent')}</span>
             </button>
           </div>
         )}
@@ -311,7 +532,7 @@ export default function StudentsPage() {
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
-          🎓 Élèves
+          🎓 {t('students.tabs.students')}
         </button>
         <button
           onClick={() => {
@@ -324,9 +545,16 @@ export default function StudentsPage() {
               : 'border-transparent text-slate-400 hover:text-slate-600'
           }`}
         >
-          👨‍👩‍👧 Comptes Parents & Liaisons
+          👨‍👩‍👧 {t('students.tabs.parents')}
         </button>
       </div>
+
+      {/* Modals */}
+      <SanctionsModal 
+        isOpen={sanctionsModalOpen} 
+        onClose={() => setSanctionsModalOpen(false)} 
+        student={sanctionStudent} 
+      />
 
       {activeTab === 'students' ? (
         <>
@@ -339,7 +567,7 @@ export default function StudentsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name or matricule..."
+            placeholder={t('students.searchPlaceholder')}
             className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition-all"
           />
         </div>
@@ -351,10 +579,23 @@ export default function StudentsPage() {
             onChange={(e) => setSelectedClass(e.target.value)}
             className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition-all"
           >
-            <option value="">All Classes</option>
+            <option value="">{t('students.allClasses')}</option>
             {classes.map(c => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
+          </select>
+        </div>
+
+        {/* Status Filter */}
+        <div className="w-full md:w-40 shrink-0">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent transition-all"
+          >
+            <option value="">{t('students.allStatuses')}</option>
+            <option value="ACTIVE">{t('students.table.active') || 'Actifs'}</option>
+            <option value="INACTIVE">{t('students.table.inactive') || 'Inactifs'}</option>
           </select>
         </div>
       </div>
@@ -368,6 +609,21 @@ export default function StudentsPage() {
             <table className="w-full border-collapse text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 uppercase text-xs font-semibold tracking-wider">
                 <tr>
+                  <th className="px-6 py-4">
+                    <input 
+                      type="checkbox" 
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedStudents(filteredStudents.map(s => s.id));
+                        } else {
+                          setSelectedStudents([]);
+                        }
+                      }}
+                      checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
+                      className="rounded border-slate-300 text-[#1E3A5F] focus:ring-[#1E3A5F]"
+                    />
+                  </th>
+                  <th className="px-6 py-4">Photo</th>
                   <th className="px-6 py-4">{t('students.table.name')}</th>
                   <th className="px-6 py-4">{t('students.table.matricule')}</th>
                   <th className="px-6 py-4">{t('students.table.gender')}</th>
@@ -380,14 +636,72 @@ export default function StudentsPage() {
               <tbody className="divide-y divide-slate-100">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-10 text-center text-slate-400">
+                    <td colSpan="8" className="px-6 py-10 text-center text-slate-400">
                       No students found matching filters.
                     </td>
                   </tr>
                 ) : (
                   filteredStudents.map(student => (
                     <tr key={student.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-slate-800">{student.name}</td>
+                      <td className="px-6 py-3">
+                        <input 
+                          type="checkbox"
+                          checked={selectedStudents.includes(student.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedStudents([...selectedStudents, student.id]);
+                            } else {
+                              setSelectedStudents(selectedStudents.filter(id => id !== student.id));
+                            }
+                          }}
+                          className="rounded border-slate-300 text-[#1E3A5F] focus:ring-[#1E3A5F]"
+                        />
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="relative group">
+                          {student.photoUrl ? (
+                            <div className="relative">
+                              <img
+                                src={student.photoUrl}
+                                alt={student.name}
+                                className="w-10 h-10 rounded-xl object-cover border-2 border-slate-200 shadow-sm"
+                              />
+                              <button
+                                onClick={() => triggerPhotoInput(student.id)}
+                                className="absolute -bottom-1 -right-1 bg-[#1E3A5F] text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                title="Changer la photo"
+                              >
+                                <Camera className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => triggerPhotoInput(student.id)}
+                              className="w-10 h-10 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-[#1E3A5F] hover:border-[#1E3A5F] transition-all bg-slate-50"
+                              title="Ajouter une photo"
+                            >
+                              {uploadingPhotoId === student.id ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Camera className="h-4 w-4" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-bold text-slate-800">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-2">
+                            {student.name}
+                            {student.isStudentCouncil && (
+                              <span title={t('studentCouncil.member')} className="text-amber-500">👑</span>
+                            )}
+                          </div>
+                          <span className="text-xs font-medium text-slate-400 italic">
+                            {student.user?.email || 'Non généré'}
+                          </span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 font-mono font-semibold text-slate-500 text-xs">{student.matricule}</td>
                       <td className="px-6 py-4">{student.gender || 'N/A'}</td>
                       <td className="px-6 py-4 font-semibold text-[#1E3A5F]">{student.class?.name || 'Unassigned'}</td>
@@ -426,20 +740,45 @@ export default function StudentsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openLinkModal(student.id)}
-                          className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
-                          title="Lier un Parent"
-                        >
-                          <Link2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteStudent(student.id)}
-                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors"
-                          title="Delete Student"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        {isCenseurAllowed(student.class) && (
+                          <>
+                            <button
+                              onClick={() => { setSanctionStudent(student); setSanctionsModalOpen(true); }}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors"
+                              title="Dossier Disciplinaire"
+                            >
+                              <AlertCircle className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleToggleCouncil(student.id, student.isStudentCouncil)}
+                              className={`p-1.5 rounded-lg transition-colors ${student.isStudentCouncil ? 'text-amber-500 hover:bg-amber-50' : 'text-slate-400 hover:text-amber-500 hover:bg-slate-50'}`}
+                              title={student.isStudentCouncil ? t('studentCouncil.remove') : t('studentCouncil.nominate')}
+                            >
+                              <Crown className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => openEditStudentModal(student)}
+                              className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
+                              title="Modifier l'élève"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => openLinkModal(student.id)}
+                              className="p-1.5 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
+                              title="Lier un Parent"
+                            >
+                              <Link2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteStudent(student.id)}
+                              className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors"
+                              title="Delete Student"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -479,15 +818,35 @@ export default function StudentsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Matricule</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Matricule <span className="text-slate-400 lowercase normal-case text-[10px]">(Optionnel)</span></label>
                   <input
                     type="text"
-                    required
                     value={newMatricule}
                     onChange={(e) => setNewMatricule(e.target.value)}
-                    placeholder="MAT-2026XX"
+                    placeholder="Auto-généré si vide"
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
                   />
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={createPortalAccount}
+                      onChange={(e) => setCreatePortalAccount(e.target.checked)}
+                      className="rounded border-slate-300 text-[#1E3A5F] focus:ring-[#1E3A5F]"
+                    />
+                    <span className="text-xs font-semibold text-slate-600">Créer compte portail élève</span>
+                  </label>
+                  {createPortalAccount && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email <span className="text-slate-400 normal-case text-[10px]">(Personnalisé ou généré)</span></label>
+                      <input
+                        type="email"
+                        value={newEmail}
+                        onChange={(e) => setNewEmail(e.target.value)}
+                        placeholder="prenom.nom@ecole.com"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Gender</label>
@@ -513,6 +872,28 @@ export default function StudentsPage() {
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date de Naissance</label>
+                  <input
+                    type="date"
+                    value={newDateOfBirth}
+                    onChange={(e) => setNewDateOfBirth(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Lieu de Naissance</label>
+                  <input
+                    type="text"
+                    value={newPlaceOfBirth}
+                    onChange={(e) => setNewPlaceOfBirth(e.target.value)}
+                    placeholder="ex: Yaoundé"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -546,6 +927,133 @@ export default function StudentsPage() {
         </div>
       )}
 
+      {/* Edit Student Modal */}
+      {editModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5 text-[#1E3A5F]" />
+                <h3 className="font-bold text-[#1E3A5F] font-outfit">Modifier l'Élève</h3>
+              </div>
+              <button onClick={() => setEditModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateStudent} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nom Complet</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Matricule</label>
+                  <input
+                    type="text"
+                    required
+                    value={editMatricule}
+                    onChange={(e) => setEditMatricule(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Sexe</label>
+                  <select
+                    value={editGender}
+                    onChange={(e) => setEditGender(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  >
+                    <option value="M">Masculin (M)</option>
+                    <option value="F">Féminin (F)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Classe Affectée</label>
+                <select
+                  value={editClassId}
+                  onChange={(e) => setEditClassId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none font-bold text-[#1E3A5F]"
+                >
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Date de Naissance</label>
+                  <input
+                    type="date"
+                    value={editDateOfBirth}
+                    onChange={(e) => setEditDateOfBirth(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Lieu de Naissance</label>
+                  <input
+                    type="text"
+                    value={editPlaceOfBirth}
+                    onChange={(e) => setEditPlaceOfBirth(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Statut</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  >
+                    <option value="ACTIVE">Actif</option>
+                    <option value="INACTIVE">Inactif</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Adresse</label>
+                  <input
+                    type="text"
+                    value={editAddress}
+                    onChange={(e) => setEditAddress(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md"
+                >
+                  Sauvegarder
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* CSV Import Modal */}
       {importModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -567,7 +1075,15 @@ export default function StudentsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Paste CSV Contents</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Importer un fichier Excel (.xlsx, .xls) ou coller le CSV
+                </label>
+                <input 
+                  type="file" 
+                  accept=".xlsx, .xls, .csv" 
+                  onChange={handleExcelUpload}
+                  className="mb-3 block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#1E3A5F] file:text-white hover:file:bg-[#152943] transition-all cursor-pointer"
+                />
                 <textarea
                   required
                   rows="8"
@@ -854,6 +1370,55 @@ export default function StudentsPage() {
           </div>
         </div>
       )}
+      {/* Bulk Transfer Modal */}
+      {bulkTransferModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-amber-500" />
+                <h3 className="font-bold text-[#1E3A5F] font-outfit">Transférer ({selectedStudents.length}) élèves</h3>
+              </div>
+              <button onClick={() => setBulkTransferModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg">
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <form onSubmit={handleBulkTransfer} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Classe de destination</label>
+                <select
+                  value={bulkTargetClassId}
+                  onChange={(e) => setBulkTargetClassId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent focus:outline-none font-bold text-[#1E3A5F]"
+                  required
+                >
+                  <option value="">Sélectionner une classe...</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setBulkTransferModalOpen(false)}
+                  className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-bold transition-all"
+                >
+                  Confirmer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

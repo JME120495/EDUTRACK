@@ -38,20 +38,49 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, [token]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, schoolId = null) => {
     const data = await apiFetch('/auth/login', {
       method: 'POST',
-      body: { email, password }
+      body: { email, password, schoolId }
+    });
+    
+    if (data.action === 'SELECT_SCHOOL') {
+      return data;
+    }
+
+    localStorage.setItem('edutrack_token', data.token);
+    setToken(data.token);
+    return data.user;
+  };
+
+  const register = async (payload) => {
+    const data = await apiFetch('/auth/register', {
+      method: 'POST',
+      body: payload
     });
     localStorage.setItem('edutrack_token', data.token);
     setToken(data.token);
     return data.user;
   };
 
-  const loginParentOtp = async (phone, otpCode) => {
+  const forgotPassword = async (email) => {
+    return await apiFetch('/auth/forgot-password', {
+      method: 'POST',
+      body: { email }
+    });
+  };
+
+  const resetPassword = async (email, code, newPassword) => {
+    return await apiFetch('/auth/reset-password', {
+      method: 'POST',
+      body: { email, code, newPassword }
+    });
+  };
+
+  const loginParentOtp = async (phone, otpCode, schoolId = null) => {
     const data = await apiFetch('/auth/parent/verify-otp', {
       method: 'POST',
-      body: { phone, code: otpCode }
+      body: { phone, code: otpCode, schoolId }
     });
     localStorage.setItem('edutrack_token', data.token);
     setToken(data.token);
@@ -89,6 +118,9 @@ export function AuthProvider({ children }) {
         token,
         loading,
         login,
+        register,
+        forgotPassword,
+        resetPassword,
         loginParentOtp,
         logout,
         isAuthenticated,

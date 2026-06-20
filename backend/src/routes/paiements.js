@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../db');
 const { sendSMS, sendWhatsAppMessage } = require('../services/notifService');
-const { auth, requireRole } = require('../middlewares/authMiddleware');
+const { auth, requireRole, requirePlan } = require('../middlewares/authMiddleware');
+const { ensureParentAccess } = require('../middlewares/securityMiddleware');
+
+// Require STANDARD, PREMIUM or CUSTOM plan for all payments routes
+router.use(auth, requirePlan(['STANDARD', 'PREMIUM', 'CUSTOM']));
 
 // Get payments for all students in a class (including their unpaid balance)
 router.get('/classe/:classId', auth, async (req, res) => {
@@ -56,7 +60,8 @@ router.get('/classe/:classId', auth, async (req, res) => {
 });
 
 // Get payment history for an individual student (Parent / Director)
-router.get('/eleve/:eleveId', auth, async (req, res) => {
+// V-007 FIX: Parents can only see their own children's payments
+router.get('/eleve/:eleveId', auth, ensureParentAccess('eleveId'), async (req, res) => {
   const { eleveId } = req.params;
   try {
     const payments = await prisma.paiement.findMany({
@@ -70,7 +75,7 @@ router.get('/eleve/:eleveId', auth, async (req, res) => {
 });
 
 // Record a manual cash/bank payment (Director only)
-router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
   const { eleveId, amount, paymentMethod, transactionReference, remarks } = req.body;
   try {
     if (!eleveId || !amount || !paymentMethod) {
@@ -95,7 +100,7 @@ router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Configure tuition fees for a class (Director only)
-router.post('/frais', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/frais', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
   const { classId, anneeScolaireId, totalAmount } = req.body;
   try {
     if (!classId || !anneeScolaireId || !totalAmount) {
@@ -138,14 +143,47 @@ router.get('/frais/all', auth, async (req, res) => {
 });
 
 // Generic Webhook for Mobile Money (Wave, Orange, MTN MoMo)
+// V-020 FIX: Secured with HMAC signature verification + idempotency check
+const crypto = require('crypto');
+
 router.post('/webhook', async (req, res) => {
-  // Webhook body e.g., { event: 'payment.success', studentId: '...', amount: 25000, reference: 'TX-123', method: 'MTN_MOMO', phone: '+237xxxxxx' }
   const { event, studentId, amount, reference, method, phone, remarks } = req.body;
   try {
-    console.log(`[Payment Webhook] Received payload:`, req.body);
+    // V-020 FIX: Verify webhook signature (HMAC-SHA256)
+    const webhookSecret = process.env.WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const signature = req.headers['x-webhook-signature'] || req.headers['x-signature'];
+      if (!signature) {
+        console.warn('[Payment Webhook] Missing signature header');
+        return res.status(403).json({ message: 'Missing webhook signature' });
+      }
+      const expectedSig = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+      if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+        console.warn('[Payment Webhook] Invalid signature');
+        return res.status(403).json({ message: 'Invalid webhook signature' });
+      }
+    }
+
+    // V-021 FIX: Log only non-sensitive metadata (no body dump)
+    console.log(`[Payment Webhook] event=${event} reference=${reference} method=${method}`);
 
     if (event !== 'payment.success') {
       return res.status(200).json({ status: 'ignored', message: 'Not a success event' });
+    }
+
+    if (!reference) {
+      return res.status(400).json({ message: 'Transaction reference is required' });
+    }
+
+    // V-020 FIX: Idempotency check — prevent duplicate processing
+    const existingPayment = await prisma.paiement.findFirst({
+      where: { transactionReference: reference }
+    });
+    if (existingPayment) {
+      return res.status(200).json({ status: 'already_processed', message: 'Payment already recorded' });
     }
 
     const student = await prisma.eleve.findUnique({
@@ -156,12 +194,18 @@ router.post('/webhook', async (req, res) => {
       return res.status(404).json({ message: 'Student not found' });
     }
 
+    // Validate amount is positive
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid payment amount' });
+    }
+
     const payment = await prisma.paiement.create({
       data: {
         eleveId: studentId,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         paymentMethod: method || 'MOBILE_MONEY',
-        transactionReference: reference || `MOB-${Date.now()}`,
+        transactionReference: reference,
         status: 'COMPLETED',
         payerPhone: phone,
         remarks: remarks || 'Mobile Payment Webhook Success'
@@ -177,20 +221,84 @@ router.post('/webhook', async (req, res) => {
     for (const link of parentLinks) {
       if (link.parent.phone) {
         const msg = link.parent.language === 'FR'
-          ? `EduTrack: Paiement mobile reçu de ${amount} FCFA pour l'élève ${student.name}. Réf: ${payment.transactionReference}.`
-          : `EduTrack: Mobile payment of ${amount} FCFA received for student ${student.name}. Ref: ${payment.transactionReference}.`;
+          ? `EduTrack: Paiement mobile reçu de ${parsedAmount} FCFA pour l'élève ${student.name}. Réf: ${payment.transactionReference}.`
+          : `EduTrack: Mobile payment of ${parsedAmount} FCFA received for student ${student.name}. Ref: ${payment.transactionReference}.`;
         await sendSMS(link.parent.phone, msg);
       }
     }
 
-    res.json({ status: 'processed', payment });
+    res.json({ status: 'processed', paymentId: payment.id });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Payment Webhook] Error:', err);
+    res.status(500).json({ message: 'Webhook processing error' });
+  }
+});
+
+// Simulate payment (for Parent Portal) - No HMAC signature needed, but requires auth
+router.post('/simulate', auth, async (req, res) => {
+  const { event, studentId, amount, reference, method, phone, remarks } = req.body;
+  try {
+    if (event !== 'payment.success') {
+      return res.status(200).json({ status: 'ignored', message: 'Not a success event' });
+    }
+    if (!reference) {
+      return res.status(400).json({ message: 'Transaction reference is required' });
+    }
+
+    const existingPayment = await prisma.paiement.findFirst({
+      where: { transactionReference: reference }
+    });
+    if (existingPayment) {
+      return res.status(200).json({ status: 'already_processed', message: 'Payment already recorded' });
+    }
+
+    const student = await prisma.eleve.findUnique({
+      where: { id: studentId }
+    });
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid payment amount' });
+    }
+
+    const payment = await prisma.paiement.create({
+      data: {
+        eleveId: studentId,
+        amount: parsedAmount,
+        paymentMethod: method || 'MOBILE_MONEY',
+        transactionReference: reference,
+        status: 'COMPLETED',
+        payerPhone: phone,
+        remarks: remarks || 'Mobile Payment Simulated Success'
+      }
+    });
+
+    const parentLinks = await prisma.parentEleve.findMany({
+      where: { eleveId: studentId },
+      include: { parent: true }
+    });
+
+    for (const link of parentLinks) {
+      if (link.parent.phone) {
+        const msg = link.parent.language === 'FR'
+          ? `EduTrack: Paiement mobile reçu de ${parsedAmount} FCFA pour l'élève ${student.name}. Réf: ${payment.transactionReference}.`
+          : `EduTrack: Mobile payment of ${parsedAmount} FCFA received for student ${student.name}. Ref: ${payment.transactionReference}.`;
+        await sendSMS(link.parent.phone, msg);
+      }
+    }
+
+    res.json({ status: 'processed', paymentId: payment.id });
+  } catch (err) {
+    console.error('[Payment Simulate] Error:', err);
+    res.status(500).json({ message: 'Simulation processing error' });
   }
 });
 
 // Trigger unpaid fee reminders (Director only)
-router.post('/unpaid-alerts', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/unpaid-alerts', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
   const { classId } = req.body;
   try {
     if (!classId) {
@@ -249,21 +357,35 @@ router.post('/unpaid-alerts', auth, requireRole(['DIRECTOR']), async (req, res) 
 });
 
 // Send a single custom reminder (individual)
-router.post('/send-reminder', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/send-reminder', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
   const { phone, message } = req.body;
   try {
     if (!phone || !message) {
       return res.status(400).json({ message: 'Phone and message are required' });
     }
+
+    // Create an internal message
+    const parent = await prisma.user.findFirst({ where: { phone, role: 'PARENT' } });
+    if (parent) {
+      await prisma.message.create({
+        data: {
+          senderId: req.user.id,
+          receiverId: parent.id,
+          title: 'Alerte Scolarité',
+          content: message
+        }
+      });
+    }
+
     const result = await sendWhatsAppMessage(phone, message);
-    res.json(result);
+    res.json({ ...result, internalMessageSent: !!parent });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // Trigger reminders to ALL parents with unpaid tuition in the entire school
-router.post('/send-unpaid-reminders-all', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/send-unpaid-reminders-all', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
   try {
     const activeYear = await prisma.anneeScolaire.findFirst({
       where: { schoolId: req.user.schoolId, active: true }
@@ -337,7 +459,7 @@ router.post('/send-unpaid-reminders-all', auth, requireRole(['DIRECTOR']), async
 });
 
 // Broadcast custom announcement message to all parents in the school
-router.post('/broadcast-announcement', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/broadcast-announcement', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
   const { message } = req.body;
   if (!message || message.trim() === '') {
     return res.status(400).json({ message: 'Message content is required' });

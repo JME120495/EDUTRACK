@@ -10,11 +10,41 @@
     "bulletins": "Bulletins",
     "payments": "Paiements & Scolarité",
     "payroll": "Paie Enseignants",
+    "teacherPayroll": "Ma Paie",
     "settings": "Paramètres École",
     "logout": "Déconnexion",
     "portalParent": "Espace Parent",
     "portalTeacher": "Espace Enseignant",
-    "portalDirector": "Espace Direction"
+    "portalDirector": "Espace Direction",
+    "hr": "Ressources Humaines",
+    "documents": "Documents & Badges"
+  },
+  "teachers": {
+    "title": "Gestion des Enseignants",
+    "subtitle": "Gérez les comptes des enseignants titulaires et vacataires et affectez-les aux matières par classe",
+    "createBtn": "Créer Compte Enseignant",
+    "assignBtn": "Affecter Enseignant",
+    "tabs": {
+      "list": "Liste des Enseignants",
+      "assignments": "Affectations des Matières"
+    },
+    "total": "Total Enseignants",
+    "searchPlaceholder": "Rechercher par nom ou numéro de téléphone...",
+    "table": {
+      "name": "Nom de l'Enseignant",
+      "phone": "Téléphone (Login)",
+      "email": "Email",
+      "date": "Date d'inscription",
+      "actions": "Actions"
+    },
+    "empty": "Aucun enseignant trouvé."
+  },
+  "library": {
+    "title": "Bibliothèque & Emprunts",
+    "subtitle": "Gérez le stock de romans/livres de lecture et suivez les prêts aux élèves",
+    "addBtn": "Ajouter un Livre",
+    "searchPlaceholder": "Rechercher par titre, auteur...",
+    "empty": "Aucun livre trouvé."
   },
   "auth": {
     "title": "Connexion EduTrack",
@@ -23,7 +53,7 @@
     "password": "Mot de passe",
     "loginBtn": "Se Connecter",
     "parentLoginTab": "Parent (Accès SMS)",
-    "staffLoginTab": "Direction / Enseignant",
+    "staffLoginTab": "Personnel / Élève",
     "phone": "Numéro de Téléphone (ex: +237...)",
     "requestOtp": "Demander le code de connexion",
     "enterOtp": "Saisir le code OTP reçu par SMS",
@@ -49,6 +79,16 @@
   },
   "students": {
     "title": "Gestion des Élèves",
+    "subtitle": "Consultez, ajoutez et liez les profils d'élèves avec les identifiants parents",
+    "createParent": "Créer Compte Parent",
+    "linkParent": "Lier un Parent",
+    "allClasses": "Toutes les classes",
+    "allStatuses": "Tous les statuts",
+    "searchPlaceholder": "Rechercher par nom ou matricule...",
+    "tabs": {
+      "students": "Élèves",
+      "parents": "Comptes Parents & Liaisons"
+    },
     "add": "Ajouter un Élève",
     "import": "Importer depuis CSV",
     "table": {
@@ -82,14 +122,44 @@
   },
   "grades": {
     "title": "Saisie des Notes Séquentielles",
+    "entryTitle": "Saisie Séquentielle des Notes",
+    "entrySubtitle": "Saisissez les notes et appréciations comportementales par classe, matière et séquence",
     "draftSaved": "Brouillon sauvegardé !",
     "validated": "Notes validées et verrouillées !",
     "modeOffline": "Mode Hors-ligne (Modifications locales temporaires)",
+    "status": {
+      "online": "En ligne"
+    },
     "saveDraft": "Sauvegarder Brouillon",
+    "btn": {
+      "saveDraft": "Enregistrer Brouillon",
+      "submitFinal": "Validation Finale"
+    },
     "validate": "Valider définitivement",
     "student": "Élève",
     "value": "Note / 20",
-    "behavior": "Comportement"
+    "behavior": "Comportement",
+    "filters": {
+      "class": "CLASSE",
+      "subject": "MATIÈRE",
+      "add": "+ AJOUTER",
+      "sequence": "SÉQUENCE ACADÉMIQUE"
+    },
+    "progress": {
+      "title": "Progression de Saisie",
+      "graded": "Élèves Notés"
+    },
+    "table": {
+      "student": "Élève",
+      "matricule": "Matricule",
+      "grade": "Note / 20",
+      "remarks": "Appréciations",
+      "status": "Statut",
+      "chooseRemark": "-- Choisir remarque --"
+    },
+    "statusLabel": {
+      "draft": "BROUILLON"
+    }
   },
   "bulletins": {
     "title": "Génération de Bulletins",
@@ -106,17 +176,50 @@
     "signed": "Signé électroniquement",
     "signDirector": "Signer en tant que Directeur",
     "signTeacher": "Signer en tant que Prof. Principal",
-    "signParent": "Signer en tant que Parent"
+    "signParent": "Signer en tant que Parent",
+    "generateAnnual": "Générer Bulletins Annuels",
+    "sequential": "Séquentiel",
+    "trimestrial": "Trimestriel",
+    "annual": "Annuel",
+    "editCouncil": "Modifier Décisions/Conduite",
+    "modalTitle": "Conseil de Classe & Comportement",
+    "conduct": "Conduite / Comportement",
+    "disciplinaryAction": "Sanctions Disciplinaires (ex: avertissement, blâme, exclusion)",
+    "classCouncilDecision": "Décision du Conseil (ex: Félicitations, Encouragements, Passe)"
   },
   "payments": {
     "title": "Suivi Financier",
+    "subtitle": "Gestion de scolarité, plans d'échéance, moratoires et rapports financiers",
     "record": "Enregistrer un Paiement",
     "tuitionSetup": "Configurer les Frais par Classe",
+    "tabs": {
+      "tuition": "Recouvrement Scolarité",
+      "plans": "Plans & Tranches",
+      "moratoriums": "Moratoires",
+      "cashbook": "Journal de Caisse",
+      "reports": "Synthèse & Rapports"
+    },
+    "summary": {
+      "configuredFees": "Frais configurés pour la classe :"
+    },
+    "btn": {
+      "editFees": "Modifier les Frais",
+      "sendReminders": "Envoyer Relances Classe",
+      "addPayment": "+ Saisir Versement"
+    },
+    "stats": {
+      "expected": "Attendu dans la classe",
+      "collected": "Encaissé",
+      "rate": "Taux de recouvrement"
+    },
     "table": {
       "student": "Élève",
+      "matricule": "Matricule",
       "paid": "Payé (FCFA)",
       "balance": "Reste à payer (FCFA)",
-      "status": "Statut"
+      "remaining": "Reste",
+      "status": "Statut",
+      "actions": "Actions"
     },
     "statusPaid": "Scolarité Réglée",
     "statusPartial": "Paiement Partiel",
@@ -129,7 +232,60 @@
     "save": "Enregistrer les modifications"
   },
   "billing": {
-    "title": "Abonnement & Facturation"
+    "title": "Abonnement & Facturation",
+    "subtitle": "Gérez votre abonnement EduTrack et découvrez nos offres.",
+    "chooseOffer": "Choisissez l'offre adaptée à votre établissement",
+    "pricingDesc": "Une tarification transparente et adaptée au contexte africain.",
+    "specialOffer": "Offre Spéciale : Payez 10 mois, obtenez l'année complète (12 mois) !",
+    "demoBanner": "Démo Gratuite : 2 mois gratuits à partir du 10 Septembre avec accès au Full Options d'EduTrack !",
+    "month": "/mois",
+    "btnContact": "Nous Contacter",
+    "btnChangePlan": "Changer de Plan",
+    "btnCurrentPlan": "Plan Actuel ✓",
+    "btnStartTrial": "Commencer l'Essai",
+    "btnUpgrade": "Mettre à niveau",
+    "btnContactSales": "Contacter les Ventes",
+    "footerSetup": "*Frais d'installation (Setup) : <strong>50 000 FCFA</strong> la première année (configuration, import des données, formation initiale).",
+    "footerHelp": "Besoin d'aide pour choisir ? Contactez-nous sur WhatsApp : <strong>+237 6 91 00 33 92</strong> ou <strong>+237 6 81 62 55 20</strong>",
+    "packs": {
+      "essential": {
+        "name": "Essentiel",
+        "desc": "Démarrage rapide pour les petits établissements.",
+        "f1": "Jusqu'à 300 élèves",
+        "f2": "Toutes les fonctionnalités",
+        "f3": "Tous les rôles inclus",
+        "f4": "Hébergement cloud",
+        "f5": "Support de base"
+      },
+      "standard": {
+        "popular": "Le plus populaire",
+        "name": "Pro",
+        "desc": "L'idéal pour impliquer les parents et suivre les paiements.",
+        "f1": "De 301 à 800 élèves",
+        "f2": "Toutes les fonctionnalités",
+        "f3": "Tous les rôles inclus",
+        "f4": "Hébergement cloud",
+        "f5": "Support prioritaire"
+      },
+      "premium": {
+        "name": "Premium",
+        "desc": "Pour les grands groupes et l'automatisation totale.",
+        "f1": "De 801 à 2000 élèves",
+        "f2": "Toutes les fonctionnalités",
+        "f3": "Tous les rôles inclus",
+        "f4": "Hébergement cloud",
+        "f5": "Accompagnement dédié"
+      },
+      "custom": {
+        "name": "Sur Mesure",
+        "desc": "Au-delà de 2000 élèves, réseaux d'écoles ou besoins spécifiques.",
+        "price": "Sur Devis",
+        "f1": "Marque Blanche (votre logo/domaine)",
+        "f2": "Serveur dédié exclusif",
+        "f3": "Intégration comptable sur demande",
+        "f4": "Formation sur site"
+      }
+    }
   },
   "absences": {
     "title": "Registre des Absences & Appel",
@@ -159,5 +315,167 @@
     },
     "configure": "Configurer la Paie",
     "save": "Enregistrer les modifications"
+  },
+  "hr": {
+    "title": "Ressources Humaines",
+    "subtitle": "Gestion du personnel, contrats, avances sur salaire et congés",
+    "tabs": {
+      "staff": "Personnel & Contrats",
+      "payslips": "Bulletins de Paie",
+      "advances": "Avances Salaire",
+      "leaves": "Congés & Absences"
+    },
+    "contracts": {
+      "add": "Créer un Contrat",
+      "type": "Type de contrat",
+      "baseSalary": "Salaire de base (FCFA)",
+      "hourlyRate": "Taux horaire (FCFA)",
+      "startDate": "Date de début",
+      "endDate": "Date de fin (optionnel)"
+    },
+    "advances": {
+      "request": "Demander une Avance",
+      "amount": "Montant (FCFA)",
+      "month": "Mois de retenue",
+      "year": "Année de retenue",
+      "status": "Statut",
+      "repaid": "Remboursé"
+    },
+    "leaves": {
+      "request": "Demander un Congé",
+      "type": "Type de congé",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "reason": "Motif"
+    },
+    "payroll": {
+      "generate": "Générer la paie du mois",
+      "payslips": "Bulletins de paie générés",
+      "netSalary": "Net à payer",
+      "deductions": "Retenues",
+      "bonuses": "Primes",
+      "advancesDeducted": "Avance déduite",
+      "payBtn": "Marquer comme payé"
+    }
+  },
+  "documents": {
+    "title": "Documents & Badges",
+    "subtitle": "Impression en masse de cartes d'accès avec QR codes et attestations d'étudiants",
+    "tabs": {
+      "templates": "Modèles d'Attestations",
+      "generate": "Générer Attestation",
+      "cards": "Cartes & Badges"
+    },
+    "templates": {
+      "add": "Créer un Modèle",
+      "title": "Titre du document",
+      "content": "Contenu du document (placeholders: {NOM_ELEVE}, {CLASSE}, {MATRICULE}, {ANNEE_SCOLAIRE}, {DATE_JOUR})",
+      "variablesHelp": "Balises autorisées: {NOM_ELEVE}, {CLASSE}, {MATRICULE}, {DATE_NAISSANCE}, {ANNEE_SCOLAIRE}, {DATE_JOUR}"
+    },
+    "generate": {
+      "selectTemplate": "Choisir un modèle",
+      "selectStudent": "Choisir un élève",
+      "customContent": "Texte personnalisé (facultatif)",
+      "btn": "Générer le PDF"
+    },
+    "cards": {
+      "selectClass": "Sélectionner une classe",
+      "studentCardsBtn": "Télécharger Grille Badges Élèves (A4)",
+      "parentCardsBtn": "Télécharger Grille Badges Parents (A4)"
+    }
+  },
+  "messages": {
+    "title": "Messagerie",
+    "inbox": "Boîte de réception",
+    "newMessage": "Nouveau Message",
+    "selectAll": "Sélectionner Tous",
+    "sendMessageTo": "Envoyer un message à",
+    "noMessages": "Aucun message reçu",
+    "writeMessage": "Écrivez votre message ici...",
+    "send": "Envoyer"
+  },
+  "portal": {
+    "student": {
+      "todayClasses": "Cours d'Aujourd'hui",
+      "noClasses": "Aucun cours prévu aujourd'hui.",
+      "discipline": "Discipline & Absences",
+      "absences": "Absences",
+      "sanctions": "Sanctions",
+      "justified": "Justifiée",
+      "unjustified": "Non justifiée",
+      "noAbsences": "Aucune absence",
+      "noSanctions": "Aucune sanction"
+    },
+    "parent": {
+      "linkedChildren": "Enfants Liés",
+      "reportCards": "Carnet / Bulletins",
+      "timetable": "Emploi du Temps",
+      "payments": "Paiements Scolarité",
+      "onlinePayment": "Paiement en Ligne",
+      "signReportCard": "Signer Bulletin",
+      "signedSuccess": "Bulletin signé électroniquement avec succès !"
+    }
+  },
+  "studentCouncil": {
+    "nominate": "Nommer au Bureau des Élèves",
+    "remove": "Retirer du Bureau des Élèves",
+    "member": "Membre du Bureau des Élèves",
+    "success": "Le statut de membre du bureau a été mis à jour."
+  },
+  "supportStaff": {
+    "title": "Personnel d'Appui",
+    "subtitle": "Gérez les gardiens, femmes de ménage, secrétaires et autres employés d'appui",
+    "createBtn": "Ajouter du Personnel",
+    "total": "Total Personnel",
+    "searchPlaceholder": "Rechercher par nom ou téléphone...",
+    "table": {
+      "name": "Nom",
+      "profession": "Profession / Poste",
+      "phone": "Téléphone",
+      "email": "Email",
+      "date": "Date d'ajout",
+      "actions": "Actions"
+    },
+    "empty": "Aucun personnel d'appui trouvé.",
+    "addModal": {
+      "title": "Ajouter du personnel d'appui",
+      "nameLabel": "Nom complet",
+      "professionLabel": "Poste (ex: Gardien, Femme de ménage)",
+      "phoneLabel": "Téléphone",
+      "emailLabel": "Email (Optionnel)",
+      "passwordLabel": "Mot de passe par défaut"
+    },
+    "editModal": {
+      "title": "Modifier les informations",
+      "nameLabel": "Nom complet",
+      "professionLabel": "Poste",
+      "phoneLabel": "Téléphone",
+      "emailLabel": "Email"
+    }
+  },
+  "landing": {
+    "heroTitle": "Digitalisez entièrement la gestion de votre établissement scolaire.",
+    "heroSubtitle": "Permettez aux parents de suivre la scolarité de leurs enfants en temps réel. Conçu spécifiquement pour les écoles privées d'Afrique.",
+    "btnDemo": "Demander une démo gratuite",
+    "btnPricing": "Voir les tarifs",
+    "problemTitle": "Vos défis quotidiens ? Nous les connaissons.",
+    "problemDesc": "Gestion papier interminable, bulletins remplis à la main avec risques d'erreurs, parents sans aucune visibilité sur la scolarité de leurs enfants, suivi des paiements de scolarité fastidieux, et communication école-parents compliquée et coûteuse (SMS payants).<br/><br/>Il est temps de passer à la vitesse supérieure.",
+    "featuresTitle": "Une solution complète et intégrée",
+    "featuresBadge": "Suivi en temps réel & Messagerie inclus dans TOUS les plans !",
+    "pricingTitle": "Des tarifs adaptés à votre école",
+    "monthly": "Mensuel",
+    "annual": "Annuel",
+    "saveMonths": "Économisez 2 mois",
+    "whyTitle": "Pourquoi choisir EduTrack ?",
+    "whySubtitle": "L'alternative locale idéale aux solutions européennes comme Pronote.",
+    "testimonialsTitle": "Ils nous font confiance",
+    "faqTitle": "Questions Fréquentes",
+    "ctaTitle": "Prêt à moderniser votre école ?",
+    "ctaSubtitle": "Laissez-nous vos coordonnées, notre équipe vous contactera rapidement pour une démonstration gratuite.",
+    "footerDesc": "Le système de gestion scolaire bilingue n°1 conçu pour les écoles privées d'Afrique.",
+    "quickLinks": "Liens Rapides",
+    "contact": "Contact",
+    "followUs": "Suivez-nous",
+    "login": "Connexion"
   }
 }

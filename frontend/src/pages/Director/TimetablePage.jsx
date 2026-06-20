@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
-import { Calendar, Plus, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Calendar, Plus, Trash2, X, AlertTriangle, RefreshCw } from 'lucide-react';
+import { AuthContext } from '../../context/AuthContext';
 
 const DAYS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
 
 export default function TimetablePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { user } = useContext(AuthContext);
+  const isDirector = user?.role === 'DIRECTOR';
   const [classes, setClasses] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [creneaux, setCreneaux] = useState([]);
@@ -26,6 +29,7 @@ export default function TimetablePage() {
   const [matiereId, setMatiereId] = useState('');
   const [room, setRoom] = useState('');
   const [error, setError] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     loadInitialData();
@@ -95,7 +99,8 @@ export default function TimetablePage() {
       setTimetable([...timetable, newSession]);
       setModalOpen(false);
     } catch (err) {
-      setError(err.message || 'Double-booking conflict detected!');
+      const msg = err.data?.messageFr || err.data?.messageEn || err.message || 'Conflit détecté !';
+      setError(msg);
     }
   };
 
@@ -106,6 +111,27 @@ export default function TimetablePage() {
       setTimetable(timetable.filter(s => s.id !== id));
     } catch (e) {
       alert(e.message || 'Failed to delete session');
+    }
+  };
+
+  const handleAutoGenerate = async () => {
+    const confirmMsg = i18n.language === 'FR' 
+      ? "Êtes-vous sûr de vouloir générer automatiquement l'emploi du temps pour TOUTES les classes ? Cela écrasera les emplois du temps existants." 
+      : "Are you sure you want to automatically generate the timetable for ALL classes? This will overwrite the existing timetables.";
+      
+    if (!window.confirm(confirmMsg)) return;
+
+    setGenerating(true);
+    try {
+      const result = await apiFetch('/timetable/generate', { method: 'POST' });
+      alert(i18n.language === 'FR' ? result.messageFr : result.messageEn);
+      if (selectedClassId) {
+        loadTimetable(selectedClassId);
+      }
+    } catch (e) {
+      alert(e.message || "Failed to generate timetable");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -127,17 +153,30 @@ export default function TimetablePage() {
           </p>
         </div>
 
-        {/* Class Selector */}
-        <div className="w-full sm:w-60">
-          <select
-            value={selectedClassId}
-            onChange={(e) => setSelectedClassId(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-200 bg-white rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none focus:border-transparent font-bold transition-all shadow-sm text-[#1E3A5F]"
-          >
-            {classes.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center">
+          {isDirector && (
+            <button
+              onClick={handleAutoGenerate}
+              disabled={generating}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md disabled:opacity-50 w-full sm:w-auto"
+            >
+              <RefreshCw className={`h-4.5 w-4.5 ${generating ? 'animate-spin' : ''}`} />
+              <span>{i18n.language === 'FR' ? 'Générer Auto' : 'Auto-Generate'}</span>
+            </button>
+          )}
+
+          {/* Class Selector */}
+          <div className="w-full sm:w-48">
+            <select
+              value={selectedClassId}
+              onChange={(e) => setSelectedClassId(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-slate-200 bg-white rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none focus:border-transparent font-bold transition-all shadow-sm text-[#1E3A5F]"
+            >
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

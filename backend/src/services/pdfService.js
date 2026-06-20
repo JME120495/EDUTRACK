@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const prisma = require('../db');
 
+
 function ensureDirectoryExistence(filePath) {
   const dirname = path.dirname(filePath);
   if (fs.existsSync(dirname)) {
@@ -51,6 +52,9 @@ async function generateBulletinPDF(bulletinId) {
                 include: { school: true }
               }
             }
+          },
+          sanctions: {
+            orderBy: { date: 'desc' }
           }
         }
       },
@@ -63,6 +67,15 @@ async function generateBulletinPDF(bulletinId) {
 
   if (!bulletin) throw new Error("Bulletin not found");
 
+  const teacherAssignments = await prisma.enseignantMatiereClasse.findMany({
+    where: { classId: bulletin.eleve.classId },
+    include: { teacher: true }
+  });
+  const teacherMap = {};
+  teacherAssignments.forEach(assignment => {
+    teacherMap[assignment.matiereId] = assignment.teacher.name;
+  });
+
   const studentCount = await prisma.eleve.count({
     where: { classId: bulletin.eleve.classId, status: "ACTIVE" }
   });
@@ -74,10 +87,29 @@ async function generateBulletinPDF(bulletinId) {
   // Fetch the school logo buffer asynchronously before rendering the PDF kit document
   const logoBuffer = await getImageBuffer(school.logo);
 
-  return new Promise((resolve, reject) => {
+  // Load student photo from disk if available
+  let studentPhotoPath = null;
+  if (bulletin.eleve.photoUrl) {
+    const photoAbsPath = path.join(__dirname, '..', '..', 'public', bulletin.eleve.photoUrl);
+    if (fs.existsSync(photoAbsPath)) {
+      studentPhotoPath = photoAbsPath;
+    }
+  }
+
+  return new Promise(async (resolve, reject) => {
     const doc = new PDFDocument({ size: 'A4', margin: 30 });
     const writeStream = fs.createWriteStream(targetPath);
     doc.pipe(writeStream);
+
+    writeStream.on('finish', () => {
+      resolve(`/bulletins/${bulletin.id}.pdf`);
+    });
+
+    writeStream.on('error', (err) => {
+      reject(err);
+    });
+
+
 
     // Color Palette from School settings
     const primaryColor = school.pdfPrimaryColor || '#1E3A5F';
@@ -125,7 +157,9 @@ async function generateBulletinPDF(bulletinId) {
 
     const titleText = bulletin.type === 'SEQUENCE' 
       ? bulletin.sequence.name.toUpperCase() 
-      : `TRIMESTRE ${bulletin.term}`;
+      : bulletin.type === 'ANNUAL'
+        ? 'BULLETIN ANNUEL'
+        : `TRIMESTRE ${bulletin.term}`;
 
     doc.fillColor('#FFFFFF')
        .fontSize(9)
@@ -135,11 +169,45 @@ async function generateBulletinPDF(bulletinId) {
 
     doc.moveDown(2);
 
-    // 3. Student & Class Details block
+    // 3. Student & Class Details block (with photo)
     const studentInfoY = 90;
+    const infoBlockHeight = 70;
+    const photoSize = 58;
+    const photoX = doc.page.width - 35 - photoSize - 10;
+
     doc.fillColor(lightGrey)
-       .rect(35, studentInfoY, doc.page.width - 70, 65)
+       .rect(35, studentInfoY, doc.page.width - 70, infoBlockHeight)
        .fill();
+
+    // Student photo (right-aligned inside info block)
+    if (studentPhotoPath) {
+      try {
+        // Photo border frame
+        doc.save();
+        doc.rect(photoX - 2, studentInfoY + 5, photoSize + 4, photoSize + 4)
+           .lineWidth(1.5)
+           .stroke(primaryColor);
+        doc.image(studentPhotoPath, photoX, studentInfoY + 7, {
+          fit: [photoSize, photoSize],
+          align: 'center',
+          valign: 'center'
+        });
+        doc.restore();
+      } catch (photoErr) {
+        console.error('Error drawing student photo in PDF:', photoErr);
+      }
+    } else {
+      // Placeholder silhouette box
+      doc.save();
+      doc.rect(photoX - 2, studentInfoY + 5, photoSize + 4, photoSize + 4)
+         .lineWidth(0.5)
+         .stroke('#CCCCCC');
+      doc.fillColor('#DDDDDD')
+         .fontSize(8)
+         .font('Helvetica')
+         .text('PHOTO', photoX + 12, studentInfoY + 30);
+      doc.restore();
+    }
 
     doc.fillColor(primaryColor)
        .fontSize(10)
@@ -148,23 +216,23 @@ async function generateBulletinPDF(bulletinId) {
        .fillColor(darkGrey)
        .font('Helvetica-Bold')
        .fontSize(11)
-       .text(bulletin.eleve.name, 45, studentInfoY + 20)
+       .text(bulletin.eleve.name, 45, studentInfoY + 22)
        .fontSize(9)
        .font('Helvetica')
-       .text(`Matricule: ${bulletin.eleve.matricule}`, 45, studentInfoY + 35)
-       .text(`Né(e) le / DOB: ${bulletin.eleve.dateOfBirth ? new Date(bulletin.eleve.dateOfBirth).toLocaleDateString() : 'N/A'}`, 45, studentInfoY + 48);
+       .text(`Matricule: ${bulletin.eleve.matricule}`, 45, studentInfoY + 38)
+       .text(`Né(e) le / DOB: ${bulletin.eleve.dateOfBirth ? new Date(bulletin.eleve.dateOfBirth).toLocaleDateString() : 'N/A'}`, 45, studentInfoY + 51);
 
     doc.fillColor(primaryColor)
        .fontSize(10)
        .font('Helvetica-Bold')
-       .text("CLASSE / CLASS:", 350, studentInfoY + 8)
+       .text("CLASSE / CLASS:", 280, studentInfoY + 8)
        .fillColor(darkGrey)
        .fontSize(11)
-       .text(bulletin.eleve.class.name, 350, studentInfoY + 20)
+       .text(bulletin.eleve.class.name, 280, studentInfoY + 22)
        .fontSize(9)
        .font('Helvetica')
-       .text(`Sexe / Gender: ${bulletin.eleve.gender || 'N/A'}`, 350, studentInfoY + 35)
-       .text(`Statut / Status: ${bulletin.eleve.status}`, 350, studentInfoY + 48);
+       .text(`Sexe / Gender: ${bulletin.eleve.gender || 'N/A'}`, 280, studentInfoY + 38)
+       .text(`Statut / Status: ${bulletin.eleve.status}`, 280, studentInfoY + 51);
 
     // 4. Grades Table
     const tableTop = 175;
@@ -202,33 +270,46 @@ async function generateBulletinPDF(bulletinId) {
       // Alternating row colors
       if (idx % 2 === 1) {
         doc.fillColor(lightGrey)
-           .rect(35, currentY, doc.page.width - 70, 20)
+           .rect(35, currentY, doc.page.width - 70, 28)
            .fill();
       }
+
+      const teacherName = teacherMap[det.matiereId] || '';
 
       doc.fillColor(darkGrey)
          .fontSize(8.5)
          .font('Helvetica')
-         .text(det.matiere.nameFr + " / " + det.matiere.nameEn, colX.subject + 5, currentY + 6)
-         .text(det.coefficient.toString(), colX.coeff, currentY + 6)
-         .font('Helvetica-Bold')
-         .text(det.noteValue.toFixed(2), colX.note, currentY + 6)
+         .text(det.matiere.nameFr + " / " + det.matiere.nameEn, colX.subject + 5, currentY + 5);
+
+      if (teacherName) {
+        doc.fillColor('#777777')
+           .fontSize(7.5)
+           .font('Helvetica-Oblique')
+           .text(teacherName, colX.subject + 5, currentY + 16);
+      }
+
+      doc.fillColor(darkGrey)
          .font('Helvetica')
-         .text(det.classAverage ? det.classAverage.toFixed(2) : '-', colX.avg, currentY + 6)
-         .text(det.minNote ? det.minNote.toFixed(2) : '-', colX.min, currentY + 6)
-         .text(det.maxNote ? det.maxNote.toFixed(2) : '-', colX.max, currentY + 6)
-         .text(det.rank ? `${det.rank}e` : '-', colX.rank, currentY + 6)
+         .fontSize(8.5)
+         .text(det.coefficient.toString(), colX.coeff, currentY + 9)
+         .font('Helvetica-Bold')
+         .text(det.noteValue.toFixed(2), colX.note, currentY + 9)
+         .font('Helvetica')
+         .text(det.classAverage ? det.classAverage.toFixed(2) : '-', colX.avg, currentY + 9)
+         .text(det.minNote ? det.minNote.toFixed(2) : '-', colX.min, currentY + 9)
+         .text(det.maxNote ? det.maxNote.toFixed(2) : '-', colX.max, currentY + 9)
+         .text(det.rank ? `${det.rank}e` : '-', colX.rank, currentY + 9)
          .fontSize(8)
-         .text(det.appreciation || '-', colX.appr, currentY + 6);
+         .text(det.appreciation || '-', colX.appr, currentY + 9);
 
       // Draw bottom row border
       doc.lineWidth(0.5)
          .strokeColor('#DDDDDD')
-         .moveTo(35, currentY + 20)
-         .lineTo(doc.page.width - 35, currentY + 20)
+         .moveTo(35, currentY + 28)
+         .lineTo(doc.page.width - 35, currentY + 28)
          .stroke();
 
-      currentY += 20;
+      currentY += 28;
     });
 
     // Outer table borders
@@ -304,9 +385,54 @@ async function generateBulletinPDF(bulletinId) {
        .text(`Justifiées / Justified: ${bulletin.absencesJustified} hrs`, 390, currentY + 28)
        .text(`Non Justifiées / Unjustified: ${bulletin.absencesUnjustified} hrs`, 390, currentY + 43);
 
-    // 6. Signatures Grid
-    doc.moveDown(2);
-    const sigY = doc.y + 20;
+    // 6. Behavior & Discipline summary Box
+    const behaviorBoxHeight = 55;
+    const behaviorY = currentY + 75 + 8;
+    doc.fillColor(lightGrey)
+       .rect(35, behaviorY, doc.page.width - 70, behaviorBoxHeight)
+       .fill();
+
+    doc.rect(35, behaviorY, doc.page.width - 70, behaviorBoxHeight)
+       .lineWidth(1)
+       .stroke(primaryColor);
+
+    doc.fillColor(primaryColor)
+       .fontSize(9)
+       .font('Helvetica-Bold')
+       .text("CONDUITE & DISCIPLINE / CONDUCT & DISCIPLINE", 45, behaviorY + 8);
+
+    let sanctionsList = bulletin.disciplinaryAction || '';
+    if (bulletin.eleve && bulletin.eleve.sanctions && bulletin.eleve.sanctions.length > 0) {
+      const dbSanctions = bulletin.eleve.sanctions.map(s => s.type.replace('_', ' ')).join(', ');
+      sanctionsList = sanctionsList && sanctionsList !== 'N/A' ? sanctionsList + ' | ' + dbSanctions : dbSanctions;
+    }
+    if (!sanctionsList || sanctionsList === '') sanctionsList = 'Aucune / None';
+
+    doc.fillColor(darkGrey)
+       .fontSize(8)
+       .font('Helvetica')
+       .text(`Conduite / Conduct: `, 45, behaviorY + 22)
+       .font('Helvetica-Bold')
+       .text(bulletin.conduct || 'N/A', 150, behaviorY + 22)
+       .font('Helvetica')
+       .text(`Sanction / Disciplinary Action: `, 45, behaviorY + 36)
+       .font('Helvetica-Bold')
+       .text(sanctionsList, 180, behaviorY + 36);
+
+    doc.fillColor(primaryColor)
+       .fontSize(9)
+       .font('Helvetica-Bold')
+       .text("CONSEIL DE CLASSE / CLASS COUNCIL", 345, behaviorY + 8);
+
+    doc.fillColor(darkGrey)
+       .fontSize(8)
+       .font('Helvetica')
+       .text(`Décision / Decision: `, 345, behaviorY + 22)
+       .font('Helvetica-Bold')
+       .text(bulletin.classCouncilDecision || 'N/A', 435, behaviorY + 22);
+
+    // 7. Signatures Grid
+    const sigY = behaviorY + behaviorBoxHeight + 15;
 
     doc.fontSize(9)
        .font('Helvetica-Bold')
@@ -323,30 +449,23 @@ async function generateBulletinPDF(bulletinId) {
        .text("Director's Signature & Stamp", 415, sigY + 10);
 
     // Signatures placeholders box
-    doc.rect(40, sigY + 25, 120, 50).lineWidth(0.5).stroke('#CCCCCC');
-    doc.rect(220, sigY + 25, 120, 50).lineWidth(0.5).stroke('#CCCCCC');
-    doc.rect(410, sigY + 25, 130, 50).lineWidth(0.5).stroke('#CCCCCC');
+    doc.rect(40, sigY + 25, 120, 45).lineWidth(0.5).stroke('#CCCCCC');
+    doc.rect(220, sigY + 25, 120, 45).lineWidth(0.5).stroke('#CCCCCC');
+    doc.rect(410, sigY + 25, 130, 45).lineWidth(0.5).stroke('#CCCCCC');
 
     // Automatic Signatures marks if signed
     if (bulletin.signedParent) {
-      doc.font('Helvetica-Oblique').fontSize(8).text("Signé électroniquement", 50, sigY + 45);
+      doc.font('Helvetica-Oblique').fontSize(8).text("Signé électroniquement", 50, sigY + 40);
     }
     if (bulletin.signedTeacher) {
-      doc.font('Helvetica-Oblique').fontSize(8).text("Signé électroniquement", 230, sigY + 45);
+      doc.font('Helvetica-Oblique').fontSize(8).text("Signé électroniquement", 230, sigY + 40);
     }
     if (bulletin.signedDirector) {
-      doc.font('Helvetica-Oblique').fontSize(8).text("Approuvé par le Directeur", 420, sigY + 45);
+      doc.font('Helvetica-Oblique').fontSize(8).text("Approuvé par le Directeur", 420, sigY + 40);
     }
 
     doc.end();
 
-    writeStream.on('finish', () => {
-      resolve(`/bulletins/${bulletin.id}.pdf`);
-    });
-
-    writeStream.on('error', (err) => {
-      reject(err);
-    });
   });
 }
 

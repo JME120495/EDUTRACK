@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
+import { AuthContext } from '../../context/AuthContext';
 import { Save, CheckSquare, RefreshCw, AlertTriangle, Wifi, WifiOff, Plus, X } from 'lucide-react';
 
 const BEHAVIOR_PRESETS = [
@@ -16,6 +17,7 @@ const BEHAVIOR_PRESETS = [
 
 export default function GradeEntryPage() {
   const { t } = useTranslation();
+  const { user } = useContext(AuthContext);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [sequences, setSequences] = useState([]);
@@ -257,6 +259,7 @@ export default function GradeEntryPage() {
   const totalStudents = students.length;
   const gradedCount = Object.keys(grades).filter(id => grades[id] !== '').length;
   const progressPercent = totalStudents > 0 ? Math.round((gradedCount / totalStudents) * 100) : 0;
+  const isReadOnly = user?.role === 'CENSEUR';
 
   return (
     <div className="space-y-6">
@@ -264,10 +267,10 @@ export default function GradeEntryPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-[#1E3A5F] font-outfit">
-            {t('grades.title')}
+            {t('grades.entryTitle') || t('grades.title')}
           </h1>
           <p className="text-slate-500 text-xs font-semibold">
-            Saisissez les notes et appréciations comportementales par classe, matière et séquence
+            {t('grades.entrySubtitle')}
           </p>
         </div>
 
@@ -285,35 +288,39 @@ export default function GradeEntryPage() {
               : 'bg-amber-50 text-amber-700 border border-amber-250 animate-pulse'
           }`}>
             {isOnline ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
-            <span>{isOnline ? 'En ligne' : t('grades.modeOffline')}</span>
+            <span>{isOnline ? t('grades.status.online') : t('grades.modeOffline')}</span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            disabled={saving}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50"
-          >
-            <Save className="h-3.5 w-3.5 text-amber-500" />
-            <span>{t('grades.saveDraft')}</span>
-          </button>
-          
-          <button
-            type="button"
-            onClick={handleValidateLock}
-            disabled={saving || !isOnline}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-750 text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50"
-          >
-            <CheckSquare className="h-3.5 w-3.5 text-white" />
-            <span>{t('grades.validate')}</span>
-          </button>
+          {!isReadOnly && (
+            <>
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={saving}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50"
+              >
+                <Save className="h-3.5 w-3.5 text-amber-500" />
+                <span>{t('grades.btn.saveDraft')}</span>
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleValidateLock}
+                disabled={saving || !isOnline}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-750 text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50"
+              >
+                <CheckSquare className="h-3.5 w-3.5 text-white" />
+                <span>{t('grades.btn.submitFinal')}</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Selectors Bar */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Class</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('grades.filters.class')}</label>
           <select
             value={selectedClassId}
             onChange={(e) => handleClassChange(e.target.value)}
@@ -327,13 +334,13 @@ export default function GradeEntryPage() {
 
         <div>
           <div className="flex justify-between items-center mb-1">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Subject</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">{t('grades.filters.subject')}</label>
             <button
               type="button"
               onClick={() => setSubjectModalOpen(true)}
               className="text-[10px] font-black text-[#1E3A5F] hover:text-[#F5A623] uppercase tracking-wider focus:outline-none transition-colors"
             >
-              + Add / Ajouter
+              {t('grades.filters.add')}
             </button>
           </div>
           <select
@@ -348,7 +355,7 @@ export default function GradeEntryPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Academic Sequence</label>
+          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('grades.filters.sequence')}</label>
           <select
             value={selectedSequenceId}
             onChange={(e) => handleSequenceChange(e.target.value)}
@@ -364,8 +371,8 @@ export default function GradeEntryPage() {
       {/* Progress Bar */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-2">
         <div className="flex justify-between text-xs font-semibold text-slate-500">
-          <span>Grading Entry Progress</span>
-          <span>{gradedCount} / {totalStudents} Students Graded ({progressPercent}%)</span>
+          <span>{t('grades.progress.title')}</span>
+          <span>{gradedCount} / {totalStudents} {t('grades.progress.graded')} ({progressPercent}%)</span>
         </div>
         <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
           <div 
@@ -385,11 +392,11 @@ export default function GradeEntryPage() {
               <table className="w-full border-collapse text-left text-sm text-slate-600">
                 <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 uppercase text-xs font-semibold tracking-wider">
                   <tr>
-                    <th className="px-6 py-4">{t('grades.student')}</th>
-                    <th className="px-6 py-4">Matricule</th>
-                    <th className="px-6 py-4 w-40">{t('grades.value')}</th>
-                    <th className="px-6 py-4 w-60">{t('grades.behavior')}</th>
-                    <th className="px-6 py-4 text-center">Status</th>
+                    <th className="px-6 py-4">{t('grades.table.student')}</th>
+                    <th className="px-6 py-4">{t('grades.table.matricule')}</th>
+                    <th className="px-6 py-4 w-40">{t('grades.table.grade')}</th>
+                    <th className="px-6 py-4 w-60">{t('grades.table.remarks')}</th>
+                    <th className="px-6 py-4 text-center">{t('grades.table.status')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -412,7 +419,7 @@ export default function GradeEntryPage() {
                               step="0.25"
                               min="0"
                               max="20"
-                              disabled={!isDraft}
+                              disabled={!isDraft || isReadOnly}
                               value={grades[student.id] ?? ''}
                               onChange={(e) => handleGradeChange(student.id, e.target.value)}
                               placeholder="0.00"
@@ -427,7 +434,7 @@ export default function GradeEntryPage() {
                               return (
                                 <div className="flex flex-col gap-1.5 w-full">
                                   <select
-                                    disabled={!isDraft}
+                                    disabled={!isDraft || isReadOnly}
                                     value={showTextInput ? 'custom' : remarkVal}
                                     onChange={(e) => {
                                       const val = e.target.value;
@@ -441,7 +448,7 @@ export default function GradeEntryPage() {
                                     }}
                                     className="w-full px-2 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#1E3A5F] focus:outline-none font-semibold text-slate-700 disabled:bg-slate-50 disabled:text-slate-400 transition-all text-xs"
                                   >
-                                    <option value="">-- Choisir remarque --</option>
+                                    <option value="">{t('grades.table.chooseRemark')}</option>
                                     {BEHAVIOR_PRESETS.map(p => (
                                       <option key={p.value} value={p.value}>{p.label}</option>
                                     ))}
@@ -450,7 +457,7 @@ export default function GradeEntryPage() {
                                   {showTextInput && (
                                     <input
                                       type="text"
-                                      disabled={!isDraft}
+                                      disabled={!isDraft || isReadOnly}
                                       value={remarkVal}
                                       onChange={(e) => {
                                         setRemarks(prev => ({ ...prev, [student.id]: e.target.value }));
@@ -471,7 +478,7 @@ export default function GradeEntryPage() {
                                 : 'bg-emerald-50 text-emerald-700 border border-emerald-250'
                             }`}>
                               <span className={`h-2.5 w-2.5 rounded-full ${isDraft ? 'bg-amber-400' : 'bg-emerald-500'}`} />
-                              {isDraft ? 'Draft' : 'Validated'}
+                              {isDraft ? t('grades.statusLabel.draft') : t('grades.validated')}
                             </span>
                           </td>
                         </tr>
@@ -483,26 +490,28 @@ export default function GradeEntryPage() {
             </div>
 
             {/* Actions Bar */}
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                disabled={saving}
-                className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
-              >
-                <Save className="h-4 w-4 text-amber-500" />
-                <span>{t('grades.saveDraft')}</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleValidateLock}
-                disabled={saving || !isOnline}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-md disabled:opacity-50"
-              >
-                <CheckSquare className="h-4 w-4 text-white" />
-                <span>{t('grades.validate')}</span>
-              </button>
-            </div>
+            {!isReadOnly && (
+              <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  disabled={saving}
+                  className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all shadow-sm disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4 text-amber-500" />
+                  <span>{t('grades.saveDraft')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleValidateLock}
+                  disabled={saving || !isOnline}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-md disabled:opacity-50"
+                >
+                  <CheckSquare className="h-4 w-4 text-white" />
+                  <span>{t('grades.validate')}</span>
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

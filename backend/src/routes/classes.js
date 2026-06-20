@@ -12,6 +12,9 @@ router.get('/', auth, async (req, res) => {
         principalTeacher: {
           select: { id: true, name: true, email: true }
         },
+        censeur: {
+          select: { id: true, name: true, email: true }
+        },
         anneeScolaire: true
       }
     });
@@ -22,8 +25,8 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Create class (Director only)
-router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
-  const { name, principalTeacherId, anneeScolaireId } = req.body;
+router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { name, principalTeacherId, censeurId, anneeScolaireId } = req.body;
   try {
     if (!name || !anneeScolaireId) {
       return res.status(400).json({ message: 'Name and academic year are required' });
@@ -34,10 +37,12 @@ router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
         schoolId: req.user.schoolId,
         name,
         principalTeacherId: principalTeacherId || null,
+        censeurId: censeurId || null,
         anneeScolaireId
       },
       include: {
         principalTeacher: true,
+        censeur: true,
         anneeScolaire: true
       }
     });
@@ -48,8 +53,8 @@ router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Update class (Director only)
-router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
-  const { name, principalTeacherId, anneeScolaireId } = req.body;
+router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { name, principalTeacherId, censeurId, anneeScolaireId } = req.body;
   const { id } = req.params;
   try {
     const updated = await prisma.classe.update({
@@ -57,10 +62,12 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
       data: {
         name,
         principalTeacherId: principalTeacherId || null,
+        censeurId: censeurId || null,
         anneeScolaireId
       },
       include: {
         principalTeacher: true,
+        censeur: true,
         anneeScolaire: true
       }
     });
@@ -71,15 +78,21 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Delete class (Director only)
-router.delete('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+// V-006 FIX: Verify class belongs to user's school
+router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   try {
+    const classe = await prisma.classe.findUnique({ where: { id } });
+    if (!classe || classe.schoolId !== req.user.schoolId) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
     await prisma.classe.delete({
       where: { id }
     });
     res.json({ message: 'Class deleted successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Classes] Delete error:', err);
+    res.status(500).json({ message: 'An internal error occurred' });
   }
 });
 

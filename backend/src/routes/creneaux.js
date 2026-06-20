@@ -16,8 +16,8 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// Create/Update time slot (Director only)
-router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
+// Create/Update time slot (Director or Censeur)
+router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { startTime, endTime, label, order } = req.body;
   try {
     if (!startTime || !endTime) {
@@ -40,8 +40,8 @@ router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
   }
 });
 
-// Delete time slot (Director only)
-router.delete('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+// Delete time slot (Director or Censeur)
+router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.creneauHoraire.delete({
@@ -53,8 +53,8 @@ router.delete('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
   }
 });
 
-// Update time slot (Director only)
-router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+// Update time slot (Director or Censeur)
+router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   const { startTime, endTime, label, order } = req.body;
   try {

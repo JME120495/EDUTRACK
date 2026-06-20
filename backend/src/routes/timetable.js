@@ -41,7 +41,7 @@ router.get('/teacher/:teacherId', auth, async (req, res) => {
 });
 
 // Create timetable session (Director only)
-router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { classId, teacherId, matiereId, creneauId, dayOfWeek, room } = req.body;
   try {
     if (!classId || !teacherId || !matiereId || !creneauId || !dayOfWeek) {
@@ -69,7 +69,7 @@ router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
 });
 
 // Update timetable session (Director only)
-router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { classId, teacherId, matiereId, creneauId, dayOfWeek, room } = req.body;
   const { id } = req.params;
   try {
@@ -94,8 +94,23 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
   }
 });
 
+const { generateAutomaticTimetable } = require('../services/timetableGenerator');
+
+// Generate automatic timetable (Director only)
+router.post('/generate', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  try {
+    const result = await generateAutomaticTimetable(req.user.schoolId);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Delete session (Director only)
-router.delete('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.emploiDuTemps.delete({

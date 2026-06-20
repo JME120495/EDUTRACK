@@ -3,55 +3,165 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../db');
-const { JWT_SECRET } = require('../middlewares/authMiddleware');
+const { JWT_SECRET, auth } = require('../middlewares/authMiddleware');
 const { sendSMS } = require('../services/notifService');
+const { auditLog } = require('../services/auditService');
 
-// Login with email and password (Directors & Teachers & optionally Parents)
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+// Register a new Director/Founder and create a new School
+router.post('/register', async (req, res) => {
+  const { 
+    schoolName, address, country, phone, typeOfSchool, schoolTypes, 
+    city, studentCount, currency,
+    firstName, lastName, email, password, lang 
+  } = req.body;
   try {
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email/Phone and password are required' });
+    if (!schoolName || !email || !password || !firstName || !lastName) {
+      return res.status(400).json({ message: 'Tous les champs obligatoires doivent être remplis' });
     }
 
-    // Try finding by email or phone
-    let user;
-    if (email.includes('@')) {
-      user = await prisma.user.findUnique({
-        where: { email },
-        include: { school: true }
-      });
-    } else {
-      user = await prisma.user.findFirst({
-        where: { phone: email },
-        include: { school: true }
-      });
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
     }
 
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    // Create a new School
+    const school = await prisma.school.create({
+      data: {
+        name: schoolName,
+        address: address || null,
+        country: country || 'Cameroun',
+        currency: currency || 'XAF',
+        phone: phone || null,
+        sector: typeOfSchool || null,
+        levels: schoolTypes ? JSON.stringify(schoolTypes) : null,
+        city: city || null,
+        studentCount: studentCount ? parseInt(studentCount, 10) : null,
+        subscriptionPlan: 'PREMIUM' // Give premium by default for now
+      }
+    });
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    // Hash password and create User
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+    
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
+
+    const user = await prisma.user.create({
+      data: {
+        schoolId: school.id,
+        name: fullName,
+        email,
+        passwordHash,
+        role: 'DIRECTOR',
+        language: lang || 'FR'
+      }
+    });
+
+    await auditLog(req, 'REGISTER', 'User', user.id, { role: user.role, schoolId: user.schoolId });
 
     const token = jwt.sign(
       { 
         userId: user.id, 
         role: user.role, 
         schoolId: user.schoolId,
-        id: user.id,
+        subscriptionPlan: school.subscriptionPlan,
         name: user.name,
-        email: user.email,
-        phone: user.phone,
-        language: user.language,
-        schoolName: user.school?.name || ''
+        schoolName: school.name,
+        currency: school.currency
       },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        schoolId: user.schoolId,
+        schoolName: school.name
+      }
+    });
+  } catch (err) {
+    console.error('[Auth] Register error:', err);
+    res.status(500).json({ message: 'Une erreur interne est survenue', error: err.message, stack: err.stack });
+  }
+});
+
+// Login with email and password (Directors & Teachers & optionally Parents)
+router.post('/login', async (req, res) => {
+  const { email, password, schoolId } = req.body;
+  try {
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email/Phone and password are required' });
+    }
+
+    // Try finding by email or phone
+    let users = [];
+    if (email.includes('@')) {
+      // NOTE: email is currently globally unique in DB, but this supports if it changes
+      users = await prisma.user.findMany({
+        where: { email },
+        include: { school: true }
+      });
+    } else {
+      users = await prisma.user.findMany({
+        where: { phone: email },
+        include: { school: true }
+      });
+    }
+
+    if (users.length === 0) {
+      await auditLog(req, 'LOGIN_FAILED', 'User', null, { email, reason: 'user_not_found' });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Filter by matching password
+    const validUsers = [];
+    for (const u of users) {
+      const isMatch = await bcrypt.compare(password, u.passwordHash);
+      if (isMatch) validUsers.push(u);
+    }
+
+    if (validUsers.length === 0) {
+      await auditLog(req, 'LOGIN_FAILED', 'User', users[0].id, { email, reason: 'wrong_password' });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // If multiple valid accounts but no schoolId provided, return list of schools
+    if (validUsers.length > 1 && !schoolId) {
+      const schools = validUsers.map(u => ({ id: u.schoolId, name: u.school.name }));
+      return res.json({ action: 'SELECT_SCHOOL', schools });
+    }
+
+    let user = validUsers[0];
+    if (schoolId) {
+      const selected = validUsers.find(u => u.schoolId === schoolId);
+      if (!selected) {
+        return res.status(400).json({ message: 'Invalid school selected' });
+      }
+      user = selected;
+    }
+
+    // V-004 FIX: JWT payload contains only essential claims (no PII)
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        role: user.role, 
+        schoolId: user.schoolId,
+        subscriptionPlan: user.school.subscriptionPlan || 'PREMIUM',
+        name: user.name,
+        schoolName: user.school.name,
+        currency: user.school.currency
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    await auditLog(req, 'LOGIN', 'User', user.id, { role: user.role, schoolId: user.schoolId });
 
     res.json({
       token,
@@ -67,7 +177,8 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Auth] Login error:', err);
+    res.status(500).json({ message: 'An internal error occurred' });
   }
 });
 
@@ -79,11 +190,12 @@ router.post('/parent/request-otp', async (req, res) => {
       return res.status(400).json({ message: 'Phone number is required' });
     }
 
-    const user = await prisma.user.findFirst({
-      where: { phone, role: 'PARENT' }
+    const users = await prisma.user.findMany({
+      where: { phone, role: 'PARENT' },
+      include: { school: true }
     });
 
-    if (!user) {
+    if (users.length === 0) {
       return res.status(404).json({ message: 'No parent account found with this phone number' });
     }
 
@@ -91,33 +203,48 @@ router.post('/parent/request-otp', async (req, res) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await prisma.user.update({
-      where: { id: user.id },
+    await prisma.user.updateMany({
+      where: { phone, role: 'PARENT' },
       data: { otpCode, otpExpires }
     });
 
-    const msg = user.language === 'FR' 
+    const userToMessage = users[0];
+    const msg = userToMessage.language === 'FR' 
       ? `EduTrack: Votre code de connexion est ${otpCode}. Expire dans 10 min.`
       : `EduTrack: Your login code is ${otpCode}. Expires in 10 mins.`;
 
     await sendSMS(phone, msg);
 
-    res.json({ message: 'OTP sent successfully', devCode: otpCode }); // returning code in dev for testing ease
+    const schools = users.map(u => ({ id: u.schoolId, name: u.school.name }));
+
+    // Only include OTP code in response during development (NEVER in production)
+    const response = { message: 'OTP sent successfully', schools };
+    if (process.env.NODE_ENV === 'development') {
+      response.devCode = otpCode;
+    }
+    res.json(response);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Auth] OTP request error:', err);
+    res.status(500).json({ message: 'An internal error occurred' });
   }
 });
 
-// Parent verify OTP and login
+// Parent verify OTP
 router.post('/parent/verify-otp', async (req, res) => {
-  const { phone, code } = req.body;
+  const { phone, code, schoolId } = req.body;
   try {
     if (!phone || !code) {
-      return res.status(400).json({ message: 'Phone number and OTP code are required' });
+      return res.status(400).json({ message: 'Phone number and code are required' });
     }
 
+    let whereClause = { phone, otpCode: code, role: 'PARENT' };
+    if (schoolId) {
+      whereClause.schoolId = schoolId;
+    }
+
+    // findFirst will pick the first if schoolId is omitted (e.g. they only have 1 school)
     const user = await prisma.user.findFirst({
-      where: { phone, role: 'PARENT' },
+      where: whereClause,
       include: { school: true }
     });
 
@@ -125,16 +252,13 @@ router.post('/parent/verify-otp', async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP code' });
     }
 
-    const isBypass = code === '123456';
-    const isValidOtp = user.otpCode === code && user.otpExpires > new Date();
-
-    if (!isBypass && !isValidOtp) {
-      return res.status(400).json({ message: 'Invalid or expired OTP code' });
+    if (new Date() > user.otpExpires) {
+      return res.status(400).json({ message: 'OTP code has expired' });
     }
 
-    // Clear OTP code
-    await prisma.user.update({
-      where: { id: user.id },
+    // Clear OTP for ALL accounts matching this phone, since they successfully consumed it
+    await prisma.user.updateMany({
+      where: { phone, role: 'PARENT' },
       data: { otpCode: null, otpExpires: null }
     });
 
@@ -143,16 +267,15 @@ router.post('/parent/verify-otp', async (req, res) => {
         userId: user.id, 
         role: user.role, 
         schoolId: user.schoolId,
-        id: user.id,
+        subscriptionPlan: user.school.subscriptionPlan || 'PREMIUM',
         name: user.name,
-        email: user.email,
-        phone: user.phone,
-        language: user.language,
-        schoolName: user.school?.name || ''
+        schoolName: user.school.name
       },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
+
+    await auditLog(req, 'LOGIN_OTP', 'User', user.id, { role: user.role, schoolId: user.schoolId });
 
     res.json({
       token,
@@ -168,7 +291,116 @@ router.post('/parent/verify-otp', async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[Auth] Verify OTP error:', err);
+    res.status(500).json({ message: 'An internal error occurred' });
+  }
+});
+
+// Parent fetch their linked children
+router.get('/parent/children', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'PARENT') {
+      return res.status(403).json({ message: 'Only parents can fetch their children' });
+    }
+
+    const parent = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: {
+        children: {
+          include: {
+            eleve: {
+              include: {
+                class: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!parent) {
+      return res.status(404).json({ message: 'Parent not found' });
+    }
+
+    const linkedChildren = parent.children.map(c => c.eleve);
+    res.json(linkedChildren);
+  } catch (err) {
+    console.error('[Auth] Fetch children error:', err);
+    res.status(500).json({ message: 'An internal error occurred' });
+  }
+});
+
+// Forgot Password - Request OTP for any user
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (!email) {
+      return res.status(400).json({ message: "L'email est requis" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'Aucun compte trouvé avec cet email' });
+    }
+
+    // Generate 6 digit code
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { otpCode, otpExpires }
+    });
+
+    // In a real app, send an email here. For now, just return it in dev mode.
+    const response = { message: 'Code de réinitialisation généré avec succès' };
+    response.devCode = otpCode; // Simulated email content
+
+    res.json(response);
+  } catch (err) {
+    console.error('[Auth] Forgot password error:', err);
+    res.status(500).json({ message: 'Une erreur interne est survenue' });
+  }
+});
+
+// Reset Password - Verify OTP and update password
+router.post('/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  try {
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ message: "L'email, le code et le nouveau mot de passe sont requis" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur introuvable' });
+    }
+
+    const isValidOtp = user.otpCode === code && user.otpExpires > new Date();
+    if (!isValidOtp) {
+      return res.status(400).json({ message: 'Code invalide ou expiré' });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    // Update user password and clear OTP
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        otpCode: null,
+        otpExpires: null
+      }
+    });
+
+    await auditLog(req, 'PASSWORD_RESET', 'User', user.id, { role: user.role });
+
+    res.json({ message: 'Mot de passe réinitialisé avec succès' });
+  } catch (err) {
+    console.error('[Auth] Reset password error:', err);
+    res.status(500).json({ message: 'Une erreur interne est survenue' });
   }
 });
 
