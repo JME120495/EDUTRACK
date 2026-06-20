@@ -6,8 +6,9 @@ import {
   ShieldCheck, Users, GraduationCap, Gavel, 
   Wallet, Briefcase, MessageSquare, BookOpen, 
   ArrowRight, CheckCircle2, Globe, Smartphone, 
-  WifiOff, Star, ChevronDown, MessageCircle, Facebook
+  WifiOff, Star, ChevronDown, MessageCircle, Facebook, Download, Apple
 } from 'lucide-react';
+import PwaInstallPrompt from '../../components/PwaInstallPrompt';
 
 export default function LandingPage() {
   const { t, i18n } = useTranslation();
@@ -40,7 +41,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-300 font-sans selection:bg-amber-500 selection:text-slate-900">
-      
+      <PwaInstallPrompt />
       {/* 1. Header / Navigation */}
       <motion.header 
         initial={{ y: -100 }}
@@ -390,6 +391,74 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Section Application Mobile */}
+      <section className="py-20 bg-slate-900 border-b border-slate-800 relative overflow-hidden">
+        <div className="absolute top-1/2 left-0 w-72 h-72 bg-emerald-900/20 rounded-full blur-3xl -z-10 transform -translate-y-1/2"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12">
+          <div className="md:w-1/2">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-6">
+                {i18n.language === 'fr' ? 'Emportez EduTrack partout avec vous' : 'Take EduTrack everywhere you go'}
+              </h2>
+              <p className="text-lg text-slate-400 mb-8">
+                {i18n.language === 'fr' 
+                  ? 'Installez notre application mobile directement depuis ce site web. Pas besoin de passer par l\'App Store ou le Play Store. Accès rapide, notifications, et mode hors-ligne inclus.'
+                  : 'Install our mobile application directly from this website. No need to go through the App Store or Play Store. Fast access, notifications, and offline mode included.'
+                }
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={() => {
+                    const promptEvent = new Event('beforeinstallprompt');
+                    window.dispatchEvent(promptEvent);
+                    alert(i18n.language === 'fr' ? 'Si l\\'installation ne démarre pas, ouvrez le menu de votre navigateur Chrome (3 points) et choisissez "Ajouter à l\\'écran d\\'accueil".' : 'If installation does not start, open your Chrome browser menu (3 dots) and select "Add to Home Screen".');
+                  }}
+                  className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-500 transition-colors flex items-center justify-center gap-3 shadow-lg"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>{i18n.language === 'fr' ? 'Installer sur Android' : 'Install on Android'}</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    alert(i18n.language === 'fr' ? 'Sur iPhone/iPad : Ouvrez Safari, appuyez sur l\\'icône "Partager" (carré avec flèche vers le haut) puis choisissez "Sur l\\'écran d\\'accueil".' : 'On iPhone/iPad: Open Safari, tap the "Share" icon (square with arrow pointing up) and select "Add to Home Screen".');
+                  }}
+                  className="bg-slate-800 text-white border border-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-700 transition-colors flex items-center justify-center gap-3 shadow-lg"
+                >
+                  <Apple className="w-5 h-5" />
+                  <span>{i18n.language === 'fr' ? 'Installer sur iPhone' : 'Install on iPhone'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+          <div className="md:w-1/2 flex justify-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative w-64 h-auto aspect-[1/2] bg-slate-800 rounded-[2.5rem] border-8 border-slate-700 shadow-2xl overflow-hidden flex flex-col"
+            >
+              <div className="bg-amber-500 w-full h-1/4 flex items-end justify-center pb-4 text-slate-900 font-bold text-2xl tracking-tighter">
+                <span className="mr-1">🎓</span>EduTrack
+              </div>
+              <div className="flex-1 p-4 flex flex-col gap-3 bg-slate-900">
+                <div className="h-10 bg-slate-800 rounded-lg animate-pulse"></div>
+                <div className="h-24 bg-slate-800 rounded-lg animate-pulse"></div>
+                <div className="flex gap-2">
+                  <div className="h-16 w-1/2 bg-slate-800 rounded-lg animate-pulse"></div>
+                  <div className="h-16 w-1/2 bg-slate-800 rounded-lg animate-pulse"></div>
+                </div>
+                <div className="h-10 bg-amber-500/20 rounded-lg animate-pulse mt-auto"></div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* 8. Section FAQ */}
       <section className="py-20 bg-slate-800/50 border-b border-slate-800">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -492,8 +561,8 @@ export default function LandingPage() {
             <h4 className="text-white font-bold mb-4">{t('landing.contact')}</h4>
             <ul className="space-y-2 text-sm text-slate-400">
               <li>contact@edutrack.com</li>
-              <li>+237 691 00 33 92 / 681 62 55 20</li>
-              <li>Yaoundé, {i18n.language === 'fr' ? 'Cameroun' : 'Cameroon'}</li>
+              <li>+237 691 00 33 92 / +237 681 62 55 20</li>
+              <li>Yaoundé, {i18n.language === 'fr' ? 'Cameroun' : 'Cameroon'}, Emana</li>
             </ul>
           </div>
           <div>
