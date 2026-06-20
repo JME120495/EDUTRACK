@@ -416,7 +416,7 @@ export default function LandingPage() {
                   onClick={() => {
                     const promptEvent = new Event('beforeinstallprompt');
                     window.dispatchEvent(promptEvent);
-                    alert(i18n.language === 'fr' ? 'Si l\\'installation ne démarre pas, ouvrez le menu de votre navigateur Chrome (3 points) et choisissez "Ajouter à l\\'écran d\\'accueil".' : 'If installation does not start, open your Chrome browser menu (3 dots) and select "Add to Home Screen".');
+                    alert(i18n.language === 'fr' ? `Si l'installation ne démarre pas, ouvrez le menu de votre navigateur Chrome (3 points) et choisissez "Ajouter à l'écran d'accueil".` : 'If installation does not start, open your Chrome browser menu (3 dots) and select "Add to Home Screen".');
                   }}
                   className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-500 transition-colors flex items-center justify-center gap-3 shadow-lg"
                 >
@@ -425,7 +425,7 @@ export default function LandingPage() {
                 </button>
                 <button 
                   onClick={() => {
-                    alert(i18n.language === 'fr' ? 'Sur iPhone/iPad : Ouvrez Safari, appuyez sur l\\'icône "Partager" (carré avec flèche vers le haut) puis choisissez "Sur l\\'écran d\\'accueil".' : 'On iPhone/iPad: Open Safari, tap the "Share" icon (square with arrow pointing up) and select "Add to Home Screen".');
+                    alert(i18n.language === 'fr' ? `Sur iPhone/iPad : Ouvrez Safari, appuyez sur l'icône "Partager" (carré avec flèche vers le haut) puis choisissez "Sur l'écran d'accueil".` : 'On iPhone/iPad: Open Safari, tap the "Share" icon (square with arrow pointing up) and select "Add to Home Screen".');
                   }}
                   className="bg-slate-800 text-white border border-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-700 transition-colors flex items-center justify-center gap-3 shadow-lg"
                 >
