@@ -1,11 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import electron from 'vite-plugin-electron'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    electron([
+      {
+        entry: 'electron/main.js',
+      },
+      {
+        entry: 'electron/preload.js',
+        onstart(options) {
+          options.reload()
+        },
+      },
+    ]),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['hero.png', 'pwa-192x192.png', 'pwa-512x512.png'],
