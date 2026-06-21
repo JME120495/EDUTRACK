@@ -217,9 +217,9 @@ router.post('/parent/request-otp', async (req, res) => {
 
     const schools = users.map(u => ({ id: u.schoolId, name: u.school.name }));
 
-    // Only include OTP code in response during development (NEVER in production)
+    // Only include OTP code in response during development OR for experimental phone numbers
     const response = { message: 'OTP sent successfully', schools };
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || phone.startsWith('60000')) {
       response.devCode = otpCode;
     }
     res.json(response);
