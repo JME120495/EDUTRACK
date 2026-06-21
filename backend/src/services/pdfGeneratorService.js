@@ -317,7 +317,11 @@ async function generateIDCardsPDF(schoolId, ids, type = 'student') {
         // Top Banner
         doc.save();
         doc.fillColor(primaryColor)
-           .roundedRect(x + 1, y + 1, cardWidth - 2, 28, { topLeft: 7, topRight: 7, bottomLeft: 0, bottomRight: 0 })
+           .roundedRect(x + 1, y + 1, cardWidth - 2, 28, 7)
+           .fill();
+        // Fill the bottom corners of the banner so they are square
+        doc.fillColor(primaryColor)
+           .rect(x + 1, y + 10, cardWidth - 2, 19)
            .fill();
 
         // School logo inside banner
