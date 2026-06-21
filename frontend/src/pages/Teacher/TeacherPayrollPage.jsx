@@ -72,9 +72,9 @@ export default function TeacherPayrollPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {[
-          { label: t('payroll.stats.totalPay') || 'Total à payer', value: `${totalPay.toLocaleString()} {currency}`, color: 'text-emerald-600' },
+          { label: t('payroll.stats.totalPay') || 'Total à payer', value: `${totalPay.toLocaleString()} ${currency}`, color: 'text-emerald-600' },
           { label: t('payroll.stats.totalHours') || "Total d'heures", value: `${totalHours.toLocaleString()} h`, color: 'text-blue-600' },
-          { label: t('payroll.stats.avgRate') || 'Taux horaire moyen', value: `${avgRate.toLocaleString()} {currency}/h`, color: 'text-amber-500' }
+          { label: t('payroll.stats.avgRate') || 'Taux horaire moyen', value: `${avgRate.toLocaleString()} ${currency}/h`, color: 'text-amber-500' }
         ].map((card, idx) => (
           <div key={idx} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm transition-all hover:shadow-md">
             <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider block">
@@ -121,9 +121,9 @@ export default function TeacherPayrollPage() {
                       <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 font-semibold text-slate-600">{subjectName}</td>
                         <td className="px-6 py-4 font-bold text-slate-500">{item.class?.name}</td>
-                        <td className="px-6 py-4 font-bold text-[#1E3A5F]">{rate.toLocaleString()} {currency}</td>
+                        <td className="px-6 py-4 font-bold text-[#1E3A5F]">{rate.toLocaleString()} </td>
                         <td className="px-6 py-4 font-bold text-slate-500">{hours} h</td>
-                        <td className="px-6 py-4 font-black font-outfit text-emerald-600">{due.toLocaleString()} {currency}</td>
+                        <td className="px-6 py-4 font-black font-outfit text-emerald-600">{due.toLocaleString()} </td>
                       </tr>
                     );
                   })

@@ -425,9 +425,9 @@ export default function PaymentsPage() {
             <tr><td class="label">Élève / Student :</td><td class="value">${student.name}</td></tr>
             <tr><td class="label">Matricule / ID :</td><td class="value">${student.matricule}</td></tr>
             <tr><td class="label">Classe / Class :</td><td class="value">${className}</td></tr>
-            <tr><td class="label">Scolarité Totale / Total Tuition :</td><td class="value">${classTuition.toLocaleString()} {currency}</td></tr>
-            <tr><td class="label">Total Payé / Total Paid :</td><td class="value" style="color: green;">${student.paid.toLocaleString()} {currency}</td></tr>
-            <tr><td class="label">Reste à Payer / Balance :</td><td class="value" style="color: red;">${student.balance.toLocaleString()} {currency}</td></tr>
+            <tr><td class="label">Scolarité Totale / Total Tuition :</td><td class="value">${classTuition.toLocaleString()} </td></tr>
+            <tr><td class="label">Total Payé / Total Paid :</td><td class="value" style="color: green;">${student.paid.toLocaleString()} </td></tr>
+            <tr><td class="label">Reste à Payer / Balance :</td><td class="value" style="color: red;">${student.balance.toLocaleString()} </td></tr>
             <tr><td class="label">Statut / Status :</td><td class="value">${student.status === 'PAID' ? 'RÉGLÉ' : student.status === 'PARTIAL' ? 'PARTIEL' : 'IMPAYÉ'}</td></tr>
           </table>
 
@@ -510,7 +510,7 @@ export default function PaymentsPage() {
           <div className="space-y-6">
             <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
               <span className="text-slate-700 font-semibold text-sm">
-                {t('payments.summary.configuredFees')} <span className="font-extrabold text-[#1E3A5F]">{classTuition.toLocaleString()} {currency}</span>
+                {t('payments.summary.configuredFees')} <span className="font-extrabold text-[#1E3A5F]">{classTuition.toLocaleString()} </span>
               </span>
               <div className="flex gap-2">
                 <button
@@ -540,8 +540,8 @@ export default function PaymentsPage() {
             {/* Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {[
-                { label: t('payments.stats.expected'), value: `${totalExpected.toLocaleString()} {currency}` },
-                { label: t('payments.stats.collected'), value: `${totalCollected.toLocaleString()} {currency}`, color: 'text-emerald-600' },
+                { label: t('payments.stats.expected'), value: `${totalExpected.toLocaleString()} ` },
+                { label: t('payments.stats.collected'), value: `${totalCollected.toLocaleString()} `, color: 'text-emerald-600' },
                 { label: t('payments.stats.rate'), value: `${collectionRate}%`, color: 'text-amber-500' }
               ].map((card, idx) => (
                 <div key={idx} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
@@ -581,8 +581,8 @@ export default function PaymentsPage() {
                         <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-6 py-4 font-bold text-slate-800">{s.name}</td>
                           <td className="px-6 py-4 text-slate-500 font-semibold">{s.matricule}</td>
-                          <td className="px-6 py-4 font-bold text-slate-700">{s.paid.toLocaleString()} {currency}</td>
-                          <td className="px-6 py-4 font-bold text-rose-600">{s.balance.toLocaleString()} {currency}</td>
+                          <td className="px-6 py-4 font-bold text-slate-700">{s.paid.toLocaleString()} </td>
+                          <td className="px-6 py-4 font-bold text-rose-600">{s.balance.toLocaleString()} </td>
                           <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold 
                               ${s.status === 'PAID' ? 'bg-emerald-50 text-emerald-600' :
@@ -660,7 +660,7 @@ export default function PaymentsPage() {
               <div>
                 <h3 className="font-extrabold text-[#1E3A5F] font-outfit text-base">Plan d'échéances configuré</h3>
                 <p className="text-slate-500 text-xs mt-1 font-semibold leading-relaxed">
-                  Division de la scolarité totale ({classTuition.toLocaleString()} {currency}) pour cette classe.
+                  Division de la scolarité totale ({classTuition.toLocaleString()} ) pour cette classe.
                 </p>
 
                 <div className="mt-4 border border-slate-100 rounded-xl divide-y divide-slate-100">
@@ -679,7 +679,7 @@ export default function PaymentsPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-black text-slate-700 text-sm">
-                            {inst.amount?.toLocaleString()} {currency}
+                            {inst.amount?.toLocaleString()} 
                           </span>
                           <button
                             onClick={() => {
@@ -751,7 +751,7 @@ export default function PaymentsPage() {
                         <tr key={mor.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-6 py-4 font-bold text-slate-800">{mor.eleve.name}</td>
                           <td className="px-6 py-4 font-semibold text-slate-500">{mor.eleve.class.name}</td>
-                          <td className="px-6 py-4 font-bold text-slate-700">{mor.amount?.toLocaleString()} {currency}</td>
+                          <td className="px-6 py-4 font-bold text-slate-700">{mor.amount?.toLocaleString()} </td>
                           <td className="px-6 py-4 text-slate-500">{new Date(mor.dueDate).toLocaleDateString('fr-FR')}</td>
                           <td className="px-6 py-4 text-slate-500">{mor.remarks || '-'}</td>
                           <td className="px-6 py-4">
@@ -827,7 +827,7 @@ export default function PaymentsPage() {
                           <td className="px-6 py-4 text-slate-700">{tx.description}</td>
                           <td className="px-6 py-4 text-slate-500">{tx.paymentMethod}</td>
                           <td className={`px-6 py-4 font-black ${tx.type === 'INCOME' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {tx.type === 'INCOME' ? '+' : '-'}{tx.amount?.toLocaleString()} {currency}
+                            {tx.type === 'INCOME' ? '+' : '-'}{tx.amount?.toLocaleString()} 
                           </td>
                           <td className="px-6 py-4">
                             <button
@@ -864,10 +864,10 @@ export default function PaymentsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               {[
-                { label: 'Scolarité Recouvrée', value: `${reportData.tuition.collected.toLocaleString()} {currency}`, color: 'text-emerald-600' },
-                { label: 'Autres Recettes', value: `${reportData.general.otherIncome.toLocaleString()} {currency}`, color: 'text-teal-600' },
-                { label: 'Dépenses Communes', value: `${reportData.general.generalExpenses.toLocaleString()} {currency}`, color: 'text-rose-600' },
-                { label: 'Dépenses de Salaires', value: `${reportData.general.payrollExpense.toLocaleString()} {currency}`, color: 'text-indigo-600' }
+                { label: 'Scolarité Recouvrée', value: `${reportData.tuition.collected.toLocaleString()} `, color: 'text-emerald-600' },
+                { label: 'Autres Recettes', value: `${reportData.general.otherIncome.toLocaleString()} `, color: 'text-teal-600' },
+                { label: 'Dépenses Communes', value: `${reportData.general.generalExpenses.toLocaleString()} `, color: 'text-rose-600' },
+                { label: 'Dépenses de Salaires', value: `${reportData.general.payrollExpense.toLocaleString()} `, color: 'text-indigo-600' }
               ].map((c, i) => (
                 <div key={i} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
                   <span className="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">{c.label}</span>
@@ -887,19 +887,19 @@ export default function PaymentsPage() {
                 <div className="text-center">
                   <span className="text-slate-500 text-xs block font-bold">TOTAL RECETTES</span>
                   <span className="text-xl font-extrabold text-emerald-600 font-outfit">
-                    {(reportData.totals.income).toLocaleString()} {currency}
+                    {(reportData.totals.income).toLocaleString()} 
                   </span>
                 </div>
                 <div className="text-center border-l border-slate-200 pl-8">
                   <span className="text-slate-500 text-xs block font-bold">TOTAL DÉPENSES</span>
                   <span className="text-xl font-extrabold text-rose-600 font-outfit">
-                    {(reportData.totals.expense).toLocaleString()} {currency}
+                    {(reportData.totals.expense).toLocaleString()} 
                   </span>
                 </div>
                 <div className="text-center border-l border-slate-200 pl-8">
                   <span className="text-slate-500 text-xs block font-bold">SOLDE NET</span>
                   <span className={`text-2xl font-black font-outfit ${reportData.totals.balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {reportData.totals.balance.toLocaleString()} {currency}
+                    {reportData.totals.balance.toLocaleString()} 
                   </span>
                 </div>
               </div>
@@ -924,10 +924,10 @@ export default function PaymentsPage() {
                       return (
                         <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                           <td className="px-4 py-3 font-extrabold text-[#1E3A5F]">{m.label}</td>
-                          <td className="px-4 py-3 text-right text-emerald-600 font-bold">{m.income.toLocaleString()} {currency}</td>
-                          <td className="px-4 py-3 text-right text-rose-600 font-bold">{m.expense.toLocaleString()} {currency}</td>
+                          <td className="px-4 py-3 text-right text-emerald-600 font-bold">{m.income.toLocaleString()} </td>
+                          <td className="px-4 py-3 text-right text-rose-600 font-bold">{m.expense.toLocaleString()} </td>
                           <td className={`px-4 py-3 text-right font-black ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {net.toLocaleString()} {currency}
+                            {net.toLocaleString()} 
                           </td>
                         </tr>
                       );

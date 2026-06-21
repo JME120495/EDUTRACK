@@ -72,7 +72,7 @@ export default function IntendantDashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'Revenu Total', value: `${stats.totalRevenue.toLocaleString()} {currency}`, icon: TrendingUp, color: 'from-blue-500 to-indigo-600' },
+          { label: 'Revenu Total', value: `${stats.totalRevenue.toLocaleString()} `, icon: TrendingUp, color: 'from-blue-500 to-indigo-600' },
           { label: 'Taux de Recouvrement', value: `${stats.collectionRate}%`, icon: CreditCard, color: 'from-emerald-500 to-teal-600' },
           { label: 'Impayés (Alertes)', value: stats.pendingPayments, icon: AlertTriangle, color: 'from-rose-500 to-red-600' },
           { label: 'Personnel (Paie)', value: stats.staffCount, icon: Briefcase, color: 'from-amber-500 to-orange-600' }

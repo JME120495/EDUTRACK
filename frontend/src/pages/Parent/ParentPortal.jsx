@@ -362,18 +362,18 @@ export default function ParentPortal() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs font-semibold">
           <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl">
             <span className="text-slate-400 block uppercase font-bold text-[10px] tracking-wider mb-1">Total Tuition</span>
-            <span className="text-base font-black text-slate-800">150,000 {currency}</span>
+            <span className="text-base font-black text-slate-800">150,000 </span>
           </div>
           <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl">
             <span className="text-emerald-600 block uppercase font-bold text-[10px] tracking-wider mb-1">Amount Paid</span>
             <span className="text-base font-black text-emerald-700">
-              {payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()} {currency}
+              {payments.reduce((sum, p) => sum + p.amount, 0).toLocaleString()} 
             </span>
           </div>
           <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl">
             <span className="text-rose-600 block uppercase font-bold text-[10px] tracking-wider mb-1">Remaining Balance</span>
             <span className="text-base font-black text-rose-700">
-              {(150000 - payments.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()} {currency}
+              {(150000 - payments.reduce((sum, p) => sum + p.amount, 0)).toLocaleString()} 
             </span>
           </div>
         </div>

@@ -142,7 +142,7 @@ export default function DirectorDashboard() {
           { label: t('dashboard.stats.students'), value: stats.studentsCount, icon: Users, color: 'from-blue-500 to-indigo-600' },
           { label: t('dashboard.stats.teachers'), value: stats.teachersCount, icon: GraduationCap, color: 'from-purple-500 to-indigo-700' },
           { label: t('dashboard.stats.paymentRate'), value: `${stats.collectionRate}%`, icon: Percent, color: 'from-emerald-500 to-teal-600' },
-          { label: t('dashboard.stats.totalRevenue'), value: `${stats.totalRevenue.toLocaleString()} {currency}`, icon: Coins, color: 'from-amber-500 to-orange-600' }
+          { label: t('dashboard.stats.totalRevenue'), value: `${stats.totalRevenue.toLocaleString()} ${currency}`, icon: Coins, color: 'from-amber-500 to-orange-600' }
         ].map((card, idx) => (
           <div 
             key={idx} 
@@ -202,7 +202,7 @@ export default function DirectorDashboard() {
                 <div key={alert.id} className="p-3 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-between text-xs hover:border-amber-300 transition-colors">
                   <div className="space-y-1">
                     <p className="font-bold text-slate-800">{alert.name}</p>
-                    <p className="text-slate-500 font-medium">{alert.class} | Due: {alert.amountDue.toLocaleString()} {currency}</p>
+                    <p className="text-slate-500 font-medium">{alert.class} | Due: {alert.amountDue.toLocaleString()} </p>
                   </div>
                   <button
                     onClick={() => sendSmsReminder(alert.id, alert.parentPhone, alert.name)}

@@ -407,8 +407,8 @@ export default function HRPage() {
                             <td className="px-6 py-4 font-semibold text-slate-500">{contract.userRole}</td>
                             <td className="px-6 py-4 font-bold text-slate-700">{contract.type}</td>
                             <td className="px-6 py-4 text-slate-500">{new Date(contract.startDate).toLocaleDateString('fr-FR')}</td>
-                            <td className="px-6 py-4 font-bold text-slate-800">{contract.baseSalary?.toLocaleString()} {currency}</td>
-                            <td className="px-6 py-4 text-slate-500">{contract.hourlyRate?.toLocaleString()} {currency}/h</td>
+                            <td className="px-6 py-4 font-bold text-slate-800">{contract.baseSalary?.toLocaleString()} </td>
+                            <td className="px-6 py-4 text-slate-500">{contract.hourlyRate?.toLocaleString()} /h</td>
                             <td className="px-6 py-4">
                               <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${contract.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                                 {contract.status}
@@ -498,9 +498,9 @@ export default function HRPage() {
                                 <td className="px-6 py-4 text-slate-500">
                                   {payMonth}/{payYear}
                                 </td>
-                                <td className="px-6 py-4 text-slate-600">{brut.toLocaleString()} {currency}</td>
-                                <td className="px-6 py-4 text-rose-500 font-semibold">-{payslip.advancesDeducted.toLocaleString()} {currency}</td>
-                                <td className="px-6 py-4 font-black text-emerald-600">{payslip.netSalary.toLocaleString()} {currency}</td>
+                                <td className="px-6 py-4 text-slate-600">{brut.toLocaleString()} </td>
+                                <td className="px-6 py-4 text-rose-500 font-semibold">-{payslip.advancesDeducted.toLocaleString()} </td>
+                                <td className="px-6 py-4 font-black text-emerald-600">{payslip.netSalary.toLocaleString()} </td>
                                 <td className="px-6 py-4">
                                   <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${payslip.status === 'PAID' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
                                     {payslip.status === 'PAID' ? 'PAYÉ' : 'EN ATTENTE'}
@@ -580,7 +580,7 @@ export default function HRPage() {
                         advances.map(adv => (
                           <tr key={adv.id} className="hover:bg-slate-50 transition-colors">
                             <td className="px-6 py-4 font-bold text-slate-800">{adv.user.name}</td>
-                            <td className="px-6 py-4 font-bold text-slate-600">{adv.amount.toLocaleString()} {currency}</td>
+                            <td className="px-6 py-4 font-bold text-slate-600">{adv.amount.toLocaleString()} </td>
                             <td className="px-6 py-4 text-slate-500">
                               {adv.repaymentMonth}/{adv.repaymentYear}
                             </td>
@@ -841,7 +841,7 @@ export default function HRPage() {
               <div className="text-center py-2">
                 <p className="text-xs text-slate-500 font-bold uppercase">Montant Net à Payer</p>
                 <p className="text-3xl font-black text-emerald-600 font-outfit mt-1">
-                  {selectedPayslip.netSalary.toLocaleString()} {currency}
+                  {selectedPayslip.netSalary.toLocaleString()} 
                 </p>
                 <p className="text-xs text-slate-400 mt-2 font-semibold">
                   Bénéficiaire : {selectedPayslip.user.name}
