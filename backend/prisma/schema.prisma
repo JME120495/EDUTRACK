@@ -152,6 +152,7 @@ model Matiere {
   nameEn          String
   code            String                    // e.g. "MATH"
   coefficient     Float                     @default(1.0)
+  volumeHoraire   Int                       @default(0) // Weekly hours
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
   taughtBy        EnseignantMatiereClasse[]

@@ -46,6 +46,7 @@ export default function GradeEntryPage() {
   const [newSubNameEn, setNewSubNameEn] = useState('');
   const [newSubCode, setNewSubCode] = useState('');
   const [newSubCoef, setNewSubCoef] = useState('1.0');
+  const [newSubVolume, setNewSubVolume] = useState('0');
 
   useEffect(() => {
     loadSelectors();
@@ -82,6 +83,7 @@ export default function GradeEntryPage() {
           nameEn: newSubNameEn,
           code: newSubCode,
           coefficient: parseFloat(newSubCoef) || 1.0,
+          volumeHoraire: parseInt(newSubVolume, 10) || 0,
           classId: selectedClassId
         }
       });
@@ -98,6 +100,7 @@ export default function GradeEntryPage() {
       setNewSubNameEn('');
       setNewSubCode('');
       setNewSubCoef('1.0');
+      setNewSubVolume('0');
     } catch (err) {
       alert(err.message || 'Failed to create subject');
     }
@@ -581,7 +584,7 @@ export default function GradeEntryPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject Code</label>
                   <input
@@ -603,6 +606,19 @@ export default function GradeEntryPage() {
                     required
                     value={newSubCoef}
                     onChange={(e) => setNewSubCoef(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none font-bold text-slate-800 text-center"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Volume Horaire (h/semaine)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="40"
+                    required
+                    value={newSubVolume}
+                    onChange={(e) => setNewSubVolume(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none font-bold text-slate-800 text-center"
                   />
                 </div>

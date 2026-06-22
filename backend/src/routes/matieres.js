@@ -17,7 +17,7 @@ router.get('/', auth, async (req, res) => {
 
 // Create subject (Director and Censeur)
 router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
-  const { nameFr, nameEn, code, coefficient, classId, teacherId } = req.body;
+  const { nameFr, nameEn, code, coefficient, volumeHoraire, classId, teacherId } = req.body;
   try {
     if (!nameFr || !nameEn || !code) {
       return res.status(400).json({ message: 'French name, English name, and code are required' });
@@ -30,7 +30,8 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
         nameFr,
         nameEn,
         code,
-        coefficient: parseFloat(coefficient) || 1.0
+        coefficient: parseFloat(coefficient) || 1.0,
+        volumeHoraire: volumeHoraire ? parseInt(volumeHoraire, 10) : 0
       }
     });
 
@@ -56,7 +57,7 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
 
 // Update subject (Director only)
 router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
-  const { nameFr, nameEn, code, coefficient } = req.body;
+  const { nameFr, nameEn, code, coefficient, volumeHoraire } = req.body;
   const { id } = req.params;
   try {
     const updated = await prisma.matiere.update({
@@ -65,7 +66,8 @@ router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) 
         nameFr,
         nameEn,
         code,
-        coefficient: parseFloat(coefficient)
+        coefficient: parseFloat(coefficient),
+        volumeHoraire: volumeHoraire !== undefined ? parseInt(volumeHoraire, 10) : undefined
       }
     });
     res.json(updated);
