@@ -46,7 +46,7 @@ router.get('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => 
 
 // Create a sanction
 router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
-  const { eleveId, type, motif, date } = req.body;
+  const { eleveId, type, motif, date, duration, durationType, isLateness } = req.body;
 
   try {
     if (!eleveId || !type || !motif) {
@@ -67,6 +67,9 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
         censeurId: req.user.id,
         type,
         motif,
+        duration: duration ? parseInt(duration) : null,
+        durationType: durationType || null,
+        isLateness: isLateness || false,
         date: date ? new Date(date) : new Date()
       },
       include: { eleve: true }

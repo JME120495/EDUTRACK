@@ -10,12 +10,18 @@ export default function SanctionsModal({ isOpen, onClose, student }) {
   // Form State
   const [type, setType] = useState('AVERTISSEMENT');
   const [motif, setMotif] = useState('');
+  const [duration, setDuration] = useState('');
+  const [durationType, setDurationType] = useState('DAYS');
+  const [isLateness, setIsLateness] = useState(false);
 
   useEffect(() => {
     if (isOpen && student) {
       loadSanctions();
       setType('AVERTISSEMENT');
       setMotif('');
+      setDuration('');
+      setDurationType('DAYS');
+      setIsLateness(false);
     }
   }, [isOpen, student]);
 
@@ -37,12 +43,20 @@ export default function SanctionsModal({ isOpen, onClose, student }) {
 
     setSaving(true);
     try {
+      const payload = { eleveId: student.id, type, motif, isLateness };
+      if (type === 'EXCLUSION_TEMP') {
+        payload.duration = duration ? parseInt(duration) : null;
+        payload.durationType = durationType;
+      }
+      
       const newSanction = await apiFetch('/discipline', {
         method: 'POST',
-        body: { eleveId: student.id, type, motif }
+        body: payload
       });
       setSanctions([newSanction, ...sanctions]);
       setMotif('');
+      setDuration('');
+      setIsLateness(false);
       alert('Sanction ajoutée et parent notifié !');
     } catch (err) {
       alert(err.message || 'Erreur lors de l\'ajout de la sanction');
@@ -102,7 +116,38 @@ export default function SanctionsModal({ isOpen, onClose, student }) {
                 className="col-span-1 md:col-span-2 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#1E3A5F] outline-none"
               />
             </div>
-            <div className="flex justify-end">
+            {type === 'EXCLUSION_TEMP' && (
+              <div className="flex gap-3">
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={duration || ''}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="Durée..."
+                  className="w-24 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#1E3A5F] outline-none"
+                />
+                <select
+                  value={durationType}
+                  onChange={(e) => setDurationType(e.target.value)}
+                  className="w-32 px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#1E3A5F] outline-none"
+                >
+                  <option value="DAYS">Jours</option>
+                  <option value="HOURS">Heures</option>
+                </select>
+              </div>
+            )}
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="checkbox"
+                id="lateness"
+                checked={isLateness}
+                onChange={(e) => setIsLateness(e.target.checked)}
+                className="h-4 w-4 rounded text-[#1E3A5F] focus:ring-[#1E3A5F] border-slate-300"
+              />
+              <label htmlFor="lateness" className="text-sm text-slate-700 font-medium">L'élève est venu en retard</label>
+            </div>
+            <div className="flex justify-end mt-3">
               <button
                 type="submit"
                 disabled={saving || !motif}
@@ -127,11 +172,16 @@ export default function SanctionsModal({ isOpen, onClose, student }) {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 uppercase tracking-wide">
-                        {s.type}
+                        {s.type} {s.duration && s.durationType ? `(${s.duration} ${s.durationType === 'DAYS' ? 'Jours' : 'Heures'})` : ''}
                       </span>
                       <span className="text-xs text-slate-400 font-medium">
                         {new Date(s.date).toLocaleDateString()}
                       </span>
+                      {s.isLateness && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">
+                          Retard
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-slate-700 font-medium">{s.motif}</p>
                     <p className="text-xs text-slate-400 mt-1">Sanctionné par: {s.censeur?.name || 'Inconnu'}</p>

@@ -574,6 +574,9 @@ async function generateAnnualBulletins(classId) {
     const sBulletins = termBulletins.filter(b => b.eleveId === student.id);
     const justified = sBulletins.reduce((sum, b) => sum + b.absencesJustified, 0);
     const unjustified = sBulletins.reduce((sum, b) => sum + b.absencesUnjustified, 0);
+    
+    // Auto-decision for Annual Bulletin
+    const decision = studentAvg >= 10 ? "Admis(e) en classe supérieure" : "Redouble";
 
     let bulletin = await prisma.bulletin.findFirst({
       where: {
@@ -590,6 +593,7 @@ async function generateAnnualBulletins(classId) {
           rank: studentRank,
           absencesJustified: justified,
           absencesUnjustified: unjustified,
+          classCouncilDecision: decision,
         }
       });
       await prisma.bulletinDetail.deleteMany({
@@ -604,6 +608,7 @@ async function generateAnnualBulletins(classId) {
           rank: studentRank,
           absencesJustified: justified,
           absencesUnjustified: unjustified,
+          classCouncilDecision: decision,
         }
       });
     }

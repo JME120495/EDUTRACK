@@ -29,3 +29,5 @@ Thumbs.db
 # Test scripts
 backend/test_endpoints.js
 
+frontend/dist-desktop/
+frontend/dist-electron/  

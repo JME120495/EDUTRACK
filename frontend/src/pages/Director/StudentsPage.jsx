@@ -18,9 +18,11 @@ import {
   Camera,
   RefreshCw,
   AlertCircle,
-  Crown
+  Crown,
+  ArrowRight
 } from 'lucide-react';
 import SanctionsModal from '../../components/Shared/SanctionsModal';
+import MigrationModal from '../../components/Shared/MigrationModal';
 
 export default function StudentsPage() {
   const { t } = useTranslation();
@@ -63,6 +65,7 @@ export default function StudentsPage() {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [bulkTransferModalOpen, setBulkTransferModalOpen] = useState(false);
   const [bulkTargetClassId, setBulkTargetClassId] = useState('');
+  const [migrationModalOpen, setMigrationModalOpen] = useState(false);
 
   // Filter state
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -484,6 +487,15 @@ export default function StudentsPage() {
                 <span>Transférer ({selectedStudents.length})</span>
               </button>
             )}
+            {user.role === 'DIRECTOR' && (
+              <button
+                onClick={() => setMigrationModalOpen(true)}
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-sm font-bold transition-all shadow-md"
+              >
+                <ArrowRight className="h-4 w-4" />
+                <span>Migration de Classe</span>
+              </button>
+            )}
             <button
               onClick={() => setImportModalOpen(true)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all shadow-sm"
@@ -554,6 +566,13 @@ export default function StudentsPage() {
         isOpen={sanctionsModalOpen} 
         onClose={() => setSanctionsModalOpen(false)} 
         student={sanctionStudent} 
+      />
+
+      <MigrationModal
+        isOpen={migrationModalOpen}
+        onClose={() => setMigrationModalOpen(false)}
+        classes={classes}
+        onMigrationSuccess={loadData}
       />
 
       {activeTab === 'students' ? (
@@ -755,6 +774,16 @@ export default function StudentsPage() {
                               title={student.isStudentCouncil ? t('studentCouncil.remove') : t('studentCouncil.nominate')}
                             >
                               <Crown className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedStudents([student.id]);
+                                setBulkTransferModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-indigo-500 hover:bg-indigo-50 transition-colors"
+                              title="Changer de classe"
+                            >
+                              <ArrowRight className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => openEditStudentModal(student)}
