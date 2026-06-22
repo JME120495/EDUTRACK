@@ -30,7 +30,9 @@ export default function GradeEntryPage() {
   // Grades table data
   const [students, setStudents] = useState([]);
   const [grades, setGrades] = useState({}); // studentId -> gradeValue
+  const [originalGrades, setOriginalGrades] = useState({});
   const [remarks, setRemarks] = useState({}); // studentId -> behavior remarks
+  const [originalRemarks, setOriginalRemarks] = useState({});
   const [customActive, setCustomActive] = useState({}); // studentId -> boolean (for custom inputs)
   const [draftStatus, setDraftStatus] = useState({}); // studentId -> boolean (isDraft)
   const [loading, setLoading] = useState(false);
@@ -132,17 +134,25 @@ export default function GradeEntryPage() {
       const gradesData = await apiFetch(`/notes?classId=${classId}&matiereId=${subjectId}&sequenceId=${sequenceId}`);
       
       const newGrades = {};
+      const newOriginalGrades = {};
       const newDraftStatus = {};
       const newRemarks = {};
+      const newOriginalRemarks = {};
       studentsData.forEach(student => {
         const found = gradesData.find(g => g.eleveId === student.id);
-        newGrades[student.id] = found ? found.value : '';
+        const val = found ? found.value : '';
+        const rem = found ? (found.remarks || '') : '';
+        newGrades[student.id] = val;
+        newOriginalGrades[student.id] = val;
         newDraftStatus[student.id] = found ? found.isDraft : true; // default is draft
-        newRemarks[student.id] = found ? (found.remarks || '') : '';
+        newRemarks[student.id] = rem;
+        newOriginalRemarks[student.id] = rem;
       });
       setGrades(newGrades);
+      setOriginalGrades(newOriginalGrades);
       setDraftStatus(newDraftStatus);
       setRemarks(newRemarks);
+      setOriginalRemarks(newOriginalRemarks);
       setHasUnsavedChanges(false);
     } catch (e) {
       console.error('Failed to load grades:', e);
@@ -199,12 +209,20 @@ export default function GradeEntryPage() {
         return;
       }
 
-      const gradesPayload = Object.keys(grades).map(studentId => ({
-        eleveId: studentId,
-        value: grades[studentId] === '' ? 0 : parseFloat(grades[studentId]),
-        isDraft: true,
-        remarks: remarks[studentId] || ''
-      }));
+      const gradesPayload = Object.keys(grades)
+        .filter(studentId => grades[studentId] !== originalGrades[studentId] || remarks[studentId] !== originalRemarks[studentId])
+        .map(studentId => ({
+          eleveId: studentId,
+          value: grades[studentId] === '' ? 0 : parseFloat(grades[studentId]),
+          isDraft: true,
+          remarks: remarks[studentId] || ''
+        }));
+
+      if (gradesPayload.length === 0) {
+        setSaving(false);
+        setHasUnsavedChanges(false);
+        return;
+      }
 
       await apiFetch('/notes/bulk', {
         method: 'POST',
@@ -229,12 +247,20 @@ export default function GradeEntryPage() {
     if (!window.confirm('Are you sure you want to validate and lock these grades? Once locked, only the School Director can unlock them.')) return;
     setSaving(true);
     try {
-      const gradesPayload = Object.keys(grades).map(studentId => ({
-        eleveId: studentId,
-        value: grades[studentId] === '' ? 0 : parseFloat(grades[studentId]),
-        isDraft: false, // validated
-        remarks: remarks[studentId] || ''
-      }));
+      const gradesPayload = Object.keys(grades)
+        .filter(studentId => draftStatus[studentId] !== false || grades[studentId] !== originalGrades[studentId] || remarks[studentId] !== originalRemarks[studentId])
+        .map(studentId => ({
+          eleveId: studentId,
+          value: grades[studentId] === '' ? 0 : parseFloat(grades[studentId]),
+          isDraft: false, // validated
+          remarks: remarks[studentId] || ''
+        }));
+
+      if (gradesPayload.length === 0) {
+        setSaving(false);
+        setHasUnsavedChanges(false);
+        return;
+      }
 
       await apiFetch('/notes/bulk', {
         method: 'POST',
