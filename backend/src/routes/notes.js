@@ -89,8 +89,7 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
       existingNotesMap.set(note.eleveId, note);
     }
 
-    const saved = [];
-    // We can use Promise.all to run ops concurrently, but batch them to avoid connection exhaustion
+    const ops = [];
     for (const item of grades) {
       if (item.value === '' || item.value === null || item.value === undefined) continue;
 
@@ -99,9 +98,8 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
 
       const existing = existingNotesMap.get(item.eleveId);
 
-      let note;
       if (existing) {
-        note = await prisma.note.update({
+        ops.push(prisma.note.update({
           where: { id: existing.id },
           data: {
             value: val,
@@ -109,9 +107,9 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
             remarks: item.remarks || null,
             teacherId: req.user.id
           }
-        });
+        }));
       } else {
-        note = await prisma.note.create({
+        ops.push(prisma.note.create({
           data: {
             eleveId: item.eleveId,
             sequenceId,
@@ -121,10 +119,11 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
             isDraft: item.isDraft !== false,
             remarks: item.remarks || null
           }
-        });
+        }));
       }
-      saved.push(note);
     }
+    
+    const saved = await prisma.$transaction(ops);
 
     res.json({ message: 'Grades processed successfully', count: saved.length, saved });
   } catch (err) {
@@ -155,7 +154,7 @@ router.post('/save-draft', auth, requireRole(['TEACHER', 'DIRECTOR']), async (re
       existingNotesMap.set(note.eleveId, note);
     }
 
-    const saved = [];
+    const ops = [];
     for (const item of grades) {
       if (item.value === '' || item.value === null || item.value === undefined) continue;
 
@@ -164,18 +163,17 @@ router.post('/save-draft', auth, requireRole(['TEACHER', 'DIRECTOR']), async (re
 
       const existing = existingNotesMap.get(item.studentId);
 
-      let note;
       if (existing) {
-        note = await prisma.note.update({
+        ops.push(prisma.note.update({
           where: { id: existing.id },
           data: {
             value: val,
             isDraft: true,
             teacherId: req.user.id
           }
-        });
+        }));
       } else {
-        note = await prisma.note.create({
+        ops.push(prisma.note.create({
           data: {
             eleveId: item.studentId,
             sequenceId,
@@ -184,10 +182,11 @@ router.post('/save-draft', auth, requireRole(['TEACHER', 'DIRECTOR']), async (re
             value: val,
             isDraft: true
           }
-        });
+        }));
       }
-      saved.push(note);
     }
+    
+    const saved = await prisma.$transaction(ops);
 
     res.json({ message: 'Draft saved successfully', count: saved.length, saved });
   } catch (err) {
@@ -218,7 +217,7 @@ router.post('/validate', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req,
       existingNotesMap.set(note.eleveId, note);
     }
 
-    const validated = [];
+    const ops = [];
     for (const item of grades) {
       if (item.value === '' || item.value === null || item.value === undefined) continue;
 
@@ -229,18 +228,17 @@ router.post('/validate', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req,
 
       const existing = existingNotesMap.get(item.studentId);
 
-      let note;
       if (existing) {
-        note = await prisma.note.update({
+        ops.push(prisma.note.update({
           where: { id: existing.id },
           data: {
             value: val,
             isDraft: false,
             teacherId: req.user.id
           }
-        });
+        }));
       } else {
-        note = await prisma.note.create({
+        ops.push(prisma.note.create({
           data: {
             eleveId: item.studentId,
             sequenceId,
@@ -249,10 +247,11 @@ router.post('/validate', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req,
             value: val,
             isDraft: false
           }
-        });
+        }));
       }
-      validated.push(note);
     }
+    
+    const validated = await prisma.$transaction(ops);
 
     res.json({ message: 'Grades validated and locked successfully', count: validated.length, validated });
   } catch (err) {
