@@ -128,6 +128,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
       requiredPlans: ['PREMIUM', 'CUSTOM']
     },
     {
+      path: '/payroll',
+      label: 'Paie des Enseignants',
+      icon: Coins,
+      roles: ['DIRECTOR', 'INTENDANT']
+    },
+    {
       path: '/documents',
       label: t('nav.documents') || 'Documents & Badges',
       icon: QrCode,

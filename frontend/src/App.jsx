@@ -113,6 +113,7 @@ export default function App() {
               </PlanRoute>
             </RoleRoute>
           } />
+          <Route path="/payroll" element={<RoleRoute roles={['DIRECTOR', 'INTENDANT']}><PayrollPage /></RoleRoute>} />
           <Route path="/documents" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><DocumentsPage /></RoleRoute>} />
           <Route path="/teacher/dashboard" element={<RoleRoute roles={['TEACHER']}><TeacherDashboard /></RoleRoute>} />
           <Route path="/teacher/payroll" element={<RoleRoute roles={['TEACHER']}><TeacherPayrollPage /></RoleRoute>} />
