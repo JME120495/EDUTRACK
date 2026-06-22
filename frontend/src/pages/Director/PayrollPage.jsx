@@ -128,55 +128,85 @@ export default function PayrollPage() {
         {loading ? (
           <div className="py-20 text-center text-slate-400">Loading payroll data...</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 uppercase text-xs font-semibold tracking-wider">
-                <tr>
-                  <th className="px-6 py-4">{t('payroll.table.teacher') || 'Enseignant'}</th>
-                  <th className="px-6 py-4">{t('payroll.table.subject') || 'Matière'}</th>
-                  <th className="px-6 py-4">{t('payroll.table.class') || 'Classe'}</th>
-                  <th className="px-6 py-4">{t('payroll.table.hourlyRate') || 'Taux Horaire'}</th>
-                  <th className="px-6 py-4">{t('payroll.table.hoursTaught') || 'Heures Effectuées'}</th>
-                  <th className="px-6 py-4">{t('payroll.table.totalSalary') || 'Salaire Dû'}</th>
-                  <th className="px-6 py-4">{t('payroll.table.actions') || 'Actions'}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {assignments.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-10 text-center text-slate-400">
-                      Aucune affectation d'enseignant trouvée.
-                    </td>
-                  </tr>
-                ) : (
-                  assignments.map(item => {
-                    const rate = item.hourlyRate || 0;
-                    const hours = item.hoursTaught || 0;
-                    const due = rate * hours;
-                    const subjectName = i18n.language === 'FR' ? item.matiere.nameFr : item.matiere.nameEn;
-
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-800">{item.teacher?.name}</td>
-                        <td className="px-6 py-4 font-semibold text-slate-600">{subjectName}</td>
-                        <td className="px-6 py-4 font-bold text-slate-500">{item.class?.name}</td>
-                        <td className="px-6 py-4 font-bold text-[#1E3A5F]">{rate.toLocaleString()} </td>
-                        <td className="px-6 py-4 font-bold text-slate-500">{hours} h</td>
-                        <td className="px-6 py-4 font-black font-outfit text-emerald-600">{due.toLocaleString()} </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => handleOpenEditModal(item)}
-                            className="p-2 text-[#1E3A5F] hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-200 bg-white"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+          <div className="p-6">
+            {assignments.length === 0 ? (
+              <div className="py-10 text-center text-slate-400">
+                Aucune affectation d'enseignant trouvée.
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {Object.values(
+                  assignments.reduce((acc, curr) => {
+                    const tId = curr.teacherId;
+                    if (!acc[tId]) {
+                      acc[tId] = { teacher: curr.teacher, assignments: [], totalPay: 0, totalHours: 0 };
+                    }
+                    acc[tId].assignments.push(curr);
+                    const due = (curr.hourlyRate || 0) * (curr.hoursTaught || 0);
+                    acc[tId].totalPay += due;
+                    acc[tId].totalHours += (curr.hoursTaught || 0);
+                    return acc;
+                  }, {})
+                ).map(tGroup => (
+                  <div key={tGroup.teacher.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-[#1E3A5F] text-white rounded-full flex items-center justify-center font-bold text-lg shadow-sm">
+                          {tGroup.teacher.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-slate-800 text-lg">{tGroup.teacher.name}</h3>
+                          <p className="text-xs text-slate-500 font-semibold">{tGroup.teacher.email}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Salaire Dû</p>
+                        <p className="text-2xl font-black text-emerald-600 font-outfit">{tGroup.totalPay.toLocaleString()} </p>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm text-slate-600">
+                        <thead className="bg-white text-slate-400 text-xs uppercase font-bold border-b border-slate-100">
+                          <tr>
+                            <th className="px-6 py-3">Classe</th>
+                            <th className="px-6 py-3">Matière</th>
+                            <th className="px-6 py-3">Taux Horaire</th>
+                            <th className="px-6 py-3">Heures Effectuées</th>
+                            <th className="px-6 py-3">Sous-total</th>
+                            <th className="px-6 py-3 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {tGroup.assignments.map(item => {
+                            const rate = item.hourlyRate || 0;
+                            const hours = item.hoursTaught || 0;
+                            const due = rate * hours;
+                            const subjectName = i18n.language === 'FR' ? item.matiere.nameFr : item.matiere.nameEn;
+                            return (
+                              <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="px-6 py-3 font-bold text-slate-600">{item.class?.name}</td>
+                                <td className="px-6 py-3 font-semibold text-slate-500">{subjectName}</td>
+                                <td className="px-6 py-3 font-bold text-[#1E3A5F]">{rate.toLocaleString()} </td>
+                                <td className="px-6 py-3 font-bold text-slate-500">{hours} h</td>
+                                <td className="px-6 py-3 font-black text-emerald-600 font-outfit">{due.toLocaleString()} </td>
+                                <td className="px-6 py-3 text-right">
+                                  <button
+                                    onClick={() => handleOpenEditModal(item)}
+                                    className="p-2 text-[#1E3A5F] hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-200"
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
