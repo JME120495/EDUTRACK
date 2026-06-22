@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../api';
-import { Mail, MailOpen, AlertCircle, Clock, Send } from 'lucide-react';
+import { Mail, MailOpen, AlertCircle, Clock, Send, Trash2 } from 'lucide-react';
 
 export default function MessageInbox() {
   const { t } = useTranslation();
@@ -36,6 +36,22 @@ export default function MessageInbox() {
       setMessages(messages.map(m => m.id === id ? { ...m, isRead: true } : m));
     } catch (e) {
       console.error('Failed to mark as read', e);
+    }
+  };
+
+  const deleteMessage = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) return;
+    try {
+      await apiFetch(`/messages/${id}`, { method: 'DELETE' });
+      if (activeTab === 'inbox') {
+        setMessages(messages.filter(m => m.id !== id));
+      } else {
+        setSentMessages(sentMessages.filter(m => m.id !== id));
+      }
+    } catch (err) {
+      console.error('Failed to delete message', err);
+      alert('Erreur lors de la suppression du message');
     }
   };
 
@@ -106,10 +122,19 @@ export default function MessageInbox() {
                   <p className={`text-sm ${activeTab === 'inbox' && !msg.isRead ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'}`}>
                     {msg.title || 'Message sans objet'}
                   </p>
-                  <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {new Date(msg.createdAt).toLocaleDateString()} {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {new Date(msg.createdAt).toLocaleDateString()} {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                    <button 
+                      onClick={(e) => deleteMessage(e, msg.id)}
+                      className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+                      title="Supprimer le message"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-500 mb-2">
                   {activeTab === 'inbox' ? (

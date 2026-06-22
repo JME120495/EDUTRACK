@@ -67,15 +67,14 @@ export default function LoginPage() {
       } else {
         const user = result;
         setSuccess('Login successful!');
-        setTimeout(() => {
-          if (user.role === 'PARENT') {
-            navigate('/parent');
-          } else if (user.role === 'STUDENT') {
-            navigate('/student');
-          } else {
-            navigate('/dashboard');
-          }
-        }, 800);
+        setSuccess('Login successful!');
+        if (user.role === 'PARENT') {
+          navigate('/parent');
+        } else if (user.role === 'STUDENT') {
+          navigate('/student');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (err) {
       setError(t('auth.error'));
@@ -140,9 +139,7 @@ export default function LoginPage() {
     try {
       const user = await loginParentOtp(phone, otpCode, selectedSchoolId || null);
       setSuccess('Login successful!');
-      setTimeout(() => {
-        navigate('/parent');
-      }, 800);
+      navigate('/parent');
     } catch (err) {
       setError(err.message || 'Invalid OTP code.');
     } finally {

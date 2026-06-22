@@ -233,4 +233,26 @@ router.patch('/:id/read', auth, async (req, res) => {
   }
 });
 
+// Delete a message
+router.delete('/:id', auth, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const msg = await prisma.message.findUnique({ where: { id } });
+    if (!msg) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+    
+    // Only sender or receiver can delete the message
+    if (msg.senderId !== req.user.id && msg.receiverId !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    await prisma.message.delete({ where: { id } });
+    res.json({ message: 'Message deleted' });
+  } catch (err) {
+    console.error('[Messages] Delete error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

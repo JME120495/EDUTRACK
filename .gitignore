@@ -30,4 +30,6 @@ Thumbs.db
 backend/test_endpoints.js
 
 frontend/dist-desktop/
-frontend/dist-electron/  
+frontend/dist-electron/
+frontend/public/downloads/*.exe
+frontend/public/downloads/*.dmg
