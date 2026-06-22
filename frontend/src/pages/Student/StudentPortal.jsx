@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { apiFetch } from '../../api';
 import MessageInbox from '../../components/MessageInbox';
+import SendMessageModal from '../../components/Shared/SendMessageModal';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -13,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   User,
-  Bell
+  Bell,
+  Send
 } from 'lucide-react';
 
 export default function StudentPortal() {
@@ -22,7 +24,8 @@ export default function StudentPortal() {
 
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'messages', 'profile'
+  const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'profile'
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
 
   // Detailed Data
   const [grades, setGrades] = useState([]);
@@ -111,6 +114,8 @@ export default function StudentPortal() {
 
   return (
     <div className="space-y-6">
+      <SendMessageModal isOpen={messageModalOpen} onClose={() => setMessageModalOpen(false)} />
+
       {/* Top Nav */}
       <div className="flex border-b border-slate-200 overflow-x-auto gap-2 pb-1 justify-between">
         <div className="flex gap-2">
@@ -135,6 +140,15 @@ export default function StudentPortal() {
           >
             <User className="h-4 w-4 inline-block mr-2" />
             Mon Profil
+          </button>
+        </div>
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => setMessageModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 mb-1 bg-[#1E3A5F] text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:bg-[#152943]"
+          >
+            <Send className="h-4 w-4" />
+            Nouveau Message
           </button>
         </div>
       </div>

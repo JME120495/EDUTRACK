@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { apiFetch } from '../../api';
 import MessageInbox from '../../components/MessageInbox';
+import SendMessageModal from '../../components/Shared/SendMessageModal';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -15,7 +16,8 @@ import {
   Smartphone,
   X,
   Lock,
-  Bell
+  Bell,
+  Send
 } from 'lucide-react';
 
 export default function ParentPortal() {
@@ -43,6 +45,9 @@ export default function ParentPortal() {
   const [payPhone, setPayPhone] = useState('');
   const [paying, setPaying] = useState(false);
   const [paySuccess, setPaySuccess] = useState(false);
+
+  // Message Modal State
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
 
   useEffect(() => {
     loadParentChildren();
@@ -183,6 +188,8 @@ export default function ParentPortal() {
 
   return (
     <div className="space-y-6">
+      <SendMessageModal isOpen={messageModalOpen} onClose={() => setMessageModalOpen(false)} />
+
       {/* Child Selector Tabs & Messages */}
       <div className="flex border-b border-slate-200 overflow-x-auto gap-2 pb-1 justify-between">
         <div className="flex gap-2">
@@ -207,17 +214,28 @@ export default function ParentPortal() {
             <div className="px-4 py-2.5 text-sm font-bold text-slate-400">{t('portal.parent.noChildrenLinked')}</div>
           )}
         </div>
-        <button
-          onClick={() => setActiveView('messages')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
-            activeView === 'messages'
-              ? 'border-amber-400 text-[#1E3A5F] bg-white shadow-sm'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Bell className="h-4 w-4" />
-          Messagerie
-        </button>
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => setActiveView('messages')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+              activeView === 'messages'
+                ? 'border-amber-400 text-[#1E3A5F] bg-white shadow-sm'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Bell className="h-4 w-4" />
+            Messagerie
+          </button>
+          {activeView === 'messages' && (
+            <button
+              onClick={() => setMessageModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 mb-1 bg-[#1E3A5F] text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:bg-[#152943]"
+            >
+              <Send className="h-4 w-4" />
+              Nouveau
+            </button>
+          )}
+        </div>
       </div>
 
       {activeView === 'messages' ? (

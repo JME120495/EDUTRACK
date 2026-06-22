@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation as useI18n } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { apiFetch } from '../../api';
+import SendMessageModal from '../../components/Shared/SendMessageModal';
 import { 
   Users, 
   GraduationCap, 
@@ -10,7 +11,8 @@ import {
   AlertTriangle, 
   Send, 
   ArrowRight,
-  TrendingUp
+  TrendingUp,
+  MessageSquare
 } from 'lucide-react';
 import {
   BarChart,
@@ -39,6 +41,7 @@ export default function DirectorDashboard() {
   const [academicYears, setAcademicYears] = useState([]);
   const [activeYear, setActiveYear] = useState(null);
   const [sendingReminder, setSendingReminder] = useState(null);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -108,6 +111,8 @@ export default function DirectorDashboard() {
 
   return (
     <div className="space-y-6">
+      <SendMessageModal isOpen={messageModalOpen} onClose={() => setMessageModalOpen(false)} />
+
       {/* Welcome Banner */}
       <div className="p-6 rounded-2xl bg-[#1E3A5F] text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-700/20 to-transparent pointer-events-none" />
@@ -133,6 +138,15 @@ export default function DirectorDashboard() {
               </option>
             ))}
           </select>
+        </div>
+        <div className="relative z-10 flex items-center gap-2">
+          <button
+            onClick={() => setMessageModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400 text-white rounded-xl text-sm font-bold transition-all shadow-md shrink-0 backdrop-blur-md"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>Envoyer un message</span>
+          </button>
         </div>
       </div>
 

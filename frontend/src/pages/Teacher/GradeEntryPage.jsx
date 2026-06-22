@@ -141,22 +141,60 @@ export default function GradeEntryPage() {
       const newDraftStatus = {};
       const newRemarks = {};
       const newOriginalRemarks = {};
+      
+      const offlineKey = `offline_grades_${classId}_${subjectId}_${sequenceId}`;
+      const offlineDataStr = localStorage.getItem(offlineKey);
+      let offlineGrades = null;
+      let offlineRemarks = null;
+      if (offlineDataStr) {
+        try {
+          const parsed = JSON.parse(offlineDataStr);
+          if (parsed && typeof parsed === 'object') {
+            if (parsed.grades === undefined) {
+              offlineGrades = parsed; // Old format
+              offlineRemarks = {};
+            } else {
+              offlineGrades = parsed.grades || {};
+              offlineRemarks = parsed.remarks || {};
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse offline data", e);
+        }
+      }
+      
+      let loadedOffline = false;
+
       studentsData.forEach(student => {
         const found = gradesData.find(g => g.eleveId === student.id);
-        const val = found ? found.value : '';
-        const rem = found ? (found.remarks || '') : '';
-        newGrades[student.id] = val;
-        newOriginalGrades[student.id] = val;
+        const serverVal = found ? found.value : '';
+        const serverRem = found ? (found.remarks || '') : '';
+        
+        let finalVal = serverVal;
+        let finalRem = serverRem;
+        
+        if (offlineGrades && offlineGrades[student.id] !== undefined) {
+          finalVal = offlineGrades[student.id];
+          if (finalVal !== serverVal) loadedOffline = true;
+        }
+        if (offlineRemarks && offlineRemarks[student.id] !== undefined) {
+          finalRem = offlineRemarks[student.id];
+          if (finalRem !== serverRem) loadedOffline = true;
+        }
+
+        newGrades[student.id] = finalVal;
+        newOriginalGrades[student.id] = serverVal;
         newDraftStatus[student.id] = found ? found.isDraft : true; // default is draft
-        newRemarks[student.id] = rem;
-        newOriginalRemarks[student.id] = rem;
+        newRemarks[student.id] = finalRem;
+        newOriginalRemarks[student.id] = serverRem;
       });
+
       setGrades(newGrades);
       setOriginalGrades(newOriginalGrades);
       setDraftStatus(newDraftStatus);
       setRemarks(newRemarks);
       setOriginalRemarks(newOriginalRemarks);
-      setHasUnsavedChanges(false);
+      setHasUnsavedChanges(loadedOffline);
     } catch (e) {
       console.error('Failed to load grades:', e);
     } finally {
@@ -206,7 +244,7 @@ export default function GradeEntryPage() {
     try {
       // Offline mode simulation
       if (!isOnline) {
-        localStorage.setItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}`, JSON.stringify(grades));
+        localStorage.setItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}`, JSON.stringify({ grades, remarks }));
         alert('Offline mode: Saved drafts locally in the browser storage!');
         setSaving(false);
         return;
@@ -237,6 +275,7 @@ export default function GradeEntryPage() {
         }
       });
 
+      localStorage.removeItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}`);
       alert(t('grades.draftSaved'));
       loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId);
     } catch (e) {
@@ -275,6 +314,7 @@ export default function GradeEntryPage() {
         }
       });
 
+      localStorage.removeItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}`);
       alert(t('grades.validated'));
       loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId);
     } catch (e) {

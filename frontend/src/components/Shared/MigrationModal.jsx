@@ -177,7 +177,7 @@ export default function MigrationModal({ isOpen, onClose, classes, onMigrationSu
                     onClick={handleSelectAllAdmis}
                     className="px-3 py-1.5 text-xs font-bold bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-lg transition-colors"
                   >
-                    Sélectionner tous les Admis (>= 10)
+                    Sélectionner tous les Admis ({'>='} 10)
                   </button>
                   <button
                     onClick={handleSelectAll}

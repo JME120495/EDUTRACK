@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../context/AuthContext';
@@ -6,9 +6,20 @@ import { apiFetch } from '../api';
 import { Shield, Phone, Mail, Lock, CheckCircle2, AlertCircle, Globe } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login, loginParentOtp, updateLanguage } = useContext(AuthContext);
+  const { user, login, loginParentOtp, updateLanguage } = useContext(AuthContext);
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'PARENT') navigate('/parent');
+      else if (user.role === 'STUDENT') navigate('/student');
+      else if (user.role === 'TEACHER') navigate('/teacher/dashboard');
+      else if (user.role === 'CENSEUR') navigate('/censeur/dashboard');
+      else if (user.role === 'INTENDANT') navigate('/intendant/dashboard');
+      else navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const [activeTab, setActiveTab] = useState('staff'); // 'staff' | 'parent'
   const [email, setEmail] = useState('');
@@ -31,6 +42,11 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!navigator.onLine) {
+      setError(i18n.language.toUpperCase() === 'EN' ? 'No internet connection. Cannot login offline.' : 'Pas de connexion internet. Impossible de se connecter hors ligne.');
+      return;
+    }
 
     // Require school selection if multiple schools are available
     if (availableSchools.length > 1 && !selectedSchoolId && activeTab === 'staff') {
@@ -72,6 +88,12 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!navigator.onLine) {
+      setError(i18n.language.toUpperCase() === 'EN' ? 'No internet connection.' : 'Pas de connexion internet.');
+      return;
+    }
+
     if (!phone) {
       setError('Please enter your phone number.');
       return;
@@ -108,6 +130,12 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!navigator.onLine) {
+      setError(i18n.language.toUpperCase() === 'EN' ? 'No internet connection.' : 'Pas de connexion internet.');
+      return;
+    }
+
     setLoading(true);
     try {
       const user = await loginParentOtp(phone, otpCode, selectedSchoolId || null);

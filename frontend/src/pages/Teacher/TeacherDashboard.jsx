@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
 import { AuthContext } from '../../context/AuthContext';
-import { Calendar, Users, CheckCircle, Clock, BookOpen, AlertTriangle } from 'lucide-react';
+import SendMessageModal from '../../components/Shared/SendMessageModal';
+import { Calendar, Users, CheckCircle, Clock, BookOpen, AlertTriangle, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TeacherDashboard() {
@@ -12,6 +13,7 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [timetable, setTimetable] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -45,6 +47,8 @@ export default function TeacherDashboard() {
 
   return (
     <div className="space-y-6">
+      <SendMessageModal isOpen={messageModalOpen} onClose={() => setMessageModalOpen(false)} />
+
       {/* Welcome Banner */}
       <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-800 to-indigo-900 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -55,6 +59,13 @@ export default function TeacherDashboard() {
             {formattedDate} | Professeur
           </p>
         </div>
+        <button
+          onClick={() => setMessageModalOpen(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500/30 hover:bg-blue-500/50 border border-blue-400 text-white rounded-xl text-sm font-bold transition-all shadow-md shrink-0 backdrop-blur-md"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>Envoyer un message</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

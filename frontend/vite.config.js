@@ -20,7 +20,7 @@ export default defineConfig({
     ]),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['hero.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: ['hero.png', 'edutrack-icon.svg'],
       manifest: {
         name: 'EduTrack',
         short_name: 'EduTrack',
@@ -30,19 +30,19 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'edutrack-icon.svg',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'edutrack-icon.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'edutrack-icon.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]

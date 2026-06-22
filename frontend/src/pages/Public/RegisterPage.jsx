@@ -408,17 +408,16 @@ export default function RegisterPage() {
           <div>
             <h4 className="text-lg font-medium mb-4 text-white">Contact</h4>
             <ul className="space-y-2 text-sm text-slate-400">
-              <li><a href="tel:+237690000000" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">+237 690 00 00 00</a></li>
+              <li><a href="tel:+237691003392" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">+237 691 00 33 92 / +237 681 62 55 20</a></li>
               <li><a href="mailto:contact@edutrack.com" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">contact@edutrack.com</a></li>
-              <li><a href="https://wa.me/237690000000" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">WhatsApp Direct</a></li>
+              <li><a href="https://wa.me/237691003392" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">WhatsApp Direct</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-lg font-medium mb-4 text-white">Nos bureaux</h4>
             <p className="text-sm text-slate-400 leading-relaxed">
-              Quartier Biyem-Assi<br />
-              À 50m du carrefour<br />
-              Yaoundé - Cameroun
+              Yaoundé, Cameroun<br />
+              Emana
             </p>
           </div>
         </div>

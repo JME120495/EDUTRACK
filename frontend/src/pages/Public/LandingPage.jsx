@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { AuthContext } from '../../context/AuthContext';
 import { 
   ShieldCheck, Users, GraduationCap, Gavel, 
   Wallet, Briefcase, MessageSquare, BookOpen, 
-  ArrowRight, CheckCircle2, Globe, Smartphone, 
-  WifiOff, Star, ChevronDown, MessageCircle, Facebook, Download, Apple
+  WifiOff, Star, ChevronDown, MessageCircle, Facebook, Download, Apple, Monitor
 } from 'lucide-react';
 import PwaInstallPrompt from '../../components/PwaInstallPrompt';
 
 export default function LandingPage() {
+  const { user } = useContext(AuthContext);
   const { t, i18n } = useTranslation();
   const [isAnnual, setIsAnnual] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
@@ -51,9 +52,9 @@ export default function LandingPage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-2">
-              <span className="text-3xl">🎓</span>
-              <span className="font-extrabold text-white text-2xl tracking-tight">EduTrack</span>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <span className="text-2xl sm:text-3xl">🎓</span>
+              <span className="font-extrabold text-white text-xl sm:text-2xl tracking-tight">EduTrack</span>
             </div>
             <nav className="hidden md:flex space-x-8">
               <a href="#features" className="text-slate-300 hover:text-amber-500 font-semibold transition-colors">{t('landing.quickLinks') !== 'landing.quickLinks' ? t('landing.quickLinks').split(' ')[0] : 'Fonctionnalités'}</a>
@@ -61,18 +62,19 @@ export default function LandingPage() {
               <a href="#testimonials" className="text-slate-300 hover:text-amber-500 font-semibold transition-colors">{t('landing.testimonialsTitle').split(' ').pop()}</a>
               <a href="#contact" className="text-slate-300 hover:text-amber-500 font-semibold transition-colors">{t('landing.contact')}</a>
             </nav>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button 
                 onClick={toggleLanguage} 
-                className="text-slate-300 font-bold hover:text-amber-500 transition-colors uppercase"
+                className="text-sm sm:text-base text-slate-300 font-bold hover:text-amber-500 transition-colors uppercase"
               >
                 {i18n.language === 'fr' ? 'EN' : 'FR'}
               </button>
-              <Link to="/login" className="hidden sm:inline-flex text-slate-300 font-bold hover:text-white transition-colors">
-                {t('landing.login')}
+              <Link to={user ? "/dashboard-redirect" : "/login"} className="text-sm sm:text-base text-slate-300 font-bold hover:text-white transition-colors whitespace-nowrap">
+                {user ? (i18n.language === 'fr' ? 'Tableau de bord' : 'Dashboard') : t('landing.login')}
               </Link>
-              <Link to="/register" className="bg-amber-500 text-slate-900 px-5 py-2.5 rounded-xl font-bold hover:bg-amber-400 transition-all shadow-md">
-                {t('landing.btnDemo')}
+              <Link to="/register" className="bg-amber-500 text-slate-900 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl font-bold hover:bg-amber-400 transition-all shadow-md text-xs sm:text-base whitespace-nowrap">
+                <span className="hidden sm:inline">{t('landing.btnDemo')}</span>
+                <span className="sm:hidden">{i18n.language === 'fr' ? 'Démo' : 'Demo'}</span>
               </Link>
             </div>
           </div>
@@ -391,7 +393,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Section Application Mobile */}
+      {/* Section Applications Multiplateformes */}
       <section className="py-20 bg-slate-900 border-b border-slate-800 relative overflow-hidden">
         <div className="absolute top-1/2 left-0 w-72 h-72 bg-emerald-900/20 rounded-full blur-3xl -z-10 transform -translate-y-1/2"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center gap-12">
@@ -406,12 +408,13 @@ export default function LandingPage() {
               </h2>
               <p className="text-lg text-slate-400 mb-8">
                 {i18n.language === 'fr' 
-                  ? 'Installez notre application mobile directement depuis ce site web. Pas besoin de passer par l\'App Store ou le Play Store. Accès rapide, notifications, et mode hors-ligne inclus.'
-                  : 'Install our mobile application directly from this website. No need to go through the App Store or Play Store. Fast access, notifications, and offline mode included.'
+                  ? 'Installez nos applications pour ordinateurs (Windows, Mac) ou pour appareils mobiles. Profitez de l\'accès hors-ligne, des notifications, et d\'une expérience fluide.'
+                  : 'Install our applications for computers (Windows, Mac) or mobile devices. Enjoy offline access, notifications, and a seamless experience.'
                 }
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                   onClick={() => {
                     const promptEvent = new Event('beforeinstallprompt');
@@ -433,6 +436,25 @@ export default function LandingPage() {
                   <span>{i18n.language === 'fr' ? 'Installer sur iPhone' : 'Install on iPhone'}</span>
                 </button>
               </div>
+              <div className="flex flex-col sm:flex-row gap-4 mt-2">
+                <a 
+                  href="/downloads/EduTrack-Setup.exe"
+                  download
+                  className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-500 transition-colors flex items-center justify-center gap-3 shadow-lg flex-1"
+                >
+                  <Monitor className="w-5 h-5" />
+                  <span>{i18n.language === 'fr' ? 'Windows (.exe)' : 'Windows (.exe)'}</span>
+                </a>
+                <a 
+                  href="/downloads/EduTrack-Mac.dmg"
+                  download
+                  className="bg-slate-700 text-white border border-slate-600 px-6 py-3 rounded-xl font-bold hover:bg-slate-600 transition-colors flex items-center justify-center gap-3 shadow-lg flex-1"
+                >
+                  <Apple className="w-5 h-5" />
+                  <span>{i18n.language === 'fr' ? 'Mac (.dmg)' : 'Mac (.dmg)'}</span>
+                </a>
+              </div>
+            </div>
             </motion.div>
           </div>
           <div className="md:w-1/2 flex justify-center">
@@ -554,7 +576,7 @@ export default function LandingPage() {
             <ul className="space-y-2 text-sm text-slate-400">
               <li><a href="#features" className="hover:text-amber-500">{t('landing.quickLinks') !== 'landing.quickLinks' ? t('landing.quickLinks').split(' ')[0] : 'Fonctionnalités'}</a></li>
               <li><a href="#pricing" className="hover:text-amber-500">{t('landing.btnPricing').split(' ').pop()}</a></li>
-              <li><a href="/login" className="hover:text-amber-500">{t('landing.login')}</a></li>
+              <li><Link to={user ? "/dashboard-redirect" : "/login"} className="hover:text-amber-500">{user ? (i18n.language === 'fr' ? 'Tableau de bord' : 'Dashboard') : t('landing.login')}</Link></li>
             </ul>
           </div>
           <div>
