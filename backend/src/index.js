@@ -1,3 +1,4 @@
+try {
 require('dotenv').config(); // force reload for CORS update
 const express = require('express');
 const cors = require('cors');
@@ -195,3 +196,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 module.exports = app;
+
+} catch (error) {
+  module.exports = (req, res) => {
+    res.status(500).json({ message: 'Boot error', error: error.message, stack: error.stack });
+  };
+}
