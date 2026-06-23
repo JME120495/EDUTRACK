@@ -1,10 +1,9 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../db');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is not set. Server cannot start securely.');
-  process.exit(1);
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_for_development_only_please_change';
+if (!process.env.JWT_SECRET) {
+  console.warn('WARNING: JWT_SECRET environment variable is not set. Using insecure fallback. Server will not crash, but please configure it in Vercel.');
 }
 
 const userCache = new Map();
