@@ -4,39 +4,55 @@ const path = require('path');
 
 function createPdf(filename, title, contentBlocks) {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
-  // The user might be looking for it in the root or in the frontend/public folder.
-  // We'll write to the root folder because the user's active document list shows `c:\Users\esson\OneDrive\Documents\Edutrack\Manuel_Utilisation_EduTrack.pdf`
   const outputPath = path.join(__dirname, '..', filename);
   doc.pipe(fs.createWriteStream(outputPath));
 
-  // Default font
-  doc.font('Helvetica');
+  // Couleurs et polices
+  const mainColor = '#1E3A5F';
+  const secondaryColor = '#F5A623';
+  const textColor = '#333333';
 
-  doc.fontSize(20).font('Helvetica-Bold').text(title, { align: 'center' });
+  // Couverture
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill('#F8FAFC');
+  doc.fill(mainColor).fontSize(28).font('Helvetica-Bold').text('EDUTRACK', { align: 'center', margin: 100 });
+  doc.moveDown(1);
+  doc.fill(secondaryColor).fontSize(20).text(title, { align: 'center' });
+  doc.moveDown(3);
+  
+  doc.fill(textColor).fontSize(12).font('Helvetica').text('Compte de démonstration utilisé :', { align: 'center' });
+  doc.moveDown(0.5);
+  doc.font('Helvetica-Bold').text('Email : jme.trading.academy@gmail.com', { align: 'center' });
+  doc.text('Mot de passe : 123456', { align: 'center' });
+  
+  doc.addPage();
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill('#FFFFFF');
+
+  doc.fill(mainColor).fontSize(22).font('Helvetica-Bold').text('Sommaire des Fonctionnalités', { align: 'center' });
   doc.moveDown(2);
 
   contentBlocks.forEach(block => {
-    if (block.type === 'h1') {
-      doc.font('Helvetica-Bold').fontSize(16).text(block.text);
-      doc.moveDown(0.8);
-    } else if (block.type === 'h2') {
-      doc.moveDown(0.5);
-      doc.font('Helvetica-Bold').fontSize(14).text(block.text);
-      doc.moveDown(0.5);
-    } else if (block.type === 'h3') {
-      doc.font('Helvetica-Bold').fontSize(12).text(block.text);
-      doc.moveDown(0.3);
-    } else if (block.type === 'p') {
-      doc.font('Helvetica').fontSize(11).text(block.text, { align: 'justify', lineGap: 2 });
-      doc.moveDown(0.5);
-    } else if (block.type === 'bullet') {
-      doc.font('Helvetica').fontSize(11).text('• ' + block.text, { align: 'justify', indent: 15, lineGap: 2 });
-      doc.moveDown(0.3);
+    // Check for page break
+    if (doc.y > 720) {
+      doc.addPage();
     }
-    
-    // Add page break if near bottom
-    if (doc.y > 750) {
-        doc.addPage();
+
+    if (block.type === 'h1') {
+      doc.moveDown(1);
+      doc.fill(mainColor).font('Helvetica-Bold').fontSize(16).text(block.text);
+      doc.moveDown(0.5);
+    } else if (block.type === 'h2') {
+      doc.moveDown(0.8);
+      doc.fill(secondaryColor).font('Helvetica-Bold').fontSize(13).text(block.text);
+      doc.moveDown(0.4);
+    } else if (block.type === 'p') {
+      doc.fill(textColor).font('Helvetica').fontSize(11).text(block.text, { align: 'justify', lineGap: 3 });
+      doc.moveDown(0.5);
+    } else if (block.type === 'step') {
+      doc.fill(textColor).font('Helvetica').fontSize(11).text('   ' + block.text, { align: 'justify', lineGap: 3 });
+      doc.moveDown(0.2);
+    } else if (block.type === 'note') {
+      doc.fill('#64748B').font('Helvetica-Oblique').fontSize(10).text('Remarque : ' + block.text, { align: 'justify', lineGap: 2 });
+      doc.moveDown(0.5);
     }
   });
 
@@ -45,108 +61,171 @@ function createPdf(filename, title, contentBlocks) {
 }
 
 const contentFR = [
-  { type: 'h1', text: 'GUIDE D\'UTILISATION DÉTAILLÉ - ESPACE ADMINISTRATEUR (DIRECTEUR)' },
-  { type: 'p', text: 'Ce manuel décrit de manière exhaustive chaque fonctionnalité accessible depuis le tableau de bord de l\'Administrateur (Directeur) dans EduTrack.' },
-  
-  { type: 'h2', text: '1. Tableau de Bord' },
-  { type: 'p', text: 'La vue d\'ensemble de votre établissement à la connexion.' },
-  { type: 'bullet', text: 'Statistiques globales : Visualisez instantanément le nombre d\'Élèves Actifs, d\'Enseignants, le Taux de Recouvrement, et le Total Recouvré.' },
-  { type: 'bullet', text: 'Alertes et Retards de Paiements : Consultez la liste des élèves en retard de paiement de scolarité.' },
-  { type: 'bullet', text: 'Envoyer Rappel SMS : Depuis le tableau de bord, envoyez en un clic ("Envoyer Rappel SMS") une relance automatique aux parents des élèves en retard.' },
-  { type: 'bullet', text: 'Actions Rapides : Raccourcis vers les tâches les plus courantes.' },
+  { type: 'h1', text: '1. Connexion et Tableau de Bord' },
+  { type: 'p', text: 'Le Tableau de Bord est la page d\'accueil de votre espace Administrateur (Directeur). Il centralise les données importantes de l\'école.' },
+  { type: 'h2', text: 'Comment y accéder et l\'utiliser :' },
+  { type: 'step', text: '1. Allez sur la page de connexion EduTrack.' },
+  { type: 'step', text: '2. Entrez votre email (ex: jme.trading.academy@gmail.com) et le mot de passe (123456).' },
+  { type: 'step', text: '3. Cliquez sur "Se Connecter". Vous êtes redirigé vers le Tableau de Bord.' },
+  { type: 'step', text: '4. En haut de la page, lisez les blocs de statistiques : "Élèves Actifs", "Enseignants", "Taux de Recouvrement" et "Total Recouvré". Ces données sont calculées automatiquement par le système.' },
+  { type: 'step', text: '5. Dans la section "Alertes et Retards de Paiements", vous voyez les élèves n\'ayant pas réglé leur scolarité.' },
+  { type: 'step', text: '6. Pour relancer les parents de ces élèves, cliquez simplement sur le bouton "Envoyer Rappel SMS". Le système enverra automatiquement un SMS à chaque parent concerné.' },
 
-  { type: 'h2', text: '2. Personnel Administratif' },
-  { type: 'p', text: 'Gestion des profils administratifs (Directeurs adjoints, Censeurs, Intendants).' },
-  { type: 'bullet', text: 'Ajouter ou modifier des comptes d\'utilisateurs ayant accès au panneau d\'administration avec différents niveaux de permissions.' },
+  { type: 'h1', text: '2. Personnel Administratif' },
+  { type: 'p', text: 'Cet onglet permet de créer et gérer les comptes des Censeurs et Intendants.' },
+  { type: 'h2', text: 'Comment ajouter un membre du personnel :' },
+  { type: 'step', text: '1. Dans le menu latéral gauche, cliquez sur "Personnel Administratif".' },
+  { type: 'step', text: '2. Cliquez sur le bouton "Ajouter du personnel" en haut à droite.' },
+  { type: 'step', text: '3. Dans la fenêtre qui s\'ouvre, choisissez le RÔLE dans le menu déroulant : "CENSEUR" ou "INTENDANT".' },
+  { type: 'step', text: '4. Remplissez le NOM COMPLET et le TÉLÉPHONE.' },
+  { type: 'step', text: '5. Entrez un MOT DE PASSE (il servira à la première connexion de l\'utilisateur).' },
+  { type: 'step', text: '6. Cliquez sur "Enregistrer".' },
+  { type: 'h2', text: 'Comment assigner des classes à un Censeur :' },
+  { type: 'step', text: '1. Sur la ligne du Censeur, cliquez sur l\'icône de livre ("Assigner des classes") dans la colonne "Actions".' },
+  { type: 'step', text: '2. Cochez les cases correspondant aux classes qu\'il doit gérer.' },
+  { type: 'step', text: '3. Cliquez sur "Enregistrer".' },
 
-  { type: 'h2', text: '3. Personnel d\'Appui' },
-  { type: 'p', text: 'Gérez les gardiens, femmes de ménage, secrétaires et autres employés d\'appui.' },
-  { type: 'bullet', text: 'Ajouter du Personnel : Saisissez le Nom, la Profession / Poste, le Téléphone et l\'Email.' },
-  { type: 'bullet', text: 'Consultation : Affichez la liste complète ("Total Personnel") et recherchez par nom ou téléphone.' },
+  { type: 'h1', text: '3. Personnel d\'Appui' },
+  { type: 'p', text: 'Permet de recenser les gardiens, chauffeurs, femmes de ménage, etc.' },
+  { type: 'h2', text: 'Comment ajouter ou modifier :' },
+  { type: 'step', text: '1. Cliquez sur "Personnel d\'Appui" dans le menu.' },
+  { type: 'step', text: '2. Cliquez sur le bouton "Ajouter du Personnel".' },
+  { type: 'step', text: '3. Remplissez le NOM COMPLET, le POSTE (ex: Gardien), et le TÉLÉPHONE.' },
+  { type: 'step', text: '4. Cliquez sur "Enregistrer". Le personnel apparaît maintenant dans le tableau.' },
+  { type: 'step', text: '5. Pour modifier les informations d\'un personnel existant, cliquez sur l\'icône de crayon (bleu) sur sa ligne.' },
 
-  { type: 'h2', text: '4. Gestion Élèves' },
-  { type: 'p', text: 'Consultez, ajoutez et liez les profils d\'élèves avec les identifiants parents.' },
-  { type: 'bullet', text: 'Ajouter un Élève : Saisie manuelle des informations de l\'élève (Nom complet, Matricule, Genre, Classe).' },
-  { type: 'bullet', text: 'Importer depuis CSV : Ajout d\'élèves en masse à partir d\'un fichier.' },
-  { type: 'bullet', text: 'Comptes Parents & Liaisons : Créez un compte parent ("Créer Compte Parent") et liez-le à ses enfants ("Lier un Parent").' },
+  { type: 'h1', text: '4. Gestion des Élèves' },
+  { type: 'p', text: 'C\'est ici que vous inscrivez les élèves et que vous les liez à leurs parents.' },
+  { type: 'h2', text: 'Comment ajouter un élève manuellement :' },
+  { type: 'step', text: '1. Allez dans "Gestion Élèves".' },
+  { type: 'step', text: '2. Cliquez sur "Ajouter un Élève".' },
+  { type: 'step', text: '3. Saisissez le Nom complet, le Matricule, le Genre et choisissez sa Classe.' },
+  { type: 'step', text: '4. Cliquez sur "Enregistrer".' },
+  { type: 'h2', text: 'Comment lier un parent à un élève :' },
+  { type: 'step', text: '1. Toujours dans "Gestion Élèves", cliquez sur l\'onglet "Comptes Parents & Liaisons".' },
+  { type: 'step', text: '2. Cliquez sur "Créer Compte Parent" et entrez son nom et son numéro de téléphone.' },
+  { type: 'step', text: '3. Revenez à l\'onglet "Élèves". Sur la ligne de l\'élève, cliquez sur le bouton "Lier un Parent".' },
+  { type: 'step', text: '4. Sélectionnez le parent que vous venez de créer et validez. Le parent pourra désormais voir les notes de cet élève depuis son propre compte.' },
 
-  { type: 'h2', text: '5. Gestion Classes' },
-  { type: 'p', text: 'Structure pédagogique de l\'établissement.' },
-  { type: 'bullet', text: 'Créer une classe : Définissez les nouvelles salles de classe, leur niveau et leur capacité.' },
+  { type: 'h1', text: '5. Gestion des Classes' },
+  { type: 'p', text: 'Pour créer l\'architecture de l\'école (ex: 6ème M1, Terminale D).' },
+  { type: 'h2', text: 'Comment créer une classe :' },
+  { type: 'step', text: '1. Allez dans "Gestion Classes".' },
+  { type: 'step', text: '2. Cliquez sur "Créer une classe".' },
+  { type: 'step', text: '3. Saisissez le nom de la classe, le niveau et sa capacité d\'accueil maximale.' },
+  { type: 'step', text: '4. Cliquez sur "Enregistrer".' },
 
-  { type: 'h2', text: '6. Gestion Enseignants' },
-  { type: 'p', text: 'Gérez les comptes des enseignants titulaires et vacataires et affectez-les aux matières par classe.' },
-  { type: 'bullet', text: 'Créer Compte Enseignant : Ajoutez un nouveau professeur (Nom, Téléphone, Email).' },
-  { type: 'bullet', text: 'Affecter Enseignant : Assurez la liaison entre un professeur, une classe et une matière spécifique.' },
+  { type: 'h1', text: '6. Gestion des Enseignants' },
+  { type: 'p', text: 'Gérez les profils professeurs et assignez-les aux différentes matières.' },
+  { type: 'h2', text: 'Comment ajouter et affecter un enseignant :' },
+  { type: 'step', text: '1. Cliquez sur "Gestion Enseignants" dans le menu.' },
+  { type: 'step', text: '2. Cliquez sur "Créer Compte Enseignant" et remplissez son nom et téléphone. Enregistrez.' },
+  { type: 'step', text: '3. Allez ensuite sur l\'onglet "Affectations des Matières" (en haut de la page).' },
+  { type: 'step', text: '4. Cliquez sur "Affecter Enseignant".' },
+  { type: 'step', text: '5. Sélectionnez l\'enseignant, la classe où il enseigne, et la matière. Renseignez également son quota d\'heures.' },
+  { type: 'step', text: '6. Validez pour terminer l\'affectation.' },
 
-  { type: 'h2', text: '7. Emploi du Temps' },
-  { type: 'p', text: 'Planification hebdomadaire des cours.' },
-  { type: 'bullet', text: 'Ajouter un cours : Sélectionnez la Salle, l\'Enseignant, la Matière et le Jour (du Lundi au Samedi).' },
-  { type: 'bullet', text: 'Détection de Conflit : Le système vous alerte si un enseignant ou une salle est doublement assigné.' },
-  { type: 'bullet', text: 'Exporter en PDF : Générez une version imprimable de l\'emploi du temps de la classe.' },
+  { type: 'h1', text: '7. Emploi du Temps' },
+  { type: 'p', text: 'Planifiez les cours de la semaine pour chaque classe.' },
+  { type: 'h2', text: 'Comment construire l\'emploi du temps :' },
+  { type: 'step', text: '1. Allez dans "Emploi du Temps".' },
+  { type: 'step', text: '2. Sélectionnez la classe voulue dans la liste déroulante.' },
+  { type: 'step', text: '3. Cliquez sur "Ajouter un cours" ou directement sur une case vide du planning.' },
+  { type: 'step', text: '4. Choisissez le Jour, l\'Heure de début et de fin, la Matière, l\'Enseignant et la Salle.' },
+  { type: 'step', text: '5. Cliquez sur "Enregistrer". (Note: Si l\'enseignant est déjà occupé ailleurs à cette heure, le système affichera un message de "Détection de Conflit").' },
+  { type: 'step', text: '6. Cliquez sur "Exporter en PDF" pour télécharger la grille finalisée.' },
 
-  { type: 'h2', text: '8. Bibliothèque' },
-  { type: 'p', text: 'Gérez le stock de romans/livres de lecture et suivez les prêts aux élèves.' },
-  { type: 'bullet', text: 'Ajouter un Livre : Entrez les informations des ouvrages dans la base de données.' },
-  { type: 'bullet', text: 'Rechercher : Trouvez rapidement un livre par titre ou par auteur.' },
+  { type: 'h1', text: '8. Bibliothèque' },
+  { type: 'p', text: 'Module pour la gestion du stock de livres et les emprunts.' },
+  { type: 'h2', text: 'Comment gérer les livres :' },
+  { type: 'step', text: '1. Allez dans "Bibliothèque".' },
+  { type: 'step', text: '2. Cliquez sur "Ajouter un Livre" pour entrer un nouvel ouvrage dans le système (Titre, Auteur, ISBN, Quantité).' },
+  { type: 'step', text: '3. Pour prêter un livre : sur la ligne du livre, cliquez sur le bouton "Prêter".' },
+  { type: 'step', text: '4. Sélectionnez l\'élève qui emprunte le livre et validez. Le système calcule la date de retour prévue.' },
 
-  { type: 'h2', text: '9. Saisie des Notes' },
-  { type: 'p', text: 'Saisie Séquentielle des Notes. Saisissez les notes et appréciations comportementales par classe, matière et séquence.' },
-  { type: 'bullet', text: 'Note / 20 & Comportement : Entrez la note et sélectionnez une appréciation ("-- Choisir remarque --").' },
-  { type: 'bullet', text: 'Enregistrer Brouillon / Sauvegarder Brouillon : Permet de sauvegarder la saisie en cours (Statut : BROUILLON).' },
-  { type: 'bullet', text: 'Validation Finale / Valider définitivement : Verrouille les notes ("Notes validées et verrouillées !").' },
-  { type: 'bullet', text: 'Mode Hors-ligne : Poursuivez la saisie même en cas de coupure de connexion, avec une synchronisation ultérieure.' },
+  { type: 'h1', text: '9. Saisie des Notes' },
+  { type: 'p', text: 'Entrez les évaluations et la note de comportement des élèves.' },
+  { type: 'h2', text: 'Comment saisir les notes :' },
+  { type: 'step', text: '1. Cliquez sur "Saisie des Notes".' },
+  { type: 'step', text: '2. Utilisez les filtres en haut : sélectionnez la "CLASSE", puis la "MATIÈRE", puis la "SÉQUENCE ACADÉMIQUE".' },
+  { type: 'step', text: '3. La liste des élèves s\'affiche. Dans la colonne "Note / 20", tapez la note de l\'élève.' },
+  { type: 'step', text: '4. Dans la colonne "Appréciations", cliquez sur "-- Choisir remarque --" pour indiquer le comportement.' },
+  { type: 'step', text: '5. Si vous n\'avez pas terminé, cliquez sur "Enregistrer Brouillon".' },
+  { type: 'step', text: '6. Si toutes les notes sont correctes, cliquez sur "Valider définitivement". Attention, cela verrouille les notes.' },
 
-  { type: 'h2', text: '10. Absences / Appel' },
-  { type: 'p', text: 'Registre des Absences & Appel.' },
-  { type: 'bullet', text: 'Effectuez l\'appel numérique et cliquez sur "Sauvegarder l\'Appel" pour enregistrer.' },
+  { type: 'h1', text: '10. Absences / Appel' },
+  { type: 'p', text: 'Registre numérique de présence.' },
+  { type: 'h2', text: 'Comment faire l\'appel :' },
+  { type: 'step', text: '1. Allez dans "Absences / Appel".' },
+  { type: 'step', text: '2. Sélectionnez la classe. La liste des élèves apparaît avec des cases à cocher.' },
+  { type: 'step', text: '3. Par défaut, tout le monde est présent. Décochez la case des élèves qui sont absents.' },
+  { type: 'step', text: '4. Cliquez sur le bouton "Sauvegarder l\'Appel". Les parents des absents recevront automatiquement une notification.' },
 
-  { type: 'h2', text: '11. Bulletins' },
-  { type: 'p', text: 'Génération de Bulletins.' },
-  { type: 'bullet', text: 'Options de génération : "Générer Bulletins de Séquence", "Générer Bulletins Trimestriels", "Générer Bulletins Annuels".' },
-  { type: 'bullet', text: 'Conseil de Classe & Comportement : "Modifier Décisions/Conduite", saisissez la Conduite, les Sanctions Disciplinaires et la Décision du Conseil.' },
-  { type: 'bullet', text: 'Signatures : Cliquez sur "Signer en tant que Directeur" pour apposer votre signature électronique.' },
-  { type: 'bullet', text: 'Diffusion : "Envoyer à tous les Parents par WhatsApp" pour une distribution instantanée, ou générez le PDF.' },
+  { type: 'h1', text: '11. Bulletins' },
+  { type: 'p', text: 'Génération automatique des bulletins en fin de période.' },
+  { type: 'h2', text: 'Comment générer et distribuer les bulletins :' },
+  { type: 'step', text: '1. Allez dans "Bulletins".' },
+  { type: 'step', text: '2. Cliquez sur l\'un des boutons : "Générer Bulletins de Séquence", "Trimestriels" ou "Annuels".' },
+  { type: 'step', text: '3. Une fois générés, la liste des élèves apparaît avec leur moyenne et leur rang.' },
+  { type: 'step', text: '4. Cliquez sur "Modifier Décisions/Conduite" pour ajouter l\'avis du Conseil de Classe ou une sanction.' },
+  { type: 'step', text: '5. Cliquez sur "Signer en tant que Directeur" pour apposer votre signature sur le document.' },
+  { type: 'step', text: '6. Pour imprimer, cliquez sur "Bulletins PDF".' },
+  { type: 'step', text: '7. Pour envoyer directement le bulletin aux parents sur leur téléphone, cliquez sur "Envoyer à tous les Parents par WhatsApp".' },
 
-  { type: 'h2', text: '12. Paiements & Scolarité' },
-  { type: 'p', text: 'Suivi Financier : Gestion de scolarité, plans d\'échéance, moratoires et rapports financiers.' },
-  { type: 'bullet', text: 'Configurer les Frais par Classe : Définissez les tranches ("Modifier les Frais").' },
-  { type: 'bullet', text: 'Enregistrer un Paiement / + Saisir Versement : Ajoutez le montant encaissé ("Payé (FCFA)"). Le statut s\'ajustera automatiquement (Scolarité Réglée, Paiement Partiel, Impayé).' },
-  { type: 'bullet', text: 'Envoyer Relances Classe : Envoyez un SMS groupé aux mauvais payeurs d\'une classe.' },
+  { type: 'h1', text: '12. Paiements & Scolarité' },
+  { type: 'p', text: 'Le cœur financier de l\'école pour le suivi des frais de scolarité.' },
+  { type: 'h2', text: 'Comment configurer et encaisser :' },
+  { type: 'step', text: '1. Allez dans "Paiements & Scolarité".' },
+  { type: 'step', text: '2. Cliquez sur "Modifier les Frais" pour configurer le montant total exigé pour chaque classe.' },
+  { type: 'step', text: '3. Pour enregistrer l\'argent remis par un élève, cliquez sur "+ Saisir Versement".' },
+  { type: 'step', text: '4. Sélectionnez l\'élève, saisissez le montant dans "Payé (FCFA)" et validez.' },
+  { type: 'step', text: '5. Un reçu de paiement est généré et le "Reste à payer" de l\'élève diminue automatiquement.' },
+  { type: 'step', text: '6. En cas de nombreux impayés, cliquez sur le bouton "Envoyer Relances Classe" pour notifier tous les débiteurs d\'un coup par SMS.' },
 
-  { type: 'h2', text: '13. Comptabilité (OHADA)' },
-  { type: 'p', text: 'Module réservé aux plans Premium/Custom pour la gestion comptable aux normes OHADA.' },
+  { type: 'h1', text: '13. Comptabilité (OHADA)' },
+  { type: 'p', text: 'Si vous avez le plan Premium, cet onglet génère automatiquement votre Balance et votre Journal de Caisse selon le plan comptable OHADA à partir des paiements saisis.' },
 
-  { type: 'h2', text: '14. Ressources Humaines' },
-  { type: 'p', text: 'Gestion du personnel, contrats, avances sur salaire et congés.' },
-  { type: 'bullet', text: 'Personnel & Contrats : "Créer un Contrat" avec Type de contrat, Salaire de base et Taux horaire.' },
-  { type: 'bullet', text: 'Avances Salaire : "Demander une Avance" et suivre les remboursements.' },
-  { type: 'bullet', text: 'Congés & Absences : "Demander un Congé" (Type, Date de début, Motif).' },
-  { type: 'bullet', text: 'Bulletins de Paie : "Générer la paie du mois" (calcul du Net à payer, Retenues, Primes, Avance déduite).' },
+  { type: 'h1', text: '14. Ressources Humaines' },
+  { type: 'p', text: 'Gestion des contrats de travail, des congés et des avances.' },
+  { type: 'h2', text: 'Comment gérer les avances et contrats :' },
+  { type: 'step', text: '1. Allez dans "Ressources Humaines".' },
+  { type: 'step', text: '2. Sous l\'onglet "Personnel & Contrats", cliquez sur "Créer un Contrat" pour définir le salaire de base d\'un employé.' },
+  { type: 'step', text: '3. Pour accorder une avance, allez dans l\'onglet "Avances Salaire" et cliquez sur "Demander une Avance" en spécifiant le montant et le mois de remboursement.' },
+  { type: 'step', text: '4. Pour générer les salaires à la fin du mois, allez dans "Bulletins de Paie" et cliquez sur "Générer la paie du mois". Le système va déduire automatiquement l\'avance accordée à l\'étape 3 du "Net à payer".' },
 
-  { type: 'h2', text: '15. Paie des Enseignants' },
-  { type: 'p', text: 'Gérer les taux horaires, les heures effectuées et les salaires des enseignants.' },
-  { type: 'bullet', text: 'Configuration : "Configurer la Paie", saisissez le Taux Horaire (FCFA/h) et le total des Heures effectuées pour générer le Salaire dû.' },
+  { type: 'h1', text: '15. Paie des Enseignants' },
+  { type: 'p', text: 'Calculez la paie des professeurs selon leur taux horaire et le volume effectué.' },
+  { type: 'h2', text: 'Comment valider les heures :' },
+  { type: 'step', text: '1. Allez dans l\'onglet "Paie des Enseignants".' },
+  { type: 'step', text: '2. Cliquez sur le bouton "Configurer la Paie".' },
+  { type: 'step', text: '3. Pour chaque enseignant listé, entrez le "Taux Horaire (FCFA/h)" et le nombre de "Heures effectuées" dans le mois.' },
+  { type: 'step', text: '4. Le montant "Salaire dû" se met à jour immédiatement. Cliquez sur "Enregistrer les modifications".' },
 
-  { type: 'h2', text: '16. Documents & Badges' },
-  { type: 'p', text: 'Impression en masse de cartes d\'accès avec QR codes et attestations d\'étudiants.' },
-  { type: 'bullet', text: 'Modèles d\'Attestations : "Créer un Modèle" en utilisant les balises ({NOM_ELEVE}, {CLASSE}, {MATRICULE}, etc.).' },
-  { type: 'bullet', text: 'Générer Attestation : Choisissez le modèle et l\'élève pour générer le PDF.' },
-  { type: 'bullet', text: 'Cartes & Badges : "Télécharger Grille Badges Élèves (A4)" ou "Badges Parents (A4)".' },
+  { type: 'h1', text: '16. Documents & Badges' },
+  { type: 'p', text: 'Outil de génération de documents administratifs en masse.' },
+  { type: 'h2', text: 'Comment imprimer des cartes scolaires ou attestations :' },
+  { type: 'step', text: '1. Allez dans "Documents & Badges".' },
+  { type: 'step', text: '2. Onglet "Modèles d\'Attestations" : Cliquez sur "Créer un Modèle". Vous pouvez rédiger un texte avec des balises comme {NOM_ELEVE} qui seront remplacées automatiquement.' },
+  { type: 'step', text: '3. Onglet "Générer Attestation" : Choisissez le modèle créé, choisissez l\'élève cible, et cliquez sur "Générer le PDF".' },
+  { type: 'step', text: '4. Onglet "Cartes & Badges" : Choisissez une classe et cliquez sur "Télécharger Grille Badges Élèves (A4)" pour obtenir les cartes scolaires de toute la classe prêtes à imprimer.' },
 
-  { type: 'h2', text: '17. Abonnement & Facturation' },
-  { type: 'p', text: 'Gérez votre abonnement EduTrack et découvrez nos offres.' },
-  { type: 'bullet', text: 'Consultez votre plan (Essentiel, Pro, Premium, Sur Mesure), cliquez sur "Changer de Plan" ou "Mettre à niveau" selon vos besoins.' },
+  { type: 'h1', text: '17. Paramètres École' },
+  { type: 'p', text: 'Configuration basique de l\'établissement.' },
+  { type: 'h2', text: 'Comment configurer :' },
+  { type: 'step', text: '1. Allez dans "Paramètres École".' },
+  { type: 'step', text: '2. Changez le "Nom de l\'école" ou la "Langue par défaut".' },
+  { type: 'step', text: '3. Cliquez sur le bouton "Enregistrer les modifications".' },
 
-  { type: 'h2', text: '18. Paramètres École' },
-  { type: 'p', text: 'Configuration de l\'Établissement.' },
-  { type: 'bullet', text: 'Réglez le Nom de l\'école et la Langue par défaut de l\'interface, puis cliquez sur "Enregistrer les modifications".' },
-
-  { type: 'h2', text: '19. Messagerie' },
-  { type: 'p', text: 'Outil de communication intégré.' },
-  { type: 'bullet', text: 'Boîte de réception : Consultez les messages reçus.' },
-  { type: 'bullet', text: 'Nouveau Message : "Envoyer un message à", rédigez ("Écrivez votre message ici...") et cliquez sur "Envoyer".' }
+  { type: 'h1', text: '18. Messagerie' },
+  { type: 'p', text: 'Communiquez facilement avec les parents, enseignants et autres employés.' },
+  { type: 'h2', text: 'Comment envoyer un message interne :' },
+  { type: 'step', text: '1. Allez dans "Messagerie".' },
+  { type: 'step', text: '2. La "Boîte de réception" vous affiche les messages reçus.' },
+  { type: 'step', text: '3. Pour écrire, cliquez sur "Nouveau Message" (ou "Envoyer un message à").' },
+  { type: 'step', text: '4. Sélectionnez les destinataires dans la liste (ou utilisez "Sélectionner Tous").' },
+  { type: 'step', text: '5. Rédigez le contenu dans "Écrivez votre message ici..." et cliquez sur "Envoyer". Le message apparaîtra sur le tableau de bord de la personne connectée.' }
 ];
 
-createPdf('Manuel_Utilisation_EduTrack.pdf', 'MANUEL D\'UTILISATION - ADMINISTRATEUR', contentFR);
+createPdf('Manuel_Utilisation_EduTrack.pdf', 'MANUEL PAS À PAS - DIRECTEUR', contentFR);
+
 
