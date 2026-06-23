@@ -96,17 +96,19 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email/Phone and password are required' });
     }
 
+    const cleanEmail = email.trim();
+
     // Try finding by email or phone
     let users = [];
-    if (email.includes('@')) {
+    if (cleanEmail.includes('@')) {
       // NOTE: email is currently globally unique in DB, but this supports if it changes
       users = await prisma.user.findMany({
-        where: { email },
+        where: { email: cleanEmail },
         include: { school: true }
       });
     } else {
       users = await prisma.user.findMany({
-        where: { phone: email },
+        where: { phone: cleanEmail },
         include: { school: true }
       });
     }
