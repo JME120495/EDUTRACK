@@ -6,7 +6,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { 
   ShieldCheck, Users, GraduationCap, Gavel, 
   Wallet, Briefcase, MessageSquare, BookOpen, 
-  WifiOff, Star, ChevronDown, MessageCircle, Facebook, Download, Apple, Monitor, CheckCircle2
+  WifiOff, Star, ChevronDown, MessageCircle, Facebook, Download, Apple, Monitor, CheckCircle2, Smartphone, Globe
 } from 'lucide-react';
 import PwaInstallPrompt from '../../components/PwaInstallPrompt';
 
