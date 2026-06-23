@@ -6,7 +6,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { 
   ShieldCheck, Users, GraduationCap, Gavel, 
   Wallet, Briefcase, MessageSquare, BookOpen, 
-  WifiOff, Star, ChevronDown, MessageCircle, Facebook, Download, Apple, Monitor
+  WifiOff, Star, ChevronDown, MessageCircle, Facebook, Download, Apple, Monitor, CheckCircle2
 } from 'lucide-react';
 import PwaInstallPrompt from '../../components/PwaInstallPrompt';
 
@@ -48,7 +48,7 @@ export default function LandingPage() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="sticky top-0 left-0 right-0 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 z-50"
+        className="sticky top-0 left-0 right-0 bg-slate-900/50 backdrop-blur-lg border-b border-slate-700/50 z-50"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
