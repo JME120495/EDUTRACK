@@ -222,7 +222,7 @@ router.post('/entries', requireRole(['DIRECTOR', 'INTENDANT']), async (req, res)
 
     // Allowing small floating point differences, but practically they should be exact
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
-      return res.status(400).json({ message: 'L\\'écriture n\\'est pas équilibrée (Total Débit ≠ Total Crédit).' });
+      return res.status(400).json({ message: 'L\'écriture n\'est pas équilibrée (Total Débit ≠ Total Crédit).' });
     }
 
     // Get active fiscal year
@@ -258,7 +258,7 @@ router.post('/entries', requireRole(['DIRECTOR', 'INTENDANT']), async (req, res)
     res.status(201).json(entry);
   } catch (error) {
     console.error('Error creating entry:', error);
-    res.status(500).json({ message: 'Erreur lors de la création de l\\'écriture.' });
+    res.status(500).json({ message: 'Erreur lors de la création de l\'écriture.' });
   }
 });
 
