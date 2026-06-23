@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const prisma = require('../db');
 const { JWT_SECRET, auth } = require('../middlewares/authMiddleware');
 const { sendSMS } = require('../services/notifService');
 const { auditLog } = require('../services/auditService');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
 
 // Register a new Director/Founder and create a new School
 router.post('/register', async (req, res) => {
@@ -46,6 +48,8 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, salt);
     
     const fullName = `${firstName.trim()} ${lastName.trim()}`;
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
     const user = await prisma.user.create({
       data: {
@@ -54,28 +58,21 @@ router.post('/register', async (req, res) => {
         email,
         passwordHash,
         role: 'DIRECTOR',
-        language: lang || 'FR'
+        language: lang || 'FR',
+        emailVerified: false,
+        verificationToken,
+        verificationExpires
       }
     });
 
     await auditLog(req, 'REGISTER', 'User', user.id, { role: user.role, schoolId: user.schoolId });
-
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        role: user.role, 
-        schoolId: user.schoolId,
-        subscriptionPlan: school.subscriptionPlan,
-        name: user.name,
-        schoolName: school.name,
-        currency: school.currency
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    
+    // Send verification email
+    await sendVerificationEmail(email, verificationToken, user.name);
 
     res.status(201).json({
-      token,
+      message: 'Inscription réussie. Veuillez vérifier votre boîte mail.',
+      requiresVerification: true,
       user: {
         id: user.id,
         name: user.name,
@@ -144,6 +141,10 @@ router.post('/login', async (req, res) => {
         return res.status(400).json({ message: 'Invalid school selected' });
       }
       user = selected;
+    }
+
+    if (!user.emailVerified && user.role === 'DIRECTOR') {
+      return res.status(403).json({ message: 'Veuillez vérifier votre adresse e-mail avant de vous connecter.' });
     }
 
     // V-004 FIX: JWT payload contains only essential claims (no PII)
@@ -352,13 +353,49 @@ router.post('/forgot-password', async (req, res) => {
       data: { otpCode, otpExpires }
     });
 
-    // In a real app, send an email here. For now, just return it in dev mode.
-    const response = { message: 'Code de réinitialisation généré avec succès' };
-    response.devCode = otpCode; // Simulated email content
+    // Send the password reset email
+    await sendPasswordResetEmail(user.email, otpCode, user.name);
+
+    const response = { message: 'Code de réinitialisation envoyé à votre adresse e-mail' };
+    if (process.env.NODE_ENV === 'development') {
+      response.devCode = otpCode; // Simulated email content
+    }
 
     res.json(response);
   } catch (err) {
     console.error('[Auth] Forgot password error:', err);
+    res.status(500).json({ message: 'Une erreur interne est survenue' });
+  }
+});
+
+// Verify Email
+router.post('/verify-email', async (req, res) => {
+  const { token } = req.body;
+  try {
+    if (!token) return res.status(400).json({ message: 'Token de vérification manquant' });
+
+    const user = await prisma.user.findFirst({ where: { verificationToken: token } });
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Jeton invalide ou introuvable' });
+    }
+
+    if (user.verificationExpires && user.verificationExpires < new Date()) {
+      return res.status(400).json({ message: 'Le lien de vérification a expiré' });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        verificationToken: null,
+        verificationExpires: null
+      }
+    });
+
+    res.json({ message: 'Votre adresse e-mail a été confirmée avec succès. Vous pouvez maintenant vous connecter.' });
+  } catch (err) {
+    console.error('[Auth] Verify email error:', err);
     res.status(500).json({ message: 'Une erreur interne est survenue' });
   }
 });

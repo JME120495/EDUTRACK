@@ -32,7 +32,10 @@ export default function ForgotPasswordPage() {
 
     try {
       const response = await forgotPassword(email);
-      setSuccess(`${response.message} (TEST DEV: Votre code est ${response.devCode})`);
+      const successMsg = response.devCode 
+        ? `${response.message} (Code DEV: ${response.devCode})` 
+        : response.message;
+      setSuccess(successMsg);
       setStep(2);
     } catch (err) {
       setError(err.message || 'Erreur lors de la demande de réinitialisation.');

@@ -4,6 +4,7 @@ import { AuthContext, AuthProvider } from './context/AuthContext';
 import Layout from './components/Shared/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/Public/RegisterPage';
+import VerifyEmailPage from './pages/Public/VerifyEmailPage';
 import ForgotPasswordPage from './pages/Public/ForgotPasswordPage';
 import LandingPage from './pages/Public/LandingPage';
 import DirectorDashboard from './pages/Director/Dashboard';
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         

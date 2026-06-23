@@ -87,6 +87,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -133,12 +134,16 @@ export default function RegisterPage() {
         firstName, lastName, email, password, lang: lang.toUpperCase()
       };
       
-      await register(payload);
+      const res = await register(payload);
       
-      setSuccess(i18n.language.toUpperCase() === 'EN' ? 'Registration successful!' : 'Inscription réussie !');
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      if (res.requiresVerification) {
+        setIsSubmitted(true);
+      } else {
+        setSuccess(i18n.language.toUpperCase() === 'EN' ? 'Registration successful!' : 'Inscription réussie !');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      }
     } catch (err) {
       setError(err.message || (i18n.language.toUpperCase() === 'EN' ? 'Registration error.' : "Erreur lors de l'inscription."));
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -192,6 +197,24 @@ export default function RegisterPage() {
             <p className="mt-2 text-sm text-slate-400">Commencez gratuitement avec le plan GRATUIT</p>
           </div>
 
+          {isSubmitted ? (
+            <div className="rounded-xl border border-slate-700 bg-slate-800 shadow-xl overflow-hidden p-10 text-center">
+              <div className="mx-auto w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-6">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-4">Inscription Réussie !</h3>
+              <p className="text-slate-300 mb-8 max-w-md mx-auto">
+                Votre compte a été créé avec succès. Pour des raisons de sécurité, nous vous avons envoyé un e-mail de confirmation.
+                <br /><br />
+                Veuillez cliquer sur le lien contenu dans cet e-mail pour activer votre compte.
+              </p>
+              <Link to="/login" className="inline-block bg-amber-500 text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-amber-400 transition-colors">
+                Aller à la page de connexion
+              </Link>
+            </div>
+          ) : (
           <div className="rounded-xl border border-slate-700 bg-slate-800 shadow-xl overflow-hidden">
             <div className="p-6 py-8 sm:px-12">
               
@@ -386,6 +409,7 @@ export default function RegisterPage() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </main>
 

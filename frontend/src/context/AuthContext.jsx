@@ -58,9 +58,8 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: payload
     });
-    localStorage.setItem('edutrack_token', data.token);
-    setToken(data.token);
-    return data.user;
+    // No token is returned yet, user must verify email.
+    return data;
   };
 
   const forgotPassword = async (email) => {

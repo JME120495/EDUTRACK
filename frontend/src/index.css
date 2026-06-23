@@ -47,7 +47,18 @@ h1, h2, h3, h4, h5, h6 {
     @apply backdrop-blur-md bg-navy/80 border border-white/10 rounded-2xl shadow-lg text-white;
   }
 
+  .glass-panel {
+    @apply backdrop-blur-xl bg-slate-900/60 border border-slate-700/50 rounded-3xl shadow-2xl;
+  }
+
   /* ───────────── Premium Buttons ───────────── */
+  .btn-glow {
+    @apply bg-amber-500 text-slate-900 font-bold px-6 py-3 rounded-xl
+           transition-all duration-300 ease-out
+           shadow-[0_0_20px_rgba(245,158,11,0.4)]
+           hover:bg-amber-400 hover:shadow-[0_0_30px_rgba(245,158,11,0.6)]
+           hover:-translate-y-0.5 active:translate-y-0 active:shadow-md;
+  }
   .btn-primary {
     @apply bg-navy text-white font-semibold px-6 py-2.5 rounded-xl
            transition-all duration-300 ease-out

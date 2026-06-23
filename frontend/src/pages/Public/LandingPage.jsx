@@ -72,7 +72,7 @@ export default function LandingPage() {
               <Link to={user ? "/dashboard-redirect" : "/login"} className="text-sm sm:text-base text-slate-300 font-bold hover:text-white transition-colors whitespace-nowrap">
                 {user ? (i18n.language === 'fr' ? 'Tableau de bord' : 'Dashboard') : t('landing.login')}
               </Link>
-              <Link to="/register" className="bg-amber-500 text-slate-900 px-3 py-1.5 sm:px-5 sm:py-2.5 rounded-xl font-bold hover:bg-amber-400 transition-all shadow-md text-xs sm:text-base whitespace-nowrap">
+              <Link to="/register" className="btn-glow whitespace-nowrap text-sm sm:text-base">
                 <span className="hidden sm:inline">{t('landing.btnDemo')}</span>
                 <span className="sm:hidden">{i18n.language === 'fr' ? 'Démo' : 'Demo'}</span>
               </Link>
@@ -82,54 +82,106 @@ export default function LandingPage() {
       </motion.header>
 
       {/* 2. Hero section */}
-      <section className="relative pt-24 pb-20 lg:pt-32 lg:pb-28 overflow-hidden border-b border-slate-800">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-900/20 rounded-full blur-3xl -z-10"></div>
-        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl -z-10"></div>
+      <section className="relative pt-24 pb-20 lg:pt-32 lg:pb-32 overflow-hidden border-b border-slate-800">
+        <div className="absolute top-10 left-[-10%] w-[500px] h-[500px] bg-blue-900/20 rounded-full blur-[100px] -z-10"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-900/10 rounded-full blur-[100px] -z-10"></div>
         
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.h1 
-            initial="hidden"
-            animate="visible"
-            variants={fadeIn}
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mb-6"
-            dangerouslySetInnerHTML={{ __html: t('landing.heroTitle').replace('établissement scolaire', '<br class="hidden md:block" />établissement scolaire').replace('school management', '<br class="hidden md:block" />school management') }}
-          />
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="mt-4 text-xl text-slate-400 max-w-3xl mx-auto mb-10 font-medium leading-relaxed"
-          >
-            {t('landing.heroSubtitle')}
-          </motion.p>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16"
-          >
-            <Link to="/register" className="w-full sm:w-auto bg-amber-500 text-slate-900 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-amber-400 transition-all shadow-xl flex items-center justify-center gap-2 transform hover:scale-105">
-              {t('landing.btnDemo')}
-            </Link>
-            <a href="#pricing" className="w-full sm:w-auto bg-slate-800 text-white border border-slate-700 px-8 py-4 rounded-2xl font-bold text-lg hover:bg-slate-700 transition-all flex items-center justify-center gap-2 transform hover:scale-105">
-              {t('landing.btnPricing')}
-            </a>
-          </motion.div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            {/* Gauche : Texte */}
+            <div className="lg:w-1/2 text-left">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-sm font-medium mb-6"
+              >
+                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                SaaS Éducatif · iOS & Android · Multilingue
+              </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.8 }}
-            className="mx-auto max-w-4xl bg-slate-800/50 p-2 md:p-4 rounded-3xl border border-slate-700 shadow-2xl relative"
-          >
-            <img 
-              src="/hero.png" 
-              alt="EduTrack Dashboard" 
-              className="rounded-2xl w-full h-auto object-cover opacity-80"
-            />
-          </motion.div>
+              <motion.h1 
+                initial="hidden"
+                animate="visible"
+                variants={fadeIn}
+                className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-6 leading-tight"
+              >
+                La gestion scolaire <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">
+                  réinventée pour demain.
+                </span>
+              </motion.h1>
+              
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="text-xl text-slate-400 mb-10 font-medium leading-relaxed max-w-lg"
+              >
+                {t('landing.heroSubtitle')}
+              </motion.p>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+                className="flex flex-col sm:flex-row items-center gap-4"
+              >
+                <Link to="/register" className="w-full sm:w-auto btn-glow flex items-center justify-center gap-2 text-lg">
+                  {t('landing.btnDemo')}
+                </Link>
+                <a href="#pricing" className="w-full sm:w-auto bg-slate-800 text-white border border-slate-700 px-8 py-3 rounded-xl font-bold text-lg hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
+                  {t('landing.btnPricing')}
+                </a>
+              </motion.div>
+            </div>
+
+            {/* Droite : Faux Dashboard */}
+            <div className="lg:w-1/2 w-full">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.8 }}
+                className="glass-panel p-4 md:p-6 relative overflow-hidden"
+              >
+                <div className="flex items-center gap-2 mb-6 border-b border-slate-700/50 pb-4">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                  <div className="ml-4 bg-slate-800/80 px-3 py-1 rounded-md text-xs text-slate-400 font-mono tracking-wider">
+                    edutrack.com / admin / dashboard
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+                    <div className="text-slate-400 text-xs md:text-sm mb-1">{i18n.language === 'fr' ? 'Élèves' : 'Students'}</div>
+                    <div className="text-2xl md:text-3xl font-bold text-white">847</div>
+                    <div className="text-emerald-400 text-xs flex items-center gap-1 mt-2">↑ 12%</div>
+                  </div>
+                  <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+                    <div className="text-slate-400 text-xs md:text-sm mb-1">{i18n.language === 'fr' ? 'Présences' : 'Attendance'}</div>
+                    <div className="text-2xl md:text-3xl font-bold text-white">94%</div>
+                    <div className="text-emerald-400 text-xs flex items-center gap-1 mt-2">↑ 3%</div>
+                  </div>
+                  <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm hidden md:block">
+                    <div className="text-slate-400 text-xs md:text-sm mb-1">{i18n.language === 'fr' ? 'Paiements' : 'Payments'}</div>
+                    <div className="text-2xl md:text-3xl font-bold text-white">98%</div>
+                    <div className="text-emerald-400 text-xs flex items-center gap-1 mt-2">↑ 5%</div>
+                  </div>
+                </div>
+                
+                <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm">
+                  <div className="text-slate-400 text-sm mb-6">{i18n.language === 'fr' ? 'Inscriptions par mois' : 'Enrollments per month'}</div>
+                  <div className="flex items-end gap-2 md:gap-3 h-32 md:h-40">
+                    {[40, 60, 45, 80, 50, 90, 70, 100, 60, 110, 80, 120].map((h, i) => (
+                      <div key={i} className="flex-1 bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-sm hover:from-amber-400 hover:to-amber-300 transition-colors" style={{ height: `${h}%` }}></div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -172,21 +224,21 @@ export default function LandingPage() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
           >
             {featuresList(i18n.language).map((feat, idx) => (
-              <motion.div key={idx} variants={fadeIn} className="bg-slate-800 border border-slate-700 rounded-3xl p-8 hover:border-amber-500/50 transition-colors hover:-translate-y-1 transform duration-300 shadow-lg">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-900/50 border border-slate-700 flex items-center justify-center text-amber-500 flex-shrink-0">
+              <motion.div key={idx} variants={fadeIn} className="glass-panel p-6 hover:border-amber-500/50 transition-all hover:-translate-y-1 transform duration-300 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                <div className="flex flex-col items-start gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 flex-shrink-0">
                     {feat.icon}
                   </div>
-                  <h3 className="text-xl font-bold text-white leading-tight">{feat.title}</h3>
+                  <h3 className="text-lg font-bold text-white leading-tight">{feat.title}</h3>
                 </div>
-                <p className="text-base text-slate-400 leading-relaxed mb-6">{feat.desc}</p>
-                <ul className="space-y-3">
-                  {feat.details.map((detail, dIdx) => (
-                    <li key={dIdx} className="flex items-start gap-3 text-sm text-slate-300">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-slate-400 leading-relaxed mb-4">{feat.desc}</p>
+                <ul className="space-y-2">
+                  {feat.details.slice(0, 2).map((detail, dIdx) => (
+                    <li key={dIdx} className="flex items-start gap-2 text-xs text-slate-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                       <span className="leading-snug">{detail}</span>
                     </li>
                   ))}
@@ -194,6 +246,62 @@ export default function LandingPage() {
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      {/* 4.5 Section "Comparaison Zéro Papier" (Avant / Avec) */}
+      <section className="py-24 bg-slate-900 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">
+              {i18n.language === 'fr' ? 'La différence EduTrack' : 'The EduTrack Difference'}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+            {/* Avant */}
+            <div className="bg-red-500/5 border border-red-500/20 rounded-[2rem] p-8 md:p-10">
+              <h3 className="text-2xl font-bold text-red-400 mb-8 flex items-center gap-3">
+                <span className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">✕</span>
+                {i18n.language === 'fr' ? 'Avant EduTrack' : 'Before EduTrack'}
+              </h3>
+              <ul className="space-y-6 text-slate-400 text-lg">
+                <li className="flex items-start gap-4">
+                  <span className="text-red-500 mt-1">✕</span>
+                  {i18n.language === 'fr' ? 'Registres d\'appel et bulletins en papier qui se perdent ou s\'abîment.' : 'Paper registers and report cards that get lost or damaged.'}
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="text-red-500 mt-1">✕</span>
+                  {i18n.language === 'fr' ? 'Reçus de scolarité manuels, difficiles à vérifier pour la comptabilité.' : 'Manual tuition receipts, hard to verify for accounting.'}
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="text-red-500 mt-1">✕</span>
+                  {i18n.language === 'fr' ? 'Communication lente et coûteuse avec les parents (appels, SMS payants).' : 'Slow and expensive communication with parents (calls, paid SMS).'}
+                </li>
+              </ul>
+            </div>
+            {/* Avec */}
+            <div className="glass-panel border-amber-500/30 p-8 md:p-10 relative overflow-hidden shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-bl-full -z-10"></div>
+              <h3 className="text-2xl font-bold text-amber-500 mb-8 flex items-center gap-3">
+                <span className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">✓</span>
+                {i18n.language === 'fr' ? 'Avec EduTrack' : 'With EduTrack'}
+              </h3>
+              <ul className="space-y-6 text-slate-300 text-lg">
+                <li className="flex items-start gap-4">
+                  <span className="text-amber-500 mt-1">✓</span>
+                  {i18n.language === 'fr' ? 'Appel électronique et génération de bulletins PDF en 1 clic.' : 'Electronic roll call and 1-click PDF report card generation.'}
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="text-amber-500 mt-1">✓</span>
+                  {i18n.language === 'fr' ? 'Reçus de paiement numériques, traçabilité totale et relances automatiques.' : 'Digital payment receipts, full traceability and automatic reminders.'}
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="text-amber-500 mt-1">✓</span>
+                  {i18n.language === 'fr' ? 'Messagerie interne gratuite et instantanée avec les parents.' : 'Free and instant internal messaging with parents.'}
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -526,80 +634,78 @@ export default function LandingPage() {
 
       {/* 9. CTA final & Contact Form */}
       <section id="contact" className="py-24 bg-slate-900 border-b border-slate-800">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
-        >
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-[2.5rem] p-8 md:p-12 shadow-2xl flex flex-col md:flex-row gap-12 items-center">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="glass-panel p-8 md:p-12 flex flex-col md:flex-row gap-12 items-start">
             <div className="md:w-1/2 space-y-6">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white">{t('landing.ctaTitle')}</h2>
-              <p className="text-slate-400 text-lg">{t('landing.ctaSubtitle')}</p>
-              <ul className="space-y-3 text-slate-300">
-                <li className="flex items-center gap-3"><CheckCircle2 className="text-amber-500 w-5 h-5"/> {i18n.language === 'fr' ? 'Démo personnalisée' : 'Custom demo'}</li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="text-amber-500 w-5 h-5"/> {i18n.language === 'fr' ? 'Accompagnement à l\'installation' : 'Installation support'}</li>
-                <li className="flex items-center gap-3"><CheckCircle2 className="text-amber-500 w-5 h-5"/> {i18n.language === 'fr' ? 'Sans engagement' : 'No commitment'}</li>
-              </ul>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white">Contactez-nous</h2>
+              <p className="text-slate-400 text-lg">
+                Une question ? Besoin d'une démo personnalisée ? Notre équipe est là pour vous répondre rapidement.
+              </p>
+              <div className="space-y-4 pt-4">
+                <div className="flex items-center gap-4 text-slate-300">
+                  <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-amber-500">
+                    <MessageCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-500">WhatsApp / Appel</div>
+                    <div className="font-bold">+237 691 00 33 92</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 text-slate-300">
+                  <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-amber-500">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-sm text-slate-500">Email</div>
+                    <div className="font-bold">contact@edutrack.com</div>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            <div className="md:w-1/2 w-full flex flex-col justify-center items-center bg-slate-800 p-8 rounded-2xl border border-slate-700 space-y-6 text-center">
-              <div className="text-5xl mb-2">🎓</div>
-              <h3 className="text-xl font-bold text-white">{i18n.language === 'fr' ? 'Prêt à transformer votre école ?' : 'Ready to transform your school?'}</h3>
-              <p className="text-slate-400 text-sm">
-                {i18n.language === 'fr' 
-                  ? 'Rejoignez-nous dès aujourd\'hui et découvrez comment EduTrack peut simplifier votre gestion quotidienne.'
-                  : 'Join us today and discover how EduTrack can simplify your daily management.'}
-              </p>
-              <Link to="/register" className="w-full bg-amber-500 text-slate-900 font-bold rounded-lg px-6 py-4 hover:bg-amber-400 transition-all shadow-lg transform hover:-translate-y-1 mt-4 block">
-                {t('landing.btnDemo')}
-              </Link>
+            <div className="md:w-1/2 w-full bg-slate-800/50 p-6 md:p-8 rounded-2xl border border-slate-700">
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Nom complet</label>
+                  <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder="Jean Dupont" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Email</label>
+                  <input type="email" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder="jean@ecole.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Message</label>
+                  <textarea rows="4" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder="Comment pouvons-nous vous aider ?"></textarea>
+                </div>
+                <button type="submit" className="w-full btn-glow text-center mt-2">
+                  Envoyer le message
+                </button>
+              </form>
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* 10. Footer */}
-      <footer className="bg-slate-950 py-12 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-5 gap-8">
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">🎓</span>
-              <span className="font-extrabold text-white text-xl">EduTrack</span>
-            </div>
-            <p className="text-slate-400 text-sm max-w-sm mb-4">{t('landing.footerDesc')}</p>
-            <p className="text-slate-500 text-xs">© {new Date().getFullYear()} EduTrack. {i18n.language === 'fr' ? 'Tous droits réservés.' : 'All rights reserved.'}</p>
+      <footer className="bg-slate-950 py-8 border-t border-slate-800 text-center">
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🎓</span>
+            <span className="font-extrabold text-white text-lg">EduTrack</span>
           </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">{t('landing.quickLinks')}</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li><a href="#features" className="hover:text-amber-500">{t('landing.quickLinks') !== 'landing.quickLinks' ? t('landing.quickLinks').split(' ')[0] : 'Fonctionnalités'}</a></li>
-              <li><a href="#pricing" className="hover:text-amber-500">{t('landing.btnPricing').split(' ').pop()}</a></li>
-              <li><Link to={user ? "/dashboard-redirect" : "/login"} className="hover:text-amber-500">{user ? (i18n.language === 'fr' ? 'Tableau de bord' : 'Dashboard') : t('landing.login')}</Link></li>
-            </ul>
+          <div className="flex gap-6 text-sm text-slate-400">
+            <a href="#features" className="hover:text-amber-500 transition-colors">Fonctionnalités</a>
+            <a href="#pricing" className="hover:text-amber-500 transition-colors">Tarifs</a>
+            <Link to="/login" className="hover:text-amber-500 transition-colors">Connexion</Link>
           </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">{t('landing.contact')}</h4>
-            <ul className="space-y-2 text-sm text-slate-400">
-              <li>contact@edutrack.com</li>
-              <li>+237 691 00 33 92 / +237 681 62 55 20</li>
-              <li>Yaoundé, {i18n.language === 'fr' ? 'Cameroun' : 'Cameroon'}, Emana</li>
-            </ul>
+          <div className="flex gap-4">
+            <a href="https://facebook.com/edutrack" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#1877F2] transition-colors">
+              <Facebook className="w-5 h-5" />
+            </a>
           </div>
-          <div>
-            <h4 className="text-white font-bold mb-4">{t('landing.followUs')}</h4>
-            <div className="flex gap-4">
-              <a href="https://facebook.com/edutrack" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-[#1877F2] hover:text-white transition-colors" title="Facebook EduTrack">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="https://tiktok.com/@edutrack" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-black hover:text-white transition-colors" title="TikTok EduTrack">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.12-3.44-3.17-3.8-5.46-.4-2.51.33-5.17 2.05-7.06 1.48-1.62 3.65-2.55 5.86-2.57v4.06c-1.33-.07-2.73.35-3.66 1.35-.91.95-1.28 2.37-.99 3.69.24 1.05.96 1.98 1.88 2.48 1.25.68 2.87.69 4.09.07 1.25-.63 2.07-1.92 2.18-3.32.19-3.21.05-6.44.09-9.66z"/>
-                </svg>
-              </a>
-            </div>
-          </div>
+          <p className="text-slate-600 text-xs mt-4">
+            © {new Date().getFullYear()} EduTrack. Fabriqué avec passion pour l'éducation.
+          </p>
         </div>
       </footer>
 
@@ -769,10 +875,10 @@ function PricingCard({
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
       }}
-      className={`relative bg-slate-800 rounded-3xl border ${isPopular ? 'border-amber-500 shadow-xl shadow-amber-900/20' : 'border-slate-700'} p-6 flex flex-col h-full hover:-translate-y-2 transition-transform duration-300`}
+      className={`relative glass-panel ${isPopular ? 'border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]' : 'border-slate-700/50'} p-6 flex flex-col h-full hover:-translate-y-2 transition-transform duration-300`}
     >
       {isPopular && (
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-slate-900 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap">
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-900 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap shadow-lg">
           {popularText || 'Le plus populaire'}
         </div>
       )}
@@ -831,8 +937,8 @@ function PricingCard({
         </div>
       </div>
 
-      <button className={`w-full py-3 rounded-xl font-bold transition-colors ${
-        isPopular ? 'bg-amber-500 text-slate-900 hover:bg-amber-400' : 'bg-slate-700 text-white hover:bg-slate-600'
+      <button className={`w-full py-3 rounded-xl font-bold transition-colors mt-auto ${
+        isPopular ? 'btn-glow text-center' : 'bg-slate-700 text-white hover:bg-slate-600'
       }`}>
         {ctaText}
       </button>
