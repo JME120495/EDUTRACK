@@ -184,11 +184,11 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (error) => {
   console.error('[EduTrack] Uncaught Exception:', error);
-  process.exit(1); // Exit and let process manager (Railway) restart
+  // process.exit(1); removed to prevent Vercel 500 crash
 });
 
 // Start Server (only locally, Vercel handles it via module.exports)
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`[EduTrack Backend] Server is running on port ${PORT}`);
     console.log(`[EduTrack Backend] CORS allowed origins: ${allowedOrigins.join(', ')}`);
