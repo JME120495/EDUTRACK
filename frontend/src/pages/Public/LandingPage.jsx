@@ -589,6 +589,64 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Section Documentation & Ressources */}
+      <section className="py-20 bg-slate-800/50 border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-12"
+          >
+            <h2 className="text-3xl font-bold text-white mb-4">
+              {i18n.language === 'fr' ? 'Ressources & Documentation' : 'Resources & Documentation'}
+            </h2>
+            <p className="text-slate-400">
+              {i18n.language === 'fr' ? 'Téléchargez nos manuels officiels pour maîtriser toutes les fonctionnalités d\'EduTrack.' : 'Download our official manuals to master all EduTrack features.'}
+            </p>
+          </motion.div>
+          
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col sm:flex-row justify-center gap-6"
+          >
+            <a 
+              href="/Manuel_Utilisation_EduTrack_FR.pdf"
+              download
+              className="glass-panel p-6 flex flex-col items-center hover:border-amber-500/50 transition-all hover:-translate-y-1 w-full sm:w-80 group cursor-pointer"
+            >
+              <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <BookOpen className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Manuel d'Utilisation (FR)</h3>
+              <p className="text-sm text-slate-400 mb-6 flex-grow">Guide complet en français couvrant la comptabilité OHADA, la pédagogie et l'administration.</p>
+              <div className="flex items-center gap-2 text-amber-500 font-bold text-sm">
+                <Download className="w-4 h-4" />
+                <span>Télécharger le PDF</span>
+              </div>
+            </a>
+
+            <a 
+              href="/EduTrack_User_Manual_EN.pdf"
+              download
+              className="glass-panel p-6 flex flex-col items-center hover:border-amber-500/50 transition-all hover:-translate-y-1 w-full sm:w-80 group cursor-pointer"
+            >
+              <div className="w-16 h-16 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <BookOpen className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">User Manual (EN)</h3>
+              <p className="text-sm text-slate-400 mb-6 flex-grow">Complete English guide covering OHADA accounting, pedagogy, and administration.</p>
+              <div className="flex items-center gap-2 text-amber-500 font-bold text-sm">
+                <Download className="w-4 h-4" />
+                <span>Download PDF</span>
+              </div>
+            </a>
+          </motion.div>
+        </div>
+      </section>
+
       {/* 8. Section FAQ */}
       <section className="py-20 bg-slate-800/50 border-b border-slate-800">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

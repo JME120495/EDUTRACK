@@ -25,7 +25,7 @@ async function testApi() {
 
     console.log('Testing production API with token for:', user.email);
     
-    const res = await fetch('https://edutrack-tky6.vercel.app/_/backend/api/accounting/reports/trial-balance', {
+    const res = await fetch('http://localhost:5000/api/accounting/reports/trial-balance', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
