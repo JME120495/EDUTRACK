@@ -312,4 +312,106 @@ router.get('/reports/trial-balance', requireRole(['DIRECTOR', 'INTENDANT']), asy
   }
 });
 
+const PDFDocument = require('pdfkit');
+
+router.get('/reports/grand-livre/pdf', requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
+  try {
+    const { schoolId } = req.user;
+
+    // Fetch all lines
+    const lines = await prisma.accountingLine.findMany({
+      where: {
+        entry: {
+          schoolId,
+          status: 'VALIDATED'
+        }
+      },
+      include: {
+        account: true,
+        entry: true
+      },
+      orderBy: [
+        { accountId: 'asc' },
+        { entry: { date: 'asc' } }
+      ]
+    });
+
+    // Group by account
+    const accountsMap = {};
+    lines.forEach(line => {
+      const accNum = line.account.number;
+      if (!accountsMap[accNum]) {
+        accountsMap[accNum] = {
+          account: line.account,
+          lines: []
+        };
+      }
+      accountsMap[accNum].lines.push(line);
+    });
+
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="Grand_Livre.pdf"');
+    doc.pipe(res);
+
+    doc.fontSize(20).text('GRAND LIVRE COMPTABLE', { align: 'center' });
+    doc.moveDown(2);
+
+    const sortedAccountNums = Object.keys(accountsMap).sort();
+
+    sortedAccountNums.forEach(accNum => {
+      const data = accountsMap[accNum];
+      
+      doc.fontSize(14).font('Helvetica-Bold').text(`Compte ${data.account.number} - ${data.account.name}`);
+      doc.moveDown(0.5);
+
+      // Table Header
+      const tableTop = doc.y;
+      doc.fontSize(10).font('Helvetica-Bold');
+      doc.text('Date', 40, tableTop);
+      doc.text('Réf.', 100, tableTop);
+      doc.text('Libellé', 180, tableTop);
+      doc.text('Débit', 380, tableTop, { width: 60, align: 'right' });
+      doc.text('Crédit', 450, tableTop, { width: 60, align: 'right' });
+      doc.text('Solde', 520, tableTop, { width: 60, align: 'right' });
+      
+      doc.moveTo(40, doc.y + 2).lineTo(580, doc.y + 2).stroke();
+      doc.moveDown(0.5);
+
+      doc.font('Helvetica');
+      let balance = 0;
+      
+      data.lines.forEach(line => {
+        balance += (line.debit - line.credit);
+        
+        // Check page break
+        if (doc.y > 750) {
+          doc.addPage();
+        }
+
+        const y = doc.y;
+        doc.text(new Date(line.entry.date).toLocaleDateString(), 40, y);
+        doc.text(line.entry.reference || '-', 100, y, { width: 70, height: 12, ellipsis: true });
+        doc.text(line.description || '-', 180, y, { width: 190, height: 12, ellipsis: true });
+        doc.text(line.debit > 0 ? line.debit.toFixed(2) : '-', 380, y, { width: 60, align: 'right' });
+        doc.text(line.credit > 0 ? line.credit.toFixed(2) : '-', 450, y, { width: 60, align: 'right' });
+        doc.text(balance.toFixed(2), 520, y, { width: 60, align: 'right' });
+        
+        doc.moveDown(0.2);
+      });
+
+      doc.moveDown(2);
+    });
+
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating Grand Livre PDF:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Erreur lors de la génération du PDF.' });
+    }
+  }
+});
+
 module.exports = router;

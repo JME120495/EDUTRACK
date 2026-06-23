@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
 import { AuthContext } from '../../context/AuthContext';
-import { Save, CheckSquare, RefreshCw, AlertTriangle, Wifi, WifiOff, Plus, X } from 'lucide-react';
+import { Save, CheckSquare, RefreshCw, AlertTriangle, Wifi, WifiOff, Plus, X, FileDown, FileUp } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const BEHAVIOR_PRESETS = [
   { value: 'Excellent', label: 'Excellent' },
@@ -47,6 +48,8 @@ export default function GradeEntryPage() {
   const [newSubCode, setNewSubCode] = useState('');
   const [newSubCoef, setNewSubCoef] = useState('1.0');
   const [newSubVolume, setNewSubVolume] = useState('0');
+
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadSelectors();
@@ -324,6 +327,117 @@ export default function GradeEntryPage() {
     }
   };
 
+  const handleExportTemplate = () => {
+    if (students.length === 0) {
+      alert("Aucun élève dans cette classe. Impossible de générer le modèle.");
+      return;
+    }
+
+    const wsData = [
+      ["Matricule", "Noms & Prénoms", "Note (sur 20)", "Remarque"]
+    ];
+
+    students.forEach(student => {
+      wsData.push([
+        student.matricule,
+        student.name,
+        grades[student.id] !== undefined ? grades[student.id] : '',
+        remarks[student.id] || ''
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Styling column widths
+    ws['!cols'] = [
+      { wch: 15 }, // Matricule
+      { wch: 35 }, // Noms
+      { wch: 15 }, // Note
+      { wch: 30 }  // Remarque
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Notes");
+    
+    const cls = classes.find(c => c.id === selectedClassId)?.name || "Classe";
+    const sub = subjects.find(s => s.id === selectedSubjectId)?.nameFr || "Matiere";
+    
+    XLSX.writeFile(wb, `Modele_Notes_${cls}_${sub}.xlsx`);
+  };
+
+  const handleImportExcel = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        let changesCount = 0;
+        const newGrades = { ...grades };
+        const newRemarks = { ...remarks };
+        const newCustomActive = { ...customActive };
+
+        data.forEach(row => {
+          const matricule = row["Matricule"];
+          const noteRaw = row["Note (sur 20)"];
+          const remRaw = row["Remarque"] || '';
+
+          if (!matricule) return;
+
+          const student = students.find(s => s.matricule === matricule);
+          if (student) {
+            let noteStr = '';
+            if (noteRaw !== undefined && noteRaw !== null) {
+               // Handle comma decimals
+               noteStr = String(noteRaw).replace(',', '.');
+            }
+            
+            const num = parseFloat(noteStr);
+            if (!isNaN(num) && num >= 0 && num <= 20) {
+              newGrades[student.id] = num;
+            } else if (noteStr === '') {
+              newGrades[student.id] = '';
+            }
+
+            newRemarks[student.id] = remRaw;
+            
+            // Activate custom input if remark is not empty and not in presets
+            const isPreset = BEHAVIOR_PRESETS.some(p => p.value === remRaw);
+            if (remRaw !== '' && !isPreset) {
+              newCustomActive[student.id] = true;
+            } else {
+              newCustomActive[student.id] = false;
+            }
+            
+            changesCount++;
+          }
+        });
+
+        if (changesCount > 0) {
+          setGrades(newGrades);
+          setRemarks(newRemarks);
+          setCustomActive(newCustomActive);
+          setHasUnsavedChanges(true);
+          alert(`${changesCount} ligne(s) importée(s) avec succès. N'oubliez pas d'enregistrer !`);
+        } else {
+          alert("Aucune donnée valide trouvée pour les élèves de cette classe.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de la lecture du fichier Excel.");
+      }
+    };
+    reader.readAsBinaryString(file);
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   // Grade stats
   const totalStudents = students.length;
   const gradedCount = Object.keys(grades).filter(id => grades[id] !== '').length;
@@ -362,6 +476,31 @@ export default function GradeEntryPage() {
 
           {!isReadOnly && (
             <>
+              <input 
+                type="file" 
+                accept=".xlsx, .xls" 
+                ref={fileInputRef} 
+                onChange={handleImportExcel} 
+                className="hidden" 
+              />
+              <button
+                type="button"
+                onClick={handleExportTemplate}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-bold transition-all shadow-sm"
+              >
+                <FileDown className="h-3.5 w-3.5 text-blue-500" />
+                <span className="hidden sm:inline">Modèle Excel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-xs font-bold transition-all shadow-sm"
+              >
+                <FileUp className="h-3.5 w-3.5 text-indigo-500" />
+                <span className="hidden sm:inline">Importer Notes</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleSaveDraft}
