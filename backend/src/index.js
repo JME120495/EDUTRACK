@@ -186,12 +186,12 @@ process.on('uncaughtException', (error) => {
   process.exit(1); // Exit and let process manager (Railway) restart
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`[EduTrack Backend] Server is running on port ${PORT}`);
-  if (!isProduction) {
+// Start Server (only locally, Vercel handles it via module.exports)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`[EduTrack Backend] Server is running on port ${PORT}`);
     console.log(`[EduTrack Backend] CORS allowed origins: ${allowedOrigins.join(', ')}`);
-  }
-});
+  });
+}
 
 module.exports = app;
