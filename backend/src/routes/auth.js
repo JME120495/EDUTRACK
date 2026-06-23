@@ -179,7 +179,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('[Auth] Login error:', err);
-    res.status(500).json({ message: 'An internal error occurred' });
+    res.status(500).json({ message: 'An internal error occurred', error: err.message, stack: err.stack });
   }
 });
 
