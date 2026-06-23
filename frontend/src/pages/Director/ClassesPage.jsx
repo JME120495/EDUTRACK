@@ -142,7 +142,7 @@ export default function ClassesPage() {
                   <th className="px-6 py-4">Class Name</th>
                   <th className="px-6 py-4">Academic Year</th>
                   <th className="px-6 py-4">Form Teacher</th>
-                  <th className="px-6 py-4">Email Contact</th>
+                  <th className="px-6 py-4">Demographics</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -166,8 +166,20 @@ export default function ClassesPage() {
                           <span className="text-slate-400 font-semibold text-xs italic">Unassigned</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-500 font-mono text-xs">
-                        {c.principalTeacher?.email || 'N/A'}
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold">
+                            M: {c.boysCount || 0}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-pink-50 text-pink-700 border border-pink-100 text-[10px] font-bold">
+                            F: {c.girlsCount || 0}
+                          </span>
+                          {(c.sickCount > 0 || c.disabledCount > 0) && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-100 text-[10px] font-bold">
+                              Santé: {(c.sickCount || 0) + (c.disabledCount || 0)}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

@@ -106,7 +106,7 @@ router.get('/:id', auth, ensureParentAccess('id'), async (req, res) => {
 
 // Create student (Director only)
 router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
-  let { name, matricule, dateOfBirth, placeOfBirth, gender, address, photoUrl, classId, createPortalAccount, email: providedEmail } = req.body;
+  let { name, matricule, dateOfBirth, placeOfBirth, gender, address, photoUrl, classId, createPortalAccount, email: providedEmail, isSick, hasDisability, medicalNotes } = req.body;
   try {
     if (!name || !classId) {
       return res.status(400).json({ message: 'Name and classId are required' });
@@ -198,7 +198,10 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
         address,
         photoUrl,
         classId,
-        userId
+        userId,
+        isSick: isSick || false,
+        hasDisability: hasDisability || false,
+        medicalNotes: medicalNotes || null
       },
       include: { class: true }
     });
@@ -210,7 +213,7 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
 
 // Update student (Director only)
 router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
-  const { name, matricule, dateOfBirth, placeOfBirth, gender, address, photoUrl, classId, status } = req.body;
+  const { name, matricule, dateOfBirth, placeOfBirth, gender, address, photoUrl, classId, status, isSick, hasDisability, medicalNotes } = req.body;
   const { id } = req.params;
   try {
     const updated = await prisma.eleve.update({
@@ -224,7 +227,10 @@ router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) 
         address,
         photoUrl,
         classId,
-        status
+        status,
+        isSick: isSick || false,
+        hasDisability: hasDisability || false,
+        medicalNotes: medicalNotes || null
       },
       include: { class: true }
     });

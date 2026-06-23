@@ -177,6 +177,34 @@ export default function DirectorDashboard() {
         ))}
       </div>
 
+      {/* Demographics & Health */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-blue-600 text-[10px] font-bold uppercase tracking-widest block">Garçons</span>
+            <span className="text-xl font-black text-blue-900 block font-outfit">{stats.boysCount || 0}</span>
+          </div>
+        </div>
+        <div className="bg-pink-50/50 rounded-xl p-4 border border-pink-100 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-pink-600 text-[10px] font-bold uppercase tracking-widest block">Filles</span>
+            <span className="text-xl font-black text-pink-900 block font-outfit">{stats.girlsCount || 0}</span>
+          </div>
+        </div>
+        <div className="bg-red-50/50 rounded-xl p-4 border border-red-100 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-red-600 text-[10px] font-bold uppercase tracking-widest block">Malades</span>
+            <span className="text-xl font-black text-red-900 block font-outfit">{stats.sickCount || 0}</span>
+          </div>
+        </div>
+        <div className="bg-purple-50/50 rounded-xl p-4 border border-purple-100 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-purple-600 text-[10px] font-bold uppercase tracking-widest block">Handicapés</span>
+            <span className="text-xl font-black text-purple-900 block font-outfit">{stats.disabledCount || 0}</span>
+          </div>
+        </div>
+      </div>
+
       {/* Grid of Chart and Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Class Averages Bar Chart */}

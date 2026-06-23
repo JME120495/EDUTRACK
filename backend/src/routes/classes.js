@@ -15,10 +15,39 @@ router.get('/', auth, async (req, res) => {
         censeur: {
           select: { id: true, name: true, email: true }
         },
-        anneeScolaire: true
+        anneeScolaire: true,
+        eleves: {
+          where: { status: 'ACTIVE' },
+          select: { gender: true, isSick: true, hasDisability: true }
+        }
       }
     });
-    res.json(classes);
+
+    const classesWithStats = classes.map(c => {
+      let boysCount = 0;
+      let girlsCount = 0;
+      let sickCount = 0;
+      let disabledCount = 0;
+      
+      c.eleves.forEach(s => {
+        if (s.gender === 'M' || s.gender === 'Garçon' || s.gender === 'Male') boysCount++;
+        if (s.gender === 'F' || s.gender === 'Fille' || s.gender === 'Female') girlsCount++;
+        if (s.isSick) sickCount++;
+        if (s.hasDisability) disabledCount++;
+      });
+      
+      const { eleves, ...rest } = c;
+      return {
+        ...rest,
+        studentCount: c.eleves.length,
+        boysCount,
+        girlsCount,
+        sickCount,
+        disabledCount
+      };
+    });
+
+    res.json(classesWithStats);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -13,14 +13,32 @@ router.get('/dashboard', auth, requireRole(['DIRECTOR']), async (req, res) => {
       where: { schoolId, active: true }
     });
 
-    // 1. Students Count (only for active year)
+    // 1. Students Count & Demographics (only for active year)
     let studentsCount = 0;
+    let boysCount = 0;
+    let girlsCount = 0;
+    let sickCount = 0;
+    let disabledCount = 0;
+    
     if (activeYear) {
-      studentsCount = await prisma.eleve.count({
+      const allActiveStudents = await prisma.eleve.findMany({
         where: {
           class: { schoolId, anneeScolaireId: activeYear.id },
           status: 'ACTIVE'
+        },
+        select: {
+          gender: true,
+          isSick: true,
+          hasDisability: true
         }
+      });
+      
+      studentsCount = allActiveStudents.length;
+      allActiveStudents.forEach(s => {
+        if (s.gender === 'M' || s.gender === 'Garçon' || s.gender === 'Male') boysCount++;
+        if (s.gender === 'F' || s.gender === 'Fille' || s.gender === 'Female') girlsCount++;
+        if (s.isSick) sickCount++;
+        if (s.hasDisability) disabledCount++;
       });
     }
 
@@ -129,6 +147,10 @@ router.get('/dashboard', auth, requireRole(['DIRECTOR']), async (req, res) => {
     res.json({
       stats: {
         studentsCount,
+        boysCount,
+        girlsCount,
+        sickCount,
+        disabledCount,
         teachersCount,
         collectionRate,
         totalRevenue

@@ -60,6 +60,9 @@ export default function StudentsPage() {
   const [newPlaceOfBirth, setNewPlaceOfBirth] = useState('');
   const [createPortalAccount, setCreatePortalAccount] = useState(true);
   const [newEmail, setNewEmail] = useState('');
+  const [newIsSick, setNewIsSick] = useState(false);
+  const [newHasDisability, setNewHasDisability] = useState(false);
+  const [newMedicalNotes, setNewMedicalNotes] = useState('');
 
   // Bulk transfer state
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -81,6 +84,9 @@ export default function StudentsPage() {
   const [editDateOfBirth, setEditDateOfBirth] = useState('');
   const [editPlaceOfBirth, setEditPlaceOfBirth] = useState('');
   const [editStatus, setEditStatus] = useState('ACTIVE');
+  const [editIsSick, setEditIsSick] = useState(false);
+  const [editHasDisability, setEditHasDisability] = useState(false);
+  const [editMedicalNotes, setEditMedicalNotes] = useState('');
 
   // CSV Import state
   const [csvText, setCsvText] = useState('');
@@ -247,7 +253,10 @@ export default function StudentsPage() {
           dateOfBirth: newDateOfBirth || null,
           placeOfBirth: newPlaceOfBirth || null,
           createPortalAccount,
-          email: newEmail
+          email: newEmail,
+          isSick: newIsSick,
+          hasDisability: newHasDisability,
+          medicalNotes: newMedicalNotes
         }
       });
       setStudents(prev => [added, ...prev]);
@@ -260,6 +269,9 @@ export default function StudentsPage() {
       setNewDateOfBirth('');
       setNewPlaceOfBirth('');
       setNewEmail('');
+      setNewIsSick(false);
+      setNewHasDisability(false);
+      setNewMedicalNotes('');
       setCreatePortalAccount(true);
       alert('Student added successfully!');
     } catch (err) {
@@ -277,6 +289,9 @@ export default function StudentsPage() {
     setEditDateOfBirth(student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split('T')[0] : '');
     setEditPlaceOfBirth(student.placeOfBirth || '');
     setEditStatus(student.status || 'ACTIVE');
+    setEditIsSick(student.isSick || false);
+    setEditHasDisability(student.hasDisability || false);
+    setEditMedicalNotes(student.medicalNotes || '');
     setEditModalOpen(true);
   };
 
@@ -297,7 +312,10 @@ export default function StudentsPage() {
           address: editAddress,
           dateOfBirth: editDateOfBirth || null,
           placeOfBirth: editPlaceOfBirth || null,
-          status: editStatus
+          status: editStatus,
+          isSick: editIsSick,
+          hasDisability: editHasDisability,
+          medicalNotes: editMedicalNotes
         }
       });
       setStudents(prev => prev.map(s => s.id === editStudentId ? updated : s));
@@ -750,13 +768,23 @@ export default function StudentsPage() {
                         })()}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
-                          student.status === 'ACTIVE' 
-                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-250' 
-                            : 'bg-rose-50 text-rose-700 border border-rose-250'
-                        }`}>
-                          {student.status}
-                        </span>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                            student.status === 'ACTIVE' 
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-250' 
+                              : 'bg-rose-50 text-rose-700 border border-rose-250'
+                          }`}>
+                            {student.status}
+                          </span>
+                          {(student.isSick || student.hasDisability) && (
+                            <span 
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-100 text-[10px] font-bold"
+                              title={student.medicalNotes || "Attention médicale requise"}
+                            >
+                              <AlertCircle className="h-3 w-3" /> Santé
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                         {isCenseurAllowed(student.class) && (
@@ -936,6 +964,45 @@ export default function StudentsPage() {
                 />
               </div>
 
+              {/* Informations Médicales */}
+              <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl space-y-3">
+                <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" /> Informations Médicales & Santé
+                </h4>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newIsSick}
+                      onChange={(e) => setNewIsSick(e.target.checked)}
+                      className="rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                    />
+                    <span className="text-sm font-semibold text-slate-700">Maladie Chronique</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newHasDisability}
+                      onChange={(e) => setNewHasDisability(e.target.checked)}
+                      className="rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                    />
+                    <span className="text-sm font-semibold text-slate-700">Situation de Handicap</span>
+                  </label>
+                </div>
+                {(newIsSick || newHasDisability) && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Détails médicaux</label>
+                    <textarea
+                      value={newMedicalNotes}
+                      onChange={(e) => setNewMedicalNotes(e.target.value)}
+                      placeholder="Précisez la nature de la maladie ou du handicap, allergies, etc."
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-400 focus:border-transparent focus:outline-none"
+                      rows="2"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
@@ -1061,6 +1128,45 @@ export default function StudentsPage() {
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Informations Médicales */}
+              <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-xl space-y-3">
+                <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" /> Informations Médicales & Santé
+                </h4>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editIsSick}
+                      onChange={(e) => setEditIsSick(e.target.checked)}
+                      className="rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                    />
+                    <span className="text-sm font-semibold text-slate-700">Maladie Chronique</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editHasDisability}
+                      onChange={(e) => setEditHasDisability(e.target.checked)}
+                      className="rounded border-slate-300 text-rose-600 focus:ring-rose-500"
+                    />
+                    <span className="text-sm font-semibold text-slate-700">Situation de Handicap</span>
+                  </label>
+                </div>
+                {(editIsSick || editHasDisability) && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Détails médicaux</label>
+                    <textarea
+                      value={editMedicalNotes}
+                      onChange={(e) => setEditMedicalNotes(e.target.value)}
+                      placeholder="Précisez la nature de la maladie ou du handicap, allergies, etc."
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-400 focus:border-transparent focus:outline-none"
+                      rows="2"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">

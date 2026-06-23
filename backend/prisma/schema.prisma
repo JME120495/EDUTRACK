@@ -123,6 +123,9 @@ model Eleve {
   address      String?
   photoUrl     String?
   status       String        @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  isSick       Boolean       @default(false)
+  hasDisability Boolean      @default(false)
+  medicalNotes String?
   classId      String
   class       Classe        @relation(fields: [classId], references: [id])
   createdAt   DateTime      @default(now())
