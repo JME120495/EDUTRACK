@@ -1,9 +1,12 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
-const { requireRole } = require('../middlewares/authMiddleware');
+const { auth, requireRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+
+// Protect all accounting routes
+router.use(auth);
 
 // OHADA Base Accounts Data
 const ohadaBaseAccounts = [
