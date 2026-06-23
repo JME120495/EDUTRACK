@@ -7,7 +7,7 @@
     },
     "backend": {
       "root": "backend",
-      "entrypoint": "src/index.js",
+      "entrypoint": "src/vercel-entry.js",
       "routePrefix": "/_/backend"
     }
   }
