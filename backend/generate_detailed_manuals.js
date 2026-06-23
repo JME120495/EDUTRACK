@@ -19,11 +19,6 @@ function createPdf(filename, title, contentBlocks) {
   doc.fill(secondaryColor).fontSize(20).text(title, { align: 'center' });
   doc.moveDown(3);
   
-  doc.fill(textColor).fontSize(12).font('Helvetica').text('Compte de démonstration utilisé :', { align: 'center' });
-  doc.moveDown(0.5);
-  doc.font('Helvetica-Bold').text('Email : jme.trading.academy@gmail.com', { align: 'center' });
-  doc.text('Mot de passe : 123456', { align: 'center' });
-  
   doc.addPage();
   doc.rect(0, 0, doc.page.width, doc.page.height).fill('#FFFFFF');
 
