@@ -12,6 +12,7 @@ import {
   FileText, 
   CreditCard, 
   Settings,
+  Calculator,
   GraduationCap,
   Coins,
   Briefcase,
@@ -119,6 +120,13 @@ export default function Sidebar({ mobileOpen, onClose }) {
       icon: CreditCard,
       roles: ['DIRECTOR', 'INTENDANT'],
       requiredPlans: ['STANDARD', 'PREMIUM', 'CUSTOM']
+    },
+    {
+      path: '/accounting',
+      label: 'Comptabilité (OHADA)',
+      icon: Calculator,
+      roles: ['DIRECTOR', 'INTENDANT'],
+      requiredPlans: ['PREMIUM', 'CUSTOM']
     },
     {
       path: '/hr',

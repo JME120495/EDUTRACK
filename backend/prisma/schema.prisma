@@ -39,6 +39,10 @@ model School {
   transactions    Transaction[]
   documentTemplates DocumentTemplate[]
   books           Book[]
+  accountingAccounts AccountingAccount[]
+  accountingJournals AccountingJournal[]
+  accountingFiscalYears AccountingFiscalYear[]
+  accountingEntries AccountingEntry[]
 }
 
 model User {
@@ -510,3 +514,74 @@ model BookLoan {
   updatedAt   DateTime @updatedAt
 }
 
+// --- MODULE COMPTABILITÉ ---
+
+model AccountingAccount {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  number      String   // e.g. "411", "512"
+  name        String   // e.g. "Clients", "Banque"
+  type        String   // e.g. "ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lines       AccountingLine[]
+
+  @@unique([schoolId, number])
+}
+
+model AccountingJournal {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  code        String   // e.g. "BQ", "CA", "OD", "VT", "AC"
+  name        String   // e.g. "Banque", "Caisse", "Opérations Diverses"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  entries     AccountingEntry[]
+
+  @@unique([schoolId, code])
+}
+
+model AccountingFiscalYear {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("OPEN") // "OPEN", "CLOSED"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  entries     AccountingEntry[]
+}
+
+model AccountingEntry {
+  id             String   @id @default(uuid())
+  schoolId       String
+  school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  journalId      String
+  journal        AccountingJournal @relation(fields: [journalId], references: [id])
+  fiscalYearId   String
+  fiscalYear     AccountingFiscalYear @relation(fields: [fiscalYearId], references: [id])
+  date           DateTime
+  reference      String?  // Pièce justificative (e.g. FACT-001)
+  description    String   // Libellé de l'écriture
+  status         String   @default("DRAFT") // "DRAFT", "VALIDATED"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lines          AccountingLine[]
+}
+
+model AccountingLine {
+  id          String   @id @default(uuid())
+  entryId     String
+  entry       AccountingEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     AccountingAccount @relation(fields: [accountId], references: [id])
+  debit       Float    @default(0.0)
+  credit      Float    @default(0.0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

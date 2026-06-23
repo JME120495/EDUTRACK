@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../db');
 const { sendSMS, sendWhatsAppMessage } = require('../services/notifService');
+const { generateEntryForPayment } = require('../services/accountingService');
 const { auth, requireRole, requirePlan } = require('../middlewares/authMiddleware');
 const { ensureParentAccess } = require('../middlewares/securityMiddleware');
 
@@ -92,6 +93,9 @@ router.post('/', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) 
         remarks
       }
     });
+
+    // Auto-generate accounting entry if OHADA is initialized
+    await generateEntryForPayment(req.user.schoolId, payment);
 
     res.status(201).json(payment);
   } catch (err) {
@@ -212,6 +216,9 @@ router.post('/webhook', async (req, res) => {
       }
     });
 
+    // Auto-generate accounting entry if OHADA is initialized
+    await generateEntryForPayment(student.schoolId, payment);
+
     // Notify Parent via SMS
     const parentLinks = await prisma.parentEleve.findMany({
       where: { eleveId: studentId },
@@ -275,6 +282,9 @@ router.post('/simulate', auth, async (req, res) => {
         remarks: remarks || 'Mobile Payment Simulated Success'
       }
     });
+
+    // Auto-generate accounting entry if OHADA is initialized
+    await generateEntryForPayment(student.schoolId, payment);
 
     const parentLinks = await prisma.parentEleve.findMany({
       where: { eleveId: studentId },

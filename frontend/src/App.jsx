@@ -24,6 +24,7 @@ import HRPage from './pages/Director/HRPage';
 import DocumentsPage from './pages/Director/DocumentsPage';
 import CenseurDashboard from './pages/Censeur/CenseurDashboard';
 import IntendantDashboard from './pages/Intendant/IntendantDashboard';
+import AccountingPage from './pages/Intendant/AccountingPage';
 import AdminStaffPage from './pages/Director/AdminStaffPage';
 import SupportStaffPage from './pages/Director/SupportStaffPage';
 import TeacherDashboard from './pages/Teacher/TeacherDashboard';
@@ -116,6 +117,13 @@ export default function App() {
             </RoleRoute>
           } />
           <Route path="/payroll" element={<RoleRoute roles={['DIRECTOR', 'INTENDANT']}><PayrollPage /></RoleRoute>} />
+          <Route path="/accounting" element={
+            <RoleRoute roles={['DIRECTOR', 'INTENDANT']}>
+              <PlanRoute allowedPlans={['PREMIUM', 'CUSTOM']} title="Comptabilité OHADA" description="La comptabilité complète nécessite le pack Premium." requiredPlan="Premium">
+                <AccountingPage />
+              </PlanRoute>
+            </RoleRoute>
+          } />
           <Route path="/documents" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><DocumentsPage /></RoleRoute>} />
           <Route path="/teacher/dashboard" element={<RoleRoute roles={['TEACHER']}><TeacherDashboard /></RoleRoute>} />
           <Route path="/teacher/payroll" element={<RoleRoute roles={['TEACHER']}><TeacherPayrollPage /></RoleRoute>} />
