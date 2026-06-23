@@ -143,9 +143,10 @@ router.post('/login', async (req, res) => {
       user = selected;
     }
 
-    if (!user.emailVerified && user.role === 'DIRECTOR') {
-      return res.status(403).json({ message: 'Veuillez vérifier votre adresse e-mail avant de vous connecter.' });
-    }
+    // Temporarily disabled until SMTP is fully configured in production
+    // if (!user.emailVerified && user.role === 'DIRECTOR') {
+    //   return res.status(403).json({ message: 'Veuillez vérifier votre adresse e-mail avant de vous connecter.' });
+    // }
 
     // V-004 FIX: JWT payload contains only essential claims (no PII)
     const token = jwt.sign(

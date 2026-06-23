@@ -77,7 +77,7 @@ export default function LoginPage() {
         }
       }
     } catch (err) {
-      setError(t('auth.error'));
+      setError(err.message || t('auth.error'));
     } finally {
       setLoading(false);
     }
