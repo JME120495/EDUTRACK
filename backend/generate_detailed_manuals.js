@@ -211,14 +211,15 @@ const contentFR = [
   { type: 'step', text: '2. Changez le "Nom de l\'école" ou la "Langue par défaut".' },
   { type: 'step', text: '3. Cliquez sur le bouton "Enregistrer les modifications".' },
 
-  { type: 'h1', text: '18. Messagerie' },
-  { type: 'p', text: 'Communiquez facilement avec les parents, enseignants et autres employés.' },
-  { type: 'h2', text: 'Comment envoyer un message interne :' },
-  { type: 'step', text: '1. Allez dans "Messagerie".' },
-  { type: 'step', text: '2. La "Boîte de réception" vous affiche les messages reçus.' },
-  { type: 'step', text: '3. Pour écrire, cliquez sur "Nouveau Message" (ou "Envoyer un message à").' },
-  { type: 'step', text: '4. Sélectionnez les destinataires dans la liste (ou utilisez "Sélectionner Tous").' },
-  { type: 'step', text: '5. Rédigez le contenu dans "Écrivez votre message ici..." et cliquez sur "Envoyer". Le message apparaîtra sur le tableau de bord de la personne connectée.' }
+  { type: 'h1', text: '18. Messagerie (Lien École-Parents)' },
+  { type: 'p', text: 'La messagerie est le cœur de la communication de l\'école. Elle vise à rapprocher l\'administration et les familles en offrant un canal direct, sécurisé et instantané avec les parents.' },
+  { type: 'h2', text: 'Comment communiquer efficacement avec les parents :' },
+  { type: 'step', text: '1. Allez dans le module "Messagerie" depuis votre menu principal.' },
+  { type: 'step', text: '2. Consultez votre "Boîte de réception" pour lire et répondre aux requêtes ou préoccupations envoyées par les parents.' },
+  { type: 'step', text: '3. Pour envoyer une annonce ou un rappel, cliquez sur "Nouveau Message" (ou "Envoyer un message à").' },
+  { type: 'step', text: '4. Dans la liste des destinataires, vous pouvez sélectionner précisément les parents d\'un élève, ceux d\'une classe entière, ou utiliser "Sélectionner Tous" pour une annonce générale de l\'établissement.' },
+  { type: 'step', text: '5. Rédigez votre information dans "Écrivez votre message ici..." (ex: invitation à l\'assemblée générale, alerte disciplinaire, etc.).' },
+  { type: 'step', text: '6. Cliquez sur "Envoyer". Le message apparaîtra immédiatement sur l\'espace personnel (Tableau de bord) des parents concernés, renforçant ainsi la transparence et le suivi.' }
 ];
 
 createPdf('Manuel_Utilisation_EduTrack.pdf', 'MANUEL PAS À PAS - DIRECTEUR', contentFR);
