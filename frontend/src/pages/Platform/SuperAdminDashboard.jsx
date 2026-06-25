@@ -11,9 +11,12 @@ export default function SuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
   
   // Create Influencer form
+  const [activeTab, setActiveTab] = useState('influencers');
   const [showCreate, setShowCreate] = useState(false);
-  const [newInf, setNewInf] = useState({ name: '', email: '', password: '', referralCode: '' });
+  const [newInf, setNewInf] = useState({ name: '', email: '', password: '', referralCode: '', commissionRate: 30 });
   const [creating, setCreating] = useState(false);
+  const [editingCommission, setEditingCommission] = useState(null);
+  const [newCommissionValue, setNewCommissionValue] = useState('');
 
   const user = JSON.parse(localStorage.getItem('platform_user') || '{}');
 
@@ -52,15 +55,59 @@ export default function SuperAdminDashboard() {
       });
       if (res) {
         setShowCreate(false);
-        setNewInf({ name: '', email: '', password: '', referralCode: '' });
-        setData(prev => ({ ...prev, influencers: [res, ...prev.influencers] }));
+        setNewInf({ name: '', email: '', password: '', referralCode: '', commissionRate: 30 });
+        fetchData();
       }
     } catch (err) {
-      alert("Erreur réseau");
+      alert(err.message || "Erreur réseau");
     } finally {
       setCreating(false);
     }
   };
+
+  const handleUpdateCommission = async (id) => {
+    if (!newCommissionValue) return;
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch(`/platform/admin/influencers/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { commissionRate: parseFloat(newCommissionValue) }
+      });
+      setEditingCommission(null);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteInfluencer = async (id) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet influenceur ? Cette action est irréversible.")) return;
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch(`/platform/admin/influencers/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleToggleSchoolStatus = async (id) => {
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch(`/platform/admin/schools/${id}/toggle-status`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
 
   const handleLogout = () => {
     localStorage.removeItem('platform_token');
@@ -123,77 +170,174 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
 
-        {/* Influencers Table */}
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-800">Réseau d'Influenceurs</h3>
-            <button 
-              onClick={() => setShowCreate(!showCreate)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Nouvel Influenceur
-            </button>
-          </div>
-
-          {showCreate && (
-            <div className="p-6 bg-slate-50 border-b border-slate-200">
-              <form onSubmit={handleCreateInfluencer} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                <div className="col-span-1">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Nom complet</label>
-                  <input type="text" required value={newInf.name} onChange={e => setNewInf({...newInf, name: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Jean Dupont"/>
-                </div>
-                <div className="col-span-1">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
-                  <input type="email" required value={newInf.email} onChange={e => setNewInf({...newInf, email: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="jean@email.com"/>
-                </div>
-                <div className="col-span-1">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Mot de passe</label>
-                  <input type="password" required value={newInf.password} onChange={e => setNewInf({...newInf, password: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="••••••••"/>
-                </div>
-                <div className="col-span-1">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Code Ref (Optionnel)</label>
-                  <input type="text" value={newInf.referralCode} onChange={e => setNewInf({...newInf, referralCode: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="CODE123"/>
-                </div>
-                <div className="col-span-1">
-                  <button type="submit" disabled={creating} className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-xl hover:bg-indigo-700 disabled:opacity-50">
-                    {creating ? 'Création...' : 'Créer le compte'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          <div className="p-0 overflow-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
-                <tr>
-                  <th className="px-6 py-4">Influenceur</th>
-                  <th className="px-6 py-4">Code Parrainage</th>
-                  <th className="px-6 py-4 text-center">Écoles Apportées</th>
-                  <th className="px-6 py-4 text-right">Gains Générés (20%)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {data.influencers.map(inf => (
-                  <tr key={inf.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-800">{inf.name}</div>
-                      <div className="text-sm text-slate-500">{inf.email}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="bg-slate-100 text-slate-700 font-mono px-2 py-1 rounded-md text-sm border border-slate-200">{inf.referralCode}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-indigo-600">{inf.schoolsCount}</td>
-                    <td className="px-6 py-4 text-right font-bold text-emerald-600">{inf.totalEarned.toLocaleString()} FCFA</td>
-                  </tr>
-                ))}
-                {data.influencers.length === 0 && (
-                  <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-500">Aucun influenceur n'est encore enregistré.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-4 border-b border-slate-200">
+          <button 
+            onClick={() => setActiveTab('influencers')}
+            className={`pb-4 px-2 font-bold ${activeTab === 'influencers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Influenceurs
+          </button>
+          <button 
+            onClick={() => setActiveTab('schools')}
+            className={`pb-4 px-2 font-bold ${activeTab === 'schools' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Écoles Inscrites
+          </button>
         </div>
+
+        {activeTab === 'influencers' && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-slate-800">Réseau d'Influenceurs</h3>
+              <button 
+                onClick={() => setShowCreate(!showCreate)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors"
+              >
+                <Plus className="h-4 w-4" /> Nouvel Influenceur
+              </button>
+            </div>
+
+            {showCreate && (
+              <div className="p-6 bg-slate-50 border-b border-slate-200">
+                <form onSubmit={handleCreateInfluencer} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                  <div className="col-span-1">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nom complet</label>
+                    <input type="text" required value={newInf.name} onChange={e => setNewInf({...newInf, name: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Jean Dupont"/>
+                  </div>
+                  <div className="col-span-1 md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
+                    <input type="email" required value={newInf.email} onChange={e => setNewInf({...newInf, email: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="jean@email.com"/>
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Mot de passe</label>
+                    <input type="password" required value={newInf.password} onChange={e => setNewInf({...newInf, password: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="••••••••"/>
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Taux (%)</label>
+                    <input type="number" required min="0" max="100" value={newInf.commissionRate} onChange={e => setNewInf({...newInf, commissionRate: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="30"/>
+                  </div>
+                  <div className="col-span-1">
+                    <button type="submit" disabled={creating} className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-xl hover:bg-indigo-700 disabled:opacity-50">
+                      {creating ? '...' : 'Créer'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="p-0 overflow-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                  <tr>
+                    <th className="px-6 py-4">Influenceur</th>
+                    <th className="px-6 py-4 text-center">Taux</th>
+                    <th className="px-6 py-4">Code Parrainage</th>
+                    <th className="px-6 py-4 text-center">Écoles Apportées</th>
+                    <th className="px-6 py-4 text-right">Gains Générés</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {data.influencers.map(inf => (
+                    <tr key={inf.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-slate-800">{inf.name}</div>
+                        <div className="text-sm text-slate-500">{inf.email}</div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        {editingCommission === inf.id ? (
+                          <div className="flex items-center gap-2 justify-center">
+                            <input 
+                              type="number" 
+                              className="w-16 p-1 border rounded text-center text-sm" 
+                              value={newCommissionValue} 
+                              onChange={e => setNewCommissionValue(e.target.value)} 
+                            />
+                            <button onClick={() => handleUpdateCommission(inf.id)} className="text-xs bg-emerald-500 text-white px-2 py-1 rounded">OK</button>
+                            <button onClick={() => setEditingCommission(null)} className="text-xs bg-slate-300 text-slate-700 px-2 py-1 rounded">X</button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="font-bold text-indigo-600">{inf.commissionRate}%</span>
+                            <button onClick={() => { setEditingCommission(inf.id); setNewCommissionValue(inf.commissionRate); }} className="text-xs text-indigo-500 hover:underline">Modifier</button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-slate-100 text-slate-700 font-mono px-2 py-1 rounded-md text-sm border border-slate-200">{inf.referralCode}</span>
+                      </td>
+                      <td className="px-6 py-4 text-center font-bold text-slate-700">{inf.schoolsCount}</td>
+                      <td className="px-6 py-4 text-right font-bold text-emerald-600">{inf.totalEarned.toLocaleString()} FCFA</td>
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => handleDeleteInfluencer(inf.id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Supprimer</button>
+                      </td>
+                    </tr>
+                  ))}
+                  {data.influencers.length === 0 && (
+                    <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">Aucun influenceur n'est encore enregistré.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'schools' && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-800">Écoles Inscrites sur EduTrack</h3>
+            </div>
+            <div className="p-0 overflow-auto">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                  <tr>
+                    <th className="px-6 py-4">École</th>
+                    <th className="px-6 py-4">Plan & Date</th>
+                    <th className="px-6 py-4">Parrainé Par</th>
+                    <th className="px-6 py-4 text-right">Statut / Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {data.schools && data.schools.map(school => (
+                    <tr key={school.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-slate-800">{school.name}</div>
+                        <div className="text-sm text-slate-500">{school.email || 'Aucun email'} • {school.phone || 'Aucun tel'}</div>
+                        <div className="text-xs text-slate-400">{school.city || 'Ville inconnue'}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded-md text-xs">{school.subscriptionPlan}</span>
+                        <div className="text-xs text-slate-500 mt-1">
+                          Inscrite le: {new Date(school.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {school.referredBy ? school.referredBy.name : <span className="text-slate-400 italic">Aucun parrain</span>}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex flex-col items-end gap-2">
+                          <span className={`px-2 py-1 rounded-md text-xs font-bold ${school.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                            {school.isActive ? 'ACTIF' : 'BLOQUÉ'}
+                          </span>
+                          <button 
+                            onClick={() => handleToggleSchoolStatus(school.id)}
+                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${school.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                          >
+                            {school.isActive ? 'Bloquer l\'accès' : 'Valider / Activer'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data.schools || data.schools.length === 0) && (
+                    <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-500">Aucune école n'est encore enregistrée.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

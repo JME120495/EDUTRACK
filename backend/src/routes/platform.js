@@ -91,6 +91,15 @@ router.get('/admin/dashboard', platformAuth, requirePlatformRole(['SUPER_ADMIN']
     const totalCommissions = allEarnings.reduce((sum, e) => sum + e.commission, 0);
     const totalRevenue = allEarnings.reduce((sum, e) => sum + e.amountPaid, 0);
 
+    const schools = await prisma.school.findMany({
+      select: {
+        id: true, name: true, email: true, phone: true, city: true,
+        subscriptionPlan: true, subscriptionExpiresAt: true, isActive: true, createdAt: true,
+        referredBy: { select: { name: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
     const influencerStats = influencers.map(inf => {
       const earned = inf.earnings.reduce((sum, e) => sum + e.commission, 0);
       return {
@@ -98,6 +107,7 @@ router.get('/admin/dashboard', platformAuth, requirePlatformRole(['SUPER_ADMIN']
         name: inf.name,
         email: inf.email,
         referralCode: inf.referralCode,
+        commissionRate: inf.commissionRate,
         schoolsCount: inf._count.referredSchools,
         totalEarned: earned
       };
@@ -107,7 +117,8 @@ router.get('/admin/dashboard', platformAuth, requirePlatformRole(['SUPER_ADMIN']
       totalInfluencers: influencers.length,
       totalRevenue,
       totalCommissionsPaid: totalCommissions,
-      influencers: influencerStats
+      influencers: influencerStats,
+      schools
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -116,7 +127,7 @@ router.get('/admin/dashboard', platformAuth, requirePlatformRole(['SUPER_ADMIN']
 
 // POST /platform/admin/influencers
 router.post('/admin/influencers', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
-  const { name, email, password, referralCode } = req.body;
+  const { name, email, password, referralCode, commissionRate } = req.body;
   try {
     const existing = await prisma.platformUser.findUnique({ where: { email } });
     if (existing) return res.status(400).json({ message: 'Email already exists' });
@@ -128,10 +139,53 @@ router.post('/admin/influencers', platformAuth, requirePlatformRole(['SUPER_ADMI
         email,
         passwordHash,
         role: 'INFLUENCER',
+        commissionRate: parseFloat(commissionRate) || 30.0,
         referralCode: referralCode || Math.random().toString(36).substring(2, 10).toUpperCase()
       }
     });
     res.status(201).json({ message: 'Influencer created successfully', influencer: { id: influencer.id, name: influencer.name, referralCode: influencer.referralCode } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /platform/admin/influencers/:id
+router.put('/admin/influencers/:id', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  const { commissionRate } = req.body;
+  try {
+    const influencer = await prisma.platformUser.update({
+      where: { id: req.params.id },
+      data: { commissionRate: parseFloat(commissionRate) }
+    });
+    res.json({ message: 'Pourcentage mis à jour', commissionRate: influencer.commissionRate });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /platform/admin/influencers/:id
+router.delete('/admin/influencers/:id', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  try {
+    await prisma.platformUser.delete({
+      where: { id: req.params.id, role: 'INFLUENCER' }
+    });
+    res.json({ message: 'Influenceur supprimé' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /platform/admin/schools/:id/toggle-status
+router.put('/admin/schools/:id/toggle-status', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  try {
+    const school = await prisma.school.findUnique({ where: { id: req.params.id } });
+    if (!school) return res.status(404).json({ message: 'School not found' });
+
+    const updated = await prisma.school.update({
+      where: { id: req.params.id },
+      data: { isActive: !school.isActive }
+    });
+    res.json({ message: 'Statut de l\'école mis à jour', isActive: updated.isActive });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

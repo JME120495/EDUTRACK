@@ -45,6 +45,10 @@ async function auth(req, res, next) {
       return res.status(401).json({ message: 'User no longer exists' });
     }
 
+    if (user.school && user.school.isActive === false) {
+      return res.status(403).json({ message: 'L\'accès de votre établissement a été bloqué par l\'administration.' });
+    }
+
     req.user = user;
     next();
   } catch (error) {

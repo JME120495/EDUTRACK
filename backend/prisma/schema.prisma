@@ -29,10 +29,11 @@ model School {
   pdfShowBorder     Boolean         @default(true)
   subscriptionPlan  String          @default("PREMIUM") // ESSENTIAL, STANDARD, PREMIUM, CUSTOM
   subscriptionExpiresAt DateTime?
+  isActive        Boolean         @default(true)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   referredById    String?
-  referredBy      PlatformUser?   @relation(fields: [referredById], references: [id])
+  referredBy      PlatformUser?   @relation(fields: [referredById], references: [id], onDelete: SetNull)
   influencerEarnings InfluencerEarning[]
   users           User[]
   classes         Classe[]
@@ -610,6 +611,7 @@ model PlatformUser {
   email           String   @unique
   passwordHash    String
   role            String   // "SUPER_ADMIN" ou "INFLUENCER"
+  commissionRate  Float    @default(30.0)
   referralCode    String?  @unique
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -620,7 +622,7 @@ model PlatformUser {
 model InfluencerEarning {
   id              String       @id @default(uuid())
   influencerId    String
-  influencer      PlatformUser @relation(fields: [influencerId], references: [id])
+  influencer      PlatformUser @relation(fields: [influencerId], references: [id], onDelete: Cascade)
   schoolId        String
   school          School       @relation(fields: [schoolId], references: [id])
   amountPaid      Float
