@@ -273,11 +273,26 @@ router.post('/payslips/generate', auth, requireRole(['DIRECTOR', 'INTENDANT']), 
 
       // Calculate hours worked if teacher and hourly paid
       let hoursWorked = 0;
+      let teacherAbsenceHours = 0;
       if (user.role === 'TEACHER') {
         const assignments = await prisma.enseignantMatiereClasse.findMany({
           where: { teacherId: user.id }
         });
-        hoursWorked = assignments.reduce((sum, a) => sum + a.hoursTaught, 0);
+        let totalHoursTaught = assignments.reduce((sum, a) => sum + a.hoursTaught, 0);
+
+        const m = parseInt(month);
+        const y = parseInt(year);
+        const startOfMonth = new Date(y, m - 1, 1);
+        const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
+        
+        const absences = await prisma.teacherAbsence.findMany({
+          where: {
+            teacherId: user.id,
+            date: { gte: startOfMonth, lte: endOfMonth }
+          }
+        });
+        teacherAbsenceHours = absences.reduce((sum, a) => sum + a.hours, 0);
+        hoursWorked = Math.max(0, totalHoursTaught - teacherAbsenceHours);
       }
 
       // Find approved advances for this month
@@ -318,7 +333,8 @@ router.post('/payslips/generate', auth, requireRole(['DIRECTOR', 'INTENDANT']), 
           deductions,
           advancesDeducted,
           netSalary: netSalary > 0 ? netSalary : 0,
-          status: 'PENDING'
+          status: 'PENDING',
+          remarks: teacherAbsenceHours > 0 ? `Déduction de ${teacherAbsenceHours}h d'absence.` : undefined
         }
       });
 

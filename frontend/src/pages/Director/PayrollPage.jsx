@@ -10,6 +10,7 @@ export default function PayrollPage() {
 
   const { t, i18n } = useTranslation();
   const [assignments, setAssignments] = useState([]);
+  const [teacherAbsences, setTeacherAbsences] = useState({});
   const [loading, setLoading] = useState(false);
 
   // Modal State
@@ -33,7 +34,21 @@ export default function PayrollPage() {
       setLoading(true);
       const data = await apiFetch('/matieres/assignments');
       setAssignments(data);
-      calculateStats(data);
+      
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+      let absencesMap = {};
+      try {
+        const absences = await apiFetch(`/absences/teachers?month=${month}&year=${year}`);
+        absences.forEach(a => {
+           if (!absencesMap[a.teacherId]) absencesMap[a.teacherId] = 0;
+           absencesMap[a.teacherId] += (a.hours || 0);
+        });
+        setTeacherAbsences(absencesMap);
+      } catch(err) { console.error('Failed to fetch absences', err); }
+
+      calculateStats(data, absencesMap);
     } catch (e) {
       console.error('Failed to load payroll data:', e);
     } finally {
@@ -41,7 +56,7 @@ export default function PayrollPage() {
     }
   }
 
-  function calculateStats(data) {
+  function calculateStats(data, absencesMap = {}) {
     let paySum = 0;
     let hoursSum = 0;
     let rateSum = 0;
@@ -58,9 +73,19 @@ export default function PayrollPage() {
       }
     });
 
-    setTotalPay(paySum);
-    setTotalHours(hoursSum);
-    setAvgRate(count > 0 ? Math.round(rateSum / count) : 0);
+    const calculatedAvgRate = count > 0 ? Math.round(rateSum / count) : 0;
+    
+    // Deduct absences
+    let totalAbsenceHours = 0;
+    Object.values(absencesMap).forEach(h => totalAbsenceHours += h);
+    
+    const effectiveHours = Math.max(0, hoursSum - totalAbsenceHours);
+    const deduction = totalAbsenceHours * calculatedAvgRate;
+    const finalPay = Math.max(0, paySum - deduction);
+
+    setTotalPay(finalPay);
+    setTotalHours(effectiveHours);
+    setAvgRate(calculatedAvgRate);
   }
 
   const handleOpenEditModal = (assignment) => {
@@ -139,15 +164,26 @@ export default function PayrollPage() {
                   assignments.reduce((acc, curr) => {
                     const tId = curr.teacherId;
                     if (!acc[tId]) {
-                      acc[tId] = { teacher: curr.teacher, assignments: [], totalPay: 0, totalHours: 0 };
+                      acc[tId] = { teacher: curr.teacher, assignments: [], totalPay: 0, totalHours: 0, rateSum: 0, count: 0 };
                     }
                     acc[tId].assignments.push(curr);
                     const due = (curr.hourlyRate || 0) * (curr.hoursTaught || 0);
                     acc[tId].totalPay += due;
                     acc[tId].totalHours += (curr.hoursTaught || 0);
+                    if (curr.hourlyRate > 0) {
+                      acc[tId].rateSum += curr.hourlyRate;
+                      acc[tId].count++;
+                    }
                     return acc;
                   }, {})
-                ).map(tGroup => (
+                ).map(tGroup => {
+                  const tId = tGroup.teacher.id;
+                  const absHours = teacherAbsences[tId] || 0;
+                  const avgRateT = tGroup.count > 0 ? Math.round(tGroup.rateSum / tGroup.count) : 0;
+                  const deduction = absHours * avgRateT;
+                  const finalPay = Math.max(0, tGroup.totalPay - deduction);
+                  
+                  return (
                   <div key={tGroup.teacher.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                     <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                       <div className="flex items-center gap-3">
@@ -160,8 +196,13 @@ export default function PayrollPage() {
                         </div>
                       </div>
                       <div className="text-right">
+                        {absHours > 0 && (
+                          <p className="text-xs text-rose-500 font-bold mb-1">
+                            -{absHours}h abs. (-{deduction.toLocaleString()} )
+                          </p>
+                        )}
                         <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Total Salaire Dû</p>
-                        <p className="text-2xl font-black text-emerald-600 font-outfit">{tGroup.totalPay.toLocaleString()} </p>
+                        <p className="text-2xl font-black text-emerald-600 font-outfit">{finalPay.toLocaleString()} </p>
                       </div>
                     </div>
                     <div className="overflow-x-auto">
@@ -204,7 +245,8 @@ export default function PayrollPage() {
                       </table>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

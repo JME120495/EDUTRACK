@@ -16,6 +16,7 @@ export default function TeacherPayrollPage() {
   const [totalPay, setTotalPay] = useState(0);
   const [totalHours, setTotalHours] = useState(0);
   const [avgRate, setAvgRate] = useState(0);
+  const [totalAbsenceHours, setTotalAbsenceHours] = useState(0);
 
   useEffect(() => {
     loadPayrollData();
@@ -26,7 +27,18 @@ export default function TeacherPayrollPage() {
       setLoading(true);
       const data = await apiFetch('/matieres/assignments');
       setAssignments(data);
-      calculateStats(data);
+      
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+      let absHours = 0;
+      try {
+        const absences = await apiFetch(`/absences/teachers?month=${month}&year=${year}`);
+        absHours = absences.reduce((sum, a) => sum + (a.hours || 0), 0);
+        setTotalAbsenceHours(absHours);
+      } catch(err) { console.error('Failed to fetch absences', err); }
+      
+      calculateStats(data, absHours);
     } catch (e) {
       console.error('Failed to load payroll data:', e);
     } finally {
@@ -51,9 +63,14 @@ export default function TeacherPayrollPage() {
       }
     });
 
-    setTotalPay(paySum);
-    setTotalHours(hoursSum);
-    setAvgRate(count > 0 ? Math.round(rateSum / count) : 0);
+    const calculatedAvgRate = count > 0 ? Math.round(rateSum / count) : 0;
+    const effectiveHours = Math.max(0, hoursSum - absHours);
+    const deduction = absHours * calculatedAvgRate;
+    const finalPay = Math.max(0, paySum - deduction);
+
+    setTotalPay(finalPay);
+    setTotalHours(effectiveHours);
+    setAvgRate(calculatedAvgRate);
   }
 
   return (
@@ -85,6 +102,16 @@ export default function TeacherPayrollPage() {
             </span>
           </div>
         ))}
+        {totalAbsenceHours > 0 && (
+          <div className="bg-rose-50 rounded-2xl p-5 border border-rose-200 shadow-sm transition-all hover:shadow-md">
+            <span className="text-rose-500 text-xs font-semibold uppercase tracking-wider block">
+              Heures Déduites (Absences)
+            </span>
+            <span className="text-2xl font-black block font-outfit mt-1 text-rose-600">
+              {totalAbsenceHours} h
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Table */}

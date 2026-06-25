@@ -23,6 +23,7 @@ export default function AbsencesPage() {
   // Attendance State (Students)
   const [students, setStudents] = useState([]);
   const [absencesState, setAbsencesState] = useState({}); // studentId -> { isAbsent: bool, hours: number, reason: string }
+  const [teacherHoursForClass, setTeacherHoursForClass] = useState(2);
   
   // Attendance State (Teachers)
   const [teachers, setTeachers] = useState([]);
@@ -82,12 +83,35 @@ export default function AbsencesPage() {
 
       const absencesData = await apiFetch(`/absences/classe/${classId}/date/${dateString}?sequenceId=${sequenceId}`);
       
+      let currentTeacherHours = 2;
+      if (user.role === 'TEACHER') {
+        try {
+          const timetable = await apiFetch(`/timetable/teacher/${user.id}`);
+          const dateObj = new Date(dateString);
+          const days = ["DIMANCHE", "LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI"];
+          const dayOfWeek = days[dateObj.getDay()];
+          const slots = timetable.filter(t => t.classId === classId && t.dayOfWeek === dayOfWeek);
+          if (slots.length > 0) {
+            let total = 0;
+            slots.forEach(slot => {
+               if (slot.creneau && slot.creneau.startTime && slot.creneau.endTime) {
+                  const start = parseInt(slot.creneau.startTime.split(':')[0]);
+                  const end = parseInt(slot.creneau.endTime.split(':')[0]);
+                  total += Math.max(1, end - start);
+               }
+            });
+            if (total > 0) currentTeacherHours = total;
+          }
+        } catch (e) { console.error('Failed to calculate teacher hours from timetable', e); }
+      }
+      setTeacherHoursForClass(currentTeacherHours);
+
       const initialAbsences = {};
       studentsData.forEach(student => {
         const found = absencesData.find(a => a.eleveId === student.id);
         initialAbsences[student.id] = {
           isAbsent: !!found,
-          hours: found ? found.hours : 2,
+          hours: found ? found.hours : currentTeacherHours,
           reason: found ? (found.reason || '') : ''
         };
       });
@@ -125,7 +149,7 @@ export default function AbsencesPage() {
 
   const handleToggleAbsent = (studentId) => {
     setAbsencesState(prev => {
-      const current = prev[studentId] || { isAbsent: false, hours: 2, reason: '' };
+      const current = prev[studentId] || { isAbsent: false, hours: teacherHoursForClass, reason: '' };
       return { ...prev, [studentId]: { ...current, isAbsent: !current.isAbsent } };
     });
   };
@@ -142,7 +166,7 @@ export default function AbsencesPage() {
   const handleReasonChange = (studentId, val) => {
     setAbsencesState(prev => ({
       ...prev,
-      [studentId]: { ...(prev[studentId] || { isAbsent: true, hours: 2 }), reason: val }
+      [studentId]: { ...(prev[studentId] || { isAbsent: true, hours: teacherHoursForClass }), reason: val }
     }));
   };
 
@@ -404,7 +428,7 @@ export default function AbsencesPage() {
                                 type="number"
                                 min="1"
                                 max="8"
-                                disabled={!state.isAbsent}
+                                disabled={!state.isAbsent || user.role === 'TEACHER'}
                                 value={state.isAbsent ? state.hours : ''}
                                 onChange={(e) => handleHoursChange(student.id, e.target.value)}
                                 placeholder="-"
@@ -414,7 +438,7 @@ export default function AbsencesPage() {
                             <td className="px-6 py-4">
                               <input
                                 type="text"
-                                disabled={!state.isAbsent}
+                                disabled={!state.isAbsent || user.role === 'TEACHER'}
                                 value={state.isAbsent ? state.reason : ''}
                                 onChange={(e) => handleReasonChange(student.id, e.target.value)}
                                 placeholder={state.isAbsent ? "ex: Maladie" : "Non absent"}

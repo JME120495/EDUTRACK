@@ -137,16 +137,27 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVE
 });
 
 // Get teacher absences
-router.get('/teachers', auth, requireRole(['DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
-  const { dateString } = req.query;
+router.get('/teachers', auth, requireRole(['DIRECTOR', 'CENSEUR', 'SURVEILLANT', 'TEACHER']), async (req, res) => {
+  const { dateString, month, year } = req.query;
   try {
     const where = {};
+    if (req.user.role === 'TEACHER') {
+      where.teacherId = req.user.id;
+    }
+    
     if (dateString) {
       const start = new Date(dateString);
       start.setHours(0,0,0,0);
       const end = new Date(dateString);
       end.setHours(23,59,59,999);
       where.date = { gte: start, lte: end };
+    } else if (month && year) {
+      const m = parseInt(month);
+      const y = parseInt(year);
+      where.date = {
+        gte: new Date(y, m - 1, 1),
+        lte: new Date(y, m, 0, 23, 59, 59, 999)
+      };
     }
     const absences = await prisma.teacherAbsence.findMany({
       where,
