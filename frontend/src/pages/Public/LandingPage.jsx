@@ -751,10 +751,11 @@ export default function LandingPage() {
             <span className="text-xl">🎓</span>
             <span className="font-extrabold text-white text-lg">EduTrack</span>
           </div>
-          <div className="flex gap-6 text-sm text-slate-400">
+          <div className="flex gap-6 text-sm text-slate-400 flex-wrap justify-center">
             <a href="#features" className="hover:text-amber-500 transition-colors">Fonctionnalités</a>
             <a href="#pricing" className="hover:text-amber-500 transition-colors">Tarifs</a>
             <Link to="/login" className="hover:text-amber-500 transition-colors">Connexion</Link>
+            <Link to="/platform/login" className="hover:text-amber-500 transition-colors">Portail Partenaires</Link>
           </div>
           <div className="flex gap-4">
             <a href="https://facebook.com/edutrack" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#1877F2] transition-colors">
