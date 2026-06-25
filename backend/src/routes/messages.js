@@ -57,9 +57,9 @@ router.post('/', auth, async (req, res) => {
     });
 
     if (req.user.role === 'TEACHER') {
-      const hasRestricted = receivers.some(r => r.role === 'DIRECTOR' || r.role === 'PARENT');
+      const hasRestricted = receivers.some(r => r.role === 'DIRECTOR');
       if (hasRestricted) {
-        return res.status(403).json({ message: 'Teachers are not allowed to send messages to parents or the director' });
+        return res.status(403).json({ message: 'Teachers are not allowed to send messages to the director' });
       }
     }
     
@@ -160,9 +160,20 @@ router.get('/recipients', auth, async (req, res) => {
       });
       addUsers(studentsInClasses);
 
-      // Parents are no longer visible to teachers
-
-
+      // Parents of students in their classes
+      const parentsOfStudents = await prisma.user.findMany({
+        where: {
+          schoolId,
+          role: 'PARENT',
+          children: {
+            some: {
+              eleve: { classId: { in: classIds } }
+            }
+          }
+        },
+        select: userSelect
+      });
+      addUsers(parentsOfStudents);
     } else if (userRole === 'STUDENT') {
       // Student sees Admin and Teachers of their classes
       const admins = await prisma.user.findMany({
