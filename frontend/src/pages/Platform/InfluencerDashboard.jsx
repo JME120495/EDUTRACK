@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../../api';
 import { 
   Users, DollarSign, TrendingUp, Copy, CheckCircle2,
   LogOut, Link as LinkIcon, Building2
@@ -19,10 +20,10 @@ export default function InfluencerDashboard() {
       return;
     }
 
-    fetch('/api/platform/influencer/dashboard', {
+    apiFetch('/platform/influencer/dashboard', {
+      method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` }
     })
-      .then(res => res.json())
       .then(d => {
         setData(d);
         setLoading(false);

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../../api';
 import { 
   Users, DollarSign, Activity, LogOut, Plus, ShieldCheck
 } from 'lucide-react';
@@ -19,15 +20,9 @@ export default function SuperAdminDashboard() {
   const fetchData = async () => {
     const token = localStorage.getItem('platform_token');
     if (!token || user.role !== 'SUPER_ADMIN') {
-      navigate('/platform/login');
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/platform/admin/dashboard', {
+      const d = await apiFetch('/platform/admin/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const d = await res.json();
       setData(d);
       setLoading(false);
     } catch (err) {
@@ -45,21 +40,15 @@ export default function SuperAdminDashboard() {
     setCreating(true);
     const token = localStorage.getItem('platform_token');
     try {
-      const res = await fetch('/api/platform/admin/influencers', {
+      const res = await apiFetch('/platform/admin/influencers', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify(newInf)
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: newInf
       });
-      if (res.ok) {
+      if (res) {
         setShowCreate(false);
         setNewInf({ name: '', email: '', password: '', referralCode: '' });
-        fetchData();
-      } else {
-        const d = await res.json();
-        alert(d.message || "Erreur création");
+        setData(prev => ({ ...prev, influencers: [res, ...prev.influencers] }));
       }
     } catch (err) {
       alert("Erreur réseau");

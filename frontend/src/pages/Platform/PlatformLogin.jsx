@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { apiFetch } from '../../api';
 
 export default function PlatformLogin() {
   const { t } = useTranslation();
@@ -16,16 +17,10 @@ export default function PlatformLogin() {
     setError('');
     setLoading(true);
     try {
-      const response = await fetch('/api/platform/login', {
+      const data = await apiFetch('/platform/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: { email, password }
       });
-      
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
 
       localStorage.setItem('platform_token', data.token);
       localStorage.setItem('platform_user', JSON.stringify(data.user));
