@@ -192,7 +192,7 @@ process.on('uncaughtException', (error) => {
 });
 
 // Start Server (only locally, Vercel handles it via module.exports)
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`[EduTrack Backend] Server is running on port ${PORT}`);
     console.log(`[EduTrack Backend] CORS allowed origins: ${allowedOrigins.join(', ')}`);
