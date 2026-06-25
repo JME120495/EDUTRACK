@@ -30,8 +30,8 @@ function getCountrySlug(countryName) {
 }
 
 
-// Get all users (Director, Censeur, Intendant)
-router.get('/', auth, requireRole(['DIRECTOR', 'CENSEUR', 'INTENDANT']), async (req, res) => {
+// Get all users (Director, Censeur, Intendant, Surveillant)
+router.get('/', auth, requireRole(['DIRECTOR', 'CENSEUR', 'INTENDANT', 'SURVEILLANT']), async (req, res) => {
   const { role } = req.query;
   try {
     const users = await prisma.user.findMany({

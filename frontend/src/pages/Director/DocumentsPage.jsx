@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiFetch } from '../../api';
+import { apiFetch, API_BASE, openPdfInNewTab } from '../../api';
 import { 
   FileText, 
   FileEdit, 
@@ -192,7 +192,7 @@ export default function DocumentsPage() {
         }
       });
       if (res.url) {
-        window.open(`http://localhost:5000${res.url}`, '_blank');
+        await openPdfInNewTab(res.url);
       }
     } catch (err) {
       alert(err.message || 'Failed to generate certificate PDF');
@@ -209,7 +209,7 @@ export default function DocumentsPage() {
       setGeneratingPdf(true);
       const res = await apiFetch(`/documents/cards/students/${selectedClassId}?studentIds=${ids.join(',')}`);
       if (res.url) {
-        window.open(`http://localhost:5000${res.url}`, '_blank');
+        await openPdfInNewTab(res.url);
       }
     } catch (err) {
       alert('Erreur lors de la génération des badges élèves.');
@@ -226,7 +226,7 @@ export default function DocumentsPage() {
       setGeneratingPdf(true);
       const res = await apiFetch(`/documents/cards/parents?parentIds=${ids.join(',')}`);
       if (res.url) {
-        window.open(`http://localhost:5000${res.url}`, '_blank');
+        await openPdfInNewTab(res.url);
       }
     } catch (err) {
       alert('Erreur lors de la génération des badges parents.');

@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/_/backend/api' : '/api');
+export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/_/backend/api' : '/api');
 
 export async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('edutrack_token');
@@ -32,4 +32,36 @@ export async function apiFetch(endpoint, options = {}) {
   if (res.status === 204) return null;
 
   return res.json();
+}
+
+export async function openPdfInNewTab(url) {
+  const token = localStorage.getItem('edutrack_token');
+  const headers = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  // If the url is absolute, use it directly. Otherwise, prefix with the host if it's a static file path, 
+  // or prefix with API_BASE if it's an API endpoint.
+  // Note: the endpoints we are fixing are static file paths starting with /badges, /bulletins, etc.
+  // So we prefix with API_BASE but strip '/api'.
+  const isApi = url.startsWith('/api/');
+  const fullUrl = url.startsWith('http') 
+    ? url 
+    : isApi 
+      ? `${API_BASE}${url.substring(4)}`
+      : `${API_BASE.replace(/\/api$/, '')}${url}`;
+
+  const res = await fetch(fullUrl, { headers });
+  if (!res.ok) {
+    throw new Error(`Failed to load PDF: ${res.statusText}`);
+  }
+
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, '_blank');
+  
+  // Revoke the object URL after a delay to free up memory
+  setTimeout(() => {
+    URL.revokeObjectURL(blobUrl);
+  }, 60000); // 1 minute should be enough for the browser to open it
 }

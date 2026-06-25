@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
-import { apiFetch } from '../../api';
+import { apiFetch, API_BASE, openPdfInNewTab } from '../../api';
 import MessageInbox from '../../components/MessageInbox';
 import SendMessageModal from '../../components/Shared/SendMessageModal';
 import { 
@@ -344,15 +344,13 @@ export default function ParentPortal() {
                     ) : (
                       <span className="text-[9px] text-emerald-600 font-black bg-emerald-50 px-2 py-1 border border-emerald-200 rounded-lg uppercase tracking-wide">✓ Signé</span>
                     )}
-                    <a
-                      href={`http://localhost:5000/api/bulletins/${b.id}/pdf`}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      onClick={() => openPdfInNewTab(`/api/bulletins/${b.id}/pdf`)}
                       className="px-3 py-1.5 bg-[#1E3A5F] text-[#F5A623] hover:bg-[#152943] text-xs font-bold rounded-lg transition-colors flex items-center gap-1 shadow-sm"
                     >
-                      <FileText className="h-3.5 w-3.5" />
-                      <span>PDF</span>
-                    </a>
+                      <Download className="h-3 w-3" />
+                      PDF
+                    </button>
                   </div>
                 </div>
               ))

@@ -79,6 +79,7 @@ model User {
   receivedMessages Message[] @relation("ReceivedMessages")
   sanctionsIssued Sanction[] @relation("CenseurSanctions")
   studentProfile  Eleve?
+  teacherAbsences TeacherAbsence[] @relation("TeacherAbsences")
 }
 
 model AnneeScolaire {
@@ -587,4 +588,15 @@ model AccountingLine {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model TeacherAbsence {
+  id        String   @id @default(uuid())
+  teacherId String
+  teacher   User     @relation("TeacherAbsences", fields: [teacherId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  hours     Float    @default(1.0)
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

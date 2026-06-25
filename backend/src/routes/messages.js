@@ -51,6 +51,25 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'Receiver and content are required' });
     }
 
+    const receivers = await prisma.user.findMany({
+      where: { id: { in: targets } },
+      select: { role: true }
+    });
+
+    if (req.user.role === 'TEACHER') {
+      const hasRestricted = receivers.some(r => r.role === 'DIRECTOR' || r.role === 'PARENT');
+      if (hasRestricted) {
+        return res.status(403).json({ message: 'Teachers are not allowed to send messages to parents or the director' });
+      }
+    }
+    
+    if (req.user.role === 'PARENT') {
+      const hasRestricted = receivers.some(r => r.role === 'DIRECTOR');
+      if (hasRestricted) {
+        return res.status(403).json({ message: 'Parents are not allowed to send messages to the director' });
+      }
+    }
+
     const messagesData = targets.map(id => ({
       senderId: req.user.id,
       receiverId: id,
@@ -112,7 +131,7 @@ router.get('/recipients', auth, async (req, res) => {
       });
     };
 
-    if (userRole === 'DIRECTOR' || userRole === 'INTENDANT' || userRole === 'CENSEUR') {
+    if (userRole === 'DIRECTOR' || userRole === 'INTENDANT' || userRole === 'CENSEUR' || userRole === 'SURVEILLANT') {
       // Admin sees everyone in the school
       const users = await prisma.user.findMany({
         where: { schoolId },
@@ -121,9 +140,9 @@ router.get('/recipients', auth, async (req, res) => {
       addUsers(users);
 
     } else if (userRole === 'TEACHER') {
-      // Teacher sees Admin, other Teachers, and Students/Parents of their classes
+      // Teacher sees Admin (except Director), other Teachers, and Students of their classes
       const adminsAndTeachers = await prisma.user.findMany({
-        where: { schoolId, role: { in: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER'] } },
+        where: { schoolId, role: { in: ['CENSEUR', 'INTENDANT', 'SURVEILLANT', 'TEACHER'] } },
         select: userSelect
       });
       addUsers(adminsAndTeachers);
@@ -141,19 +160,13 @@ router.get('/recipients', auth, async (req, res) => {
       });
       addUsers(studentsInClasses);
 
-      // Parents
-      const parentLinks = await prisma.parentEleve.findMany({
-        where: { eleve: { classId: { in: classIds } } },
-        include: { parent: { select: userSelect } }
-      });
-      parentLinks.forEach(link => {
-        if (link.parent && link.parent.id !== userId) recipientsMap.set(link.parent.id, formatUser(link.parent));
-      });
+      // Parents are no longer visible to teachers
+
 
     } else if (userRole === 'STUDENT') {
       // Student sees Admin and Teachers of their classes
       const admins = await prisma.user.findMany({
-        where: { schoolId, role: { in: ['DIRECTOR', 'CENSEUR', 'INTENDANT'] } },
+        where: { schoolId, role: { in: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'SURVEILLANT'] } },
         select: userSelect
       });
       addUsers(admins);
@@ -178,9 +191,9 @@ router.get('/recipients', auth, async (req, res) => {
         }
       }
     } else if (userRole === 'PARENT') {
-      // Parent sees Admin and Teachers of their children's classes
+      // Parent sees Admin (except Director) and Teachers of their children's classes
       const admins = await prisma.user.findMany({
-        where: { schoolId, role: { in: ['DIRECTOR', 'CENSEUR', 'INTENDANT'] } },
+        where: { schoolId, role: { in: ['CENSEUR', 'INTENDANT', 'SURVEILLANT'] } },
         select: userSelect
       });
       addUsers(admins);

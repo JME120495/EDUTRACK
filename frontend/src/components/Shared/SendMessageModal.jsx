@@ -155,12 +155,18 @@ export default function SendMessageModal({ isOpen, onClose }) {
                       className="px-3 py-1.5 text-sm font-semibold border border-slate-300 rounded-lg text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
                     >
                       <option value="">Tous les rôles</option>
-                      <option value="DIRECTOR">Direction</option>
-                      <option value="CENSEUR">Censeur</option>
-                      <option value="INTENDANT">Intendance</option>
-                      <option value="TEACHER">Enseignant</option>
-                      <option value="STUDENT">Élève</option>
-                      <option value="PARENT">Parent</option>
+                      {Array.from(new Set(recipients.map(r => r.role))).map(role => {
+                        const roleLabels = {
+                          'DIRECTOR': 'Direction',
+                          'CENSEUR': 'Censeur',
+                          'INTENDANT': 'Intendance',
+                          'SURVEILLANT': 'Surveillant',
+                          'TEACHER': 'Enseignant',
+                          'STUDENT': 'Élève',
+                          'PARENT': 'Parent'
+                        };
+                        return <option key={role} value={role}>{roleLabels[role] || role}</option>;
+                      })}
                     </select>
 
                     {(selectedRoleFilter === 'STUDENT' || selectedRoleFilter === 'PARENT') && availableClasses.length > 0 && (
@@ -204,6 +210,7 @@ export default function SendMessageModal({ isOpen, onClose }) {
                       'DIRECTOR': 'Direction',
                       'CENSEUR': 'Censeur',
                       'INTENDANT': 'Intendance',
+                      'SURVEILLANT': 'Surveillant',
                       'TEACHER': 'Enseignant',
                       'STUDENT': 'Élève',
                       'PARENT': 'Parent'
@@ -212,6 +219,7 @@ export default function SendMessageModal({ isOpen, onClose }) {
                       'DIRECTOR': 'bg-rose-100 text-rose-700',
                       'CENSEUR': 'bg-purple-100 text-purple-700',
                       'INTENDANT': 'bg-emerald-100 text-emerald-700',
+                      'SURVEILLANT': 'bg-indigo-100 text-indigo-700',
                       'TEACHER': 'bg-blue-100 text-blue-700',
                       'STUDENT': 'bg-amber-100 text-amber-700',
                       'PARENT': 'bg-slate-200 text-slate-700'

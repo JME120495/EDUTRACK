@@ -42,6 +42,7 @@ function HomeRedirect() {
   if (user.role === 'TEACHER') return <Navigate to="/teacher/dashboard" replace />;
   if (user.role === 'CENSEUR') return <Navigate to="/censeur/dashboard" replace />;
   if (user.role === 'INTENDANT') return <Navigate to="/intendant/dashboard" replace />;
+  if (user.role === 'SURVEILLANT') return <Navigate to="/absences" replace />;
   return <Navigate to="/dashboard" replace />;
 }
 
@@ -55,6 +56,7 @@ function RoleRoute({ roles, children }) {
     if (user.role === 'TEACHER') return <Navigate to="/grades" replace />;
     if (user.role === 'CENSEUR') return <Navigate to="/censeur/dashboard" replace />;
     if (user.role === 'INTENDANT') return <Navigate to="/intendant/dashboard" replace />;
+    if (user.role === 'SURVEILLANT') return <Navigate to="/absences" replace />;
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -100,7 +102,7 @@ export default function App() {
           <Route path="/teachers" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><TeachersPage /></RoleRoute>} />
           <Route path="/timetable" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><TimetablePage /></RoleRoute>} />
           <Route path="/grades" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'TEACHER']}><GradeEntryPage /></RoleRoute>} />
-          <Route path="/absences" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'TEACHER']}><AbsencesPage /></RoleRoute>} />
+          <Route path="/absences" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'TEACHER', 'SURVEILLANT']}><AbsencesPage /></RoleRoute>} />
           <Route path="/bulletins" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'TEACHER']}><BulletinsPage /></RoleRoute>} />
           <Route path="/payments" element={
             <RoleRoute roles={['DIRECTOR', 'INTENDANT']}>
@@ -133,7 +135,7 @@ export default function App() {
           <Route path="/director/library" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><LibraryPage /></RoleRoute>} />
           <Route path="/billing" element={<RoleRoute roles={['DIRECTOR']}><BillingPage /></RoleRoute>} />
           <Route path="/director/timetable" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><TimetablePage /></RoleRoute>} />
-          <Route path="/messages" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT']}><MessagesPage /></RoleRoute>} />
+          <Route path="/messages" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT']}><MessagesPage /></RoleRoute>} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

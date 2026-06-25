@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiFetch } from '../../api';
+import { apiFetch, API_BASE, openPdfInNewTab } from '../../api';
 import { AuthContext } from '../../context/AuthContext';
 import { FileText, Send, CheckCircle, RefreshCw, Award, Lock, Edit2, X, Download } from 'lucide-react';
 
@@ -239,12 +239,11 @@ export default function BulletinsPage() {
   };
 
   const handleExportZip = () => {
-    let url = `http://localhost:5000/api/bulletins/export-zip?classId=${selectedClassId}&type=${activeTab}`;
+    let url = `/api/bulletins/export-zip?classId=${selectedClassId}&type=${activeTab}`;
     if (activeTab === 'SEQUENCE') url += `&parameter=${selectedSequenceId}`;
     if (activeTab === 'TERM') url += `&parameter=${selectedTerm}`;
     
-    // Open in new tab to trigger download
-    window.open(url, '_blank');
+    openPdfInNewTab(url);
   };
 
   return (
@@ -494,15 +493,13 @@ export default function BulletinsPage() {
                         )}
 
                         {/* PDF Download */}
-                        <a
-                          href={`http://localhost:5000/api/bulletins/${b.id}/pdf`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button
+                          onClick={() => openPdfInNewTab(`/api/bulletins/${b.id}/pdf`)}
                           className="p-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors flex items-center justify-center"
-                          title={t('bulletins.table.pdf')}
+                          title="Télécharger le PDF"
                         >
-                          <FileText className="h-4 w-4" />
-                        </a>
+                          <Download size={16} />
+                        </button>
 
                         {/* WhatsApp Send */}
                         <button

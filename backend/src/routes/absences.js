@@ -21,7 +21,7 @@ router.get('/eleve/:eleveId', auth, ensureParentAccess('eleveId'), async (req, r
 });
 
 // Register absence
-router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR']), async (req, res) => {
+router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
   const { eleveId, sequenceId, date, hours, justified, reason } = req.body;
   try {
     if (!eleveId || !sequenceId || !hours) {
@@ -46,7 +46,7 @@ router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR']), async (r
 });
 
 // Update absence justification
-router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR', 'TEACHER']), async (req, res) => {
+router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR', 'TEACHER', 'SURVEILLANT']), async (req, res) => {
   const { justified, reason } = req.body;
   const { id } = req.params;
   try {
@@ -88,7 +88,7 @@ router.get('/classe/:classId/date/:dateString', auth, async (req, res) => {
 });
 
 // Bulk register absences for a class (roll call)
-router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR']), async (req, res) => {
+router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
   const { classId, sequenceId, date, absences } = req.body; // absences: Array of { eleveId, hours, reason }
   try {
     if (!classId || !sequenceId || !date || !Array.isArray(absences)) {
@@ -131,6 +131,99 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR']), asyn
     }
 
     res.status(201).json({ message: 'Attendance recorded successfully', count: toCreate.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get teacher absences
+router.get('/teachers', auth, requireRole(['DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
+  const { dateString } = req.query;
+  try {
+    const where = {};
+    if (dateString) {
+      const start = new Date(dateString);
+      start.setHours(0,0,0,0);
+      const end = new Date(dateString);
+      end.setHours(23,59,59,999);
+      where.date = { gte: start, lte: end };
+    }
+    const absences = await prisma.teacherAbsence.findMany({
+      where,
+      include: { teacher: { select: { id: true, name: true, phone: true } } }
+    });
+    res.json(absences);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Bulk register teacher absences
+router.post('/teachers/bulk', auth, requireRole(['DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
+  const { date, absences } = req.body; // absences: [{ teacherId, hours, reason }]
+  try {
+    if (!date || !Array.isArray(absences)) {
+      return res.status(400).json({ message: 'Date and absences list are required' });
+    }
+
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+
+    const start = new Date(date);
+    start.setHours(0,0,0,0);
+    const end = new Date(date);
+    end.setHours(23,59,59,999);
+
+    // Delete existing absences for this date
+    await prisma.teacherAbsence.deleteMany({
+      where: {
+        date: { gte: start, lte: end }
+      }
+    });
+
+    // Create new absences
+    const toCreate = absences.map(item => ({
+      teacherId: item.teacherId,
+      date: parsedDate,
+      hours: parseFloat(item.hours || 1),
+      reason: item.reason || ''
+    }));
+
+    if (toCreate.length > 0) {
+      await prisma.teacherAbsence.createMany({
+        data: toCreate
+      });
+    }
+
+    res.status(201).json({ message: 'Teacher attendance recorded successfully', count: toCreate.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update teacher absence
+router.put('/teachers/:id', auth, requireRole(['DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
+  const { hours, reason } = req.body;
+  const { id } = req.params;
+  try {
+    const updated = await prisma.teacherAbsence.update({
+      where: { id },
+      data: { hours, reason }
+    });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete teacher absence
+router.delete('/teachers/:id', auth, requireRole(['DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.teacherAbsence.delete({ where: { id } });
+    res.json({ message: 'Absence deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

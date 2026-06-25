@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { AuthContext } from '../../context/AuthContext';
 import { useContext } from 'react';
-import { apiFetch } from '../../api';
+import { apiFetch, API_BASE, openPdfInNewTab } from '../../api';
 import { 
   Users, 
   FileText, 
@@ -508,15 +508,13 @@ export default function HRPage() {
                                 </td>
                                 <td className="px-6 py-4 flex gap-2">
                                   {payslip.pdfUrl && (
-                                    <a
-                                      href={`http://localhost:5000${payslip.pdfUrl}`}
-                                      target="_blank"
-                                      rel="noreferrer"
+                                    <button
+                                      onClick={() => openPdfInNewTab(payslip.pdfUrl)}
                                       className="p-1.5 hover:bg-slate-100 rounded-lg text-[#1E3A5F] border border-slate-200 shadow-sm"
                                       title="Télécharger PDF"
                                     >
                                       <Download className="h-4 w-4" />
-                                    </a>
+                                    </button>
                                   )}
                                   {payslip.status === 'PENDING' && (
                                     <button

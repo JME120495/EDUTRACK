@@ -26,12 +26,13 @@ export default function AdminStaffPage() {
   async function loadData() {
     try {
       setLoading(true);
-      const [censeurs, intendants, classes] = await Promise.all([
+      const [censeurs, intendants, surveillants, classes] = await Promise.all([
         apiFetch('/users?role=CENSEUR'),
         apiFetch('/users?role=INTENDANT'),
+        apiFetch('/users?role=SURVEILLANT'),
         apiFetch('/classes')
       ]);
-      setStaffList([...censeurs, ...intendants]);
+      setStaffList([...censeurs, ...intendants, ...surveillants]);
       setClassesList(classes);
     } catch (e) {
       console.error('Failed to load admin staff:', e);
@@ -162,7 +163,7 @@ export default function AdminStaffPage() {
                   <tr key={s.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 font-bold text-slate-800">{s.name}</td>
                     <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${s.role === 'CENSEUR' ? 'bg-purple-50 text-purple-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${s.role === 'CENSEUR' ? 'bg-purple-50 text-purple-600' : s.role === 'INTENDANT' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                         {s.role}
                       </span>
                     </td>
@@ -219,6 +220,7 @@ export default function AdminStaffPage() {
                 <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F]">
                   <option value="CENSEUR">Censeur (Pédagogie)</option>
                   <option value="INTENDANT">Intendant (Finances & RH)</option>
+                  <option value="SURVEILLANT">Surveillant (Discipline)</option>
                 </select>
               </div>
               <div>

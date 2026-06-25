@@ -1,7 +1,7 @@
 import { AuthContext } from '../../context/AuthContext';
 import React, { useContext, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiFetch } from '../../api';
+import { apiFetch, API_BASE, openPdfInNewTab } from '../../api';
 import { 
   CreditCard, 
   Plus, 
@@ -386,9 +386,9 @@ export default function PaymentsPage() {
     try {
       const res = await apiFetch('/finance/reports/pdf');
       if (res.url) {
-        window.open(`http://localhost:5000${res.url}`, '_blank');
+        await openPdfInNewTab(res.url);
       }
-    } catch (e) {
+    } catch (err) {
       alert('Failed to generate report PDF');
     } finally {
       setExportingReport(false);

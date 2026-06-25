@@ -106,7 +106,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       path: '/absences',
       label: t('nav.absences'),
       icon: ClipboardCheck,
-      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
+      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER', 'SURVEILLANT']
     },
     {
       path: '/bulletins',
@@ -181,7 +181,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       path: '/messages',
       label: 'Messagerie',
       icon: MessageSquare,
-      roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT']
+      roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT']
     }
   ];
 
