@@ -19,7 +19,7 @@ export default function InfluencerDashboard() {
       return;
     }
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/platform/influencer/dashboard`, {
+    fetch('/api/platform/influencer/dashboard', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(res => res.json())

@@ -16,7 +16,7 @@ export default function PlatformLogin() {
     setError('');
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/platform/login`, {
+      const response = await fetch('/api/platform/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

@@ -24,7 +24,7 @@ export default function SuperAdminDashboard() {
     }
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/platform/admin/dashboard`, {
+      const res = await fetch('/api/platform/admin/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const d = await res.json();
@@ -45,7 +45,7 @@ export default function SuperAdminDashboard() {
     setCreating(true);
     const token = localStorage.getItem('platform_token');
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/platform/admin/influencers`, {
+      const res = await fetch('/api/platform/admin/influencers', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
