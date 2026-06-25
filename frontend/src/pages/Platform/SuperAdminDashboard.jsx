@@ -20,6 +20,11 @@ export default function SuperAdminDashboard() {
   const fetchData = async () => {
     const token = localStorage.getItem('platform_token');
     if (!token || user.role !== 'SUPER_ADMIN') {
+      navigate('/platform/login');
+      return;
+    }
+
+    try {
       const d = await apiFetch('/platform/admin/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
