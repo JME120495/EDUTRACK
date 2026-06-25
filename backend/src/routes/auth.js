@@ -14,7 +14,7 @@ router.post('/register', async (req, res) => {
   const { 
     schoolName, address, country, phone, typeOfSchool, schoolTypes, 
     city, studentCount, currency,
-    firstName, lastName, email, password, lang 
+    firstName, lastName, email, password, lang, ref
   } = req.body;
   try {
     if (!schoolName || !email || !password || !firstName || !lastName) {
@@ -25,6 +25,15 @@ router.post('/register', async (req, res) => {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'Cet email est déjà utilisé' });
+    }
+
+    // Check if referral code exists
+    let referredById = null;
+    if (ref) {
+      const influencer = await prisma.platformUser.findUnique({ where: { referralCode: ref } });
+      if (influencer && influencer.role === 'INFLUENCER') {
+        referredById = influencer.id;
+      }
     }
 
     // Create a new School
@@ -39,7 +48,8 @@ router.post('/register', async (req, res) => {
         levels: schoolTypes ? JSON.stringify(schoolTypes) : null,
         city: city || null,
         studentCount: studentCount ? parseInt(studentCount, 10) : null,
-        subscriptionPlan: 'PREMIUM' // Give premium by default for now
+        subscriptionPlan: 'PREMIUM', // Give premium by default for now
+        referredById: referredById
       }
     });
 

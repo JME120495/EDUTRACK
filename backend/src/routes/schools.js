@@ -106,6 +106,30 @@ router.post('/pay-subscription', auth, requireRole(['DIRECTOR']), async (req, re
       data: { subscriptionExpiresAt: nextExpiry }
     });
 
+    // Handle Influencer Commission
+    if (school.referredById) {
+      let monthlyPrice = 0;
+      if (school.subscriptionPlan === 'ESSENTIAL') monthlyPrice = 25000;
+      else if (school.subscriptionPlan === 'STANDARD') monthlyPrice = 54000;
+      else if (school.subscriptionPlan === 'PREMIUM') monthlyPrice = 99000;
+
+      if (monthlyPrice > 0) {
+        // If annual (12 months), they pay for 10 months
+        const paidMonths = months >= 12 ? (Math.floor(months/12)*10 + months%12) : months;
+        const amountPaid = monthlyPrice * paidMonths;
+        const commission = amountPaid * 0.20;
+
+        await prisma.influencerEarning.create({
+          data: {
+            influencerId: school.referredById,
+            schoolId: school.id,
+            amountPaid,
+            commission
+          }
+        });
+      }
+    }
+
     res.json({ message: 'Subscription paid successfully', subscriptionExpiresAt: updated.subscriptionExpiresAt });
   } catch (err) {
     res.status(500).json({ error: err.message });

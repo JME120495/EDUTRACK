@@ -33,6 +33,9 @@ import StudentPortal from './pages/Student/StudentPortal';
 import MessagesPage from './pages/Shared/MessagesPage';
 import PricingPage from './pages/Public/PricingPage';
 import BillingPage from './pages/Director/BillingPage';
+import PlatformLogin from './pages/Platform/PlatformLogin';
+import InfluencerDashboard from './pages/Platform/InfluencerDashboard';
+import SuperAdminDashboard from './pages/Platform/SuperAdminDashboard';
 
 function HomeRedirect() {
   const { user } = useContext(AuthContext);
@@ -88,6 +91,11 @@ export default function App() {
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        
+        {/* Platform Routes */}
+        <Route path="/platform/login" element={<PlatformLogin />} />
+        <Route path="/platform/influencer" element={<InfluencerDashboard />} />
+        <Route path="/platform/admin" element={<SuperAdminDashboard />} />
         
         {/* Protected Routes */}
         <Route element={<Layout />}>

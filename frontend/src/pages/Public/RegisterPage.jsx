@@ -128,10 +128,14 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
+      const queryParams = new URLSearchParams(window.location.search);
+      const refCode = queryParams.get('ref') || null;
+
       const payload = {
         schoolName, address, country, phone, typeOfSchool, schoolTypes,
         city, studentCount, currency,
-        firstName, lastName, email, password, lang: lang.toUpperCase()
+        firstName, lastName, email, password, lang: lang.toUpperCase(),
+        ref: refCode
       };
       
       const res = await register(payload);

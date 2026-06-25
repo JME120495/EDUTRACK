@@ -31,6 +31,9 @@ model School {
   subscriptionExpiresAt DateTime?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  referredById    String?
+  referredBy      PlatformUser?   @relation(fields: [referredById], references: [id])
+  influencerEarnings InfluencerEarning[]
   users           User[]
   classes         Classe[]
   matieres        Matiere[]
@@ -599,4 +602,28 @@ model TeacherAbsence {
   reason    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PlatformUser {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  passwordHash    String
+  role            String   // "SUPER_ADMIN" ou "INFLUENCER"
+  referralCode    String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  referredSchools School[]
+  earnings        InfluencerEarning[]
+}
+
+model InfluencerEarning {
+  id              String       @id @default(uuid())
+  influencerId    String
+  influencer      PlatformUser @relation(fields: [influencerId], references: [id])
+  schoolId        String
+  school          School       @relation(fields: [schoolId], references: [id])
+  amountPaid      Float
+  commission      Float
+  date            DateTime     @default(now())
 }

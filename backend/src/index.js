@@ -29,6 +29,7 @@ const statsRoutes = require('./routes/stats');
 const disciplineRoutes = require('./routes/discipline');
 const libraryRoutes = require('./routes/library');
 const accountingRoutes = require('./routes/accounting');
+const platformRoutes = require('./routes/platform');
 
 const app = express();
 app.set('trust proxy', 1); // Trust Vercel's proxy for rate limiting
@@ -150,6 +151,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/discipline', disciplineRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/api/accounting', accountingRoutes);
+app.use('/api/platform', platformRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
