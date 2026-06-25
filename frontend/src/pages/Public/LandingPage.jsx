@@ -133,6 +133,9 @@ export default function LandingPage() {
                 <a href="#pricing" className="w-full sm:w-auto bg-slate-800 text-white border border-slate-700 px-8 py-3 rounded-xl font-bold text-lg hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
                   {t('landing.btnPricing')}
                 </a>
+                <Link to="/platform/login" className="w-full sm:w-auto bg-slate-900 text-amber-400 border border-amber-500/30 px-8 py-3 rounded-xl font-bold text-lg hover:bg-amber-500/10 transition-all flex items-center justify-center gap-2">
+                  Espace Partenaires
+                </Link>
               </motion.div>
             </div>
 
