@@ -69,6 +69,9 @@ export default function LandingPage() {
               >
                 {i18n.language === 'fr' ? 'EN' : 'FR'}
               </button>
+              <Link to="/platform/login" className="text-sm sm:text-base text-amber-500 font-bold hover:text-amber-400 transition-colors whitespace-nowrap">
+                {i18n.language === 'fr' ? 'Partenaires' : 'Partners'}
+              </Link>
               <Link to={user ? "/dashboard-redirect" : "/login"} className="text-sm sm:text-base text-slate-300 font-bold hover:text-white transition-colors whitespace-nowrap">
                 {user ? (i18n.language === 'fr' ? 'Tableau de bord' : 'Dashboard') : t('landing.login')}
               </Link>
