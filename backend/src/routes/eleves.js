@@ -294,19 +294,19 @@ router.post('/import-csv', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (re
       return res.status(400).json({ message: 'CSV content and target Class ID are required' });
     }
 
-    // CSV format: Name,Matricule,Gender,Address
+    // CSV format: Nom, Matricule, Sexe, Date de Naissance, Lieu de Naissance, Adresse, Maladie, Handicap, Nom Parent, Téléphone Parent
     const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     const imported = [];
     const skipped = [];
 
     // Skip header line if it contains metadata
-    const startIdx = lines[0].toLowerCase().includes('name') || lines[0].toLowerCase().includes('nom') ? 1 : 0;
+    const startIdx = lines[0].toLowerCase().includes('nom') || lines[0].toLowerCase().includes('name') ? 1 : 0;
 
     for (let i = startIdx; i < lines.length; i++) {
       const parts = lines[i].split(',').map(part => part.trim());
       if (parts.length < 2) continue;
 
-      const [name, matricule, gender, address] = parts;
+      const [name, matricule, gender, dateOfBirthStr, placeOfBirth, address, malStr, handStr, parentName, parentPhone] = parts;
       if (!name || !matricule) continue;
 
       // Check duplicate matricule
@@ -334,16 +334,70 @@ router.post('/import-csv', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (re
       }
       // --------------------------------
 
+      // Parse date of birth
+      let parsedDateOfBirth = null;
+      if (dateOfBirthStr) {
+        if (dateOfBirthStr.includes('/')) {
+          const [d, m, y] = dateOfBirthStr.split('/');
+          if (d && m && y) parsedDateOfBirth = new Date(`${y}-${m}-${d}`);
+        } else {
+          parsedDateOfBirth = new Date(dateOfBirthStr);
+        }
+        if (isNaN(parsedDateOfBirth?.getTime())) parsedDateOfBirth = null;
+      }
+
+      const isSick = malStr?.toLowerCase().trim() === 'oui' || malStr?.toLowerCase().trim() === 'yes';
+      const hasDisability = handStr?.toLowerCase().trim() === 'oui' || handStr?.toLowerCase().trim() === 'yes';
+
       const newStudent = await prisma.eleve.create({
         data: {
           name,
           matricule,
           gender: gender || null,
+          dateOfBirth: parsedDateOfBirth,
+          placeOfBirth: placeOfBirth || null,
           address: address || null,
+          isSick,
+          hasDisability,
           classId
         }
       });
       imported.push(newStudent);
+
+      // Handle Parent creation and linking
+      if (parentPhone) {
+        const phone = parentPhone.replace(/\s+/g, '');
+        if (phone.length >= 6) { // basic validation
+          let parentUser = await prisma.user.findFirst({
+            where: { schoolId: req.user.schoolId, role: 'PARENT', phone }
+          });
+          
+          if (!parentUser) {
+            const baseName = parentName ? parentName.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') : 'parent';
+            let finalEmail = `${baseName}.${phone}@edutrack.parent`;
+            const passwordHash = await bcrypt.hash(phone, 10);
+            
+            parentUser = await prisma.user.create({
+              data: {
+                schoolId: req.user.schoolId,
+                name: parentName || 'Parent de ' + name,
+                email: finalEmail,
+                phone: phone,
+                passwordHash,
+                role: 'PARENT'
+              }
+            });
+          }
+          
+          await prisma.parentEleve.create({
+            data: {
+              parentId: parentUser.id,
+              eleveId: newStudent.id,
+              relationship: 'GUARDIAN'
+            }
+          });
+        }
+      }
     }
 
     res.json({

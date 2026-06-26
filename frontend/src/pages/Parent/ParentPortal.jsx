@@ -17,7 +17,8 @@ import {
   X,
   Lock,
   Bell,
-  Send
+  Send,
+  Download
 } from 'lucide-react';
 
 export default function ParentPortal() {
@@ -87,8 +88,7 @@ export default function ParentPortal() {
     // Load grades
     try {
       const gradesData = await apiFetch(`/notes?eleveId=${childId}`);
-      // Filter out drafts: only show validated evaluations to parents
-      const validatedGrades = gradesData.filter(g => !g.isDraft);
+      const validatedGrades = Array.isArray(gradesData) ? gradesData.filter(g => !g.isDraft) : [];
       setGrades(validatedGrades);
     } catch (e) {
       console.error('Failed to load child grades:', e);
@@ -98,7 +98,7 @@ export default function ParentPortal() {
     // Load bulletins
     try {
       const bulletinsData = await apiFetch(`/bulletins?eleveId=${childId}`);
-      setBulletins(bulletinsData);
+      setBulletins(Array.isArray(bulletinsData) ? bulletinsData : []);
     } catch (e) {
       console.error('Failed to load child bulletins:', e);
       setBulletins([]);
@@ -106,8 +106,8 @@ export default function ParentPortal() {
 
     // Load payments
     try {
-      const paymentsData = await apiFetch(`/paiements?eleveId=${childId}`);
-      setPayments(paymentsData);
+      const paymentsData = await apiFetch(`/paiements/eleve/${childId}`);
+      setPayments(Array.isArray(paymentsData) ? paymentsData : []);
     } catch (e) {
       console.error('Failed to load child payments:', e);
       setPayments([]);
@@ -116,7 +116,7 @@ export default function ParentPortal() {
     // Load timetable
     try {
       const timetableData = classId ? await apiFetch(`/emplois-du-temps/classe/${classId}`) : [];
-      setTimetable(timetableData);
+      setTimetable(Array.isArray(timetableData) ? timetableData : []);
     } catch (e) {
       console.error('Failed to load child timetable:', e);
       setTimetable([]);
@@ -125,7 +125,7 @@ export default function ParentPortal() {
     // Load creneaux
     try {
       const creneauxData = await apiFetch('/creneaux');
-      setCreneaux(creneauxData);
+      setCreneaux(Array.isArray(creneauxData) ? creneauxData : []);
     } catch (e) {
       console.error('Failed to load creneaux:', e);
       setCreneaux([]);
@@ -167,17 +167,70 @@ export default function ParentPortal() {
       });
 
       setPaySuccess(true);
+      // Wait for 1 second, then just refresh data but keep modal open for receipt download
       setTimeout(() => {
-        setPaySuccess(false);
-        setPayModalOpen(false);
-        // Refresh metrics
         loadChildData(selectedChildId);
-      }, 2000);
+      }, 1000);
     } catch (err) {
       alert(err.message || 'Payment simulation failed');
     } finally {
       setPaying(false);
     }
+  };
+
+  const handleDownloadReceipt = () => {
+    const student = children.find(c => c.id === selectedChildId);
+    if (!student) return;
+
+    const printWindow = window.open('', '_blank');
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Reçu de Paiement - ${student.name}</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
+            .header { text-align: center; border-bottom: 2px solid #1E3A5F; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 24px; font-weight: bold; color: #1E3A5F; }
+            .info-table { width: 100%; margin-bottom: 30px; border-collapse: collapse; }
+            .info-table td { padding: 8px 0; border-bottom: 1px solid #eee; }
+            .label { font-weight: bold; width: 40%; color: #555; }
+            .value { font-weight: bold; color: #111; }
+            .footer { text-align: center; margin-top: 50px; font-size: 12px; color: #777; }
+            .stamp-area { margin-top: 40px; text-align: right; padding-right: 50px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title">REÇU DE PAIEMENT / PAYMENT RECEIPT</div>
+            <div>Date : ${new Date().toLocaleDateString('fr-FR')}</div>
+          </div>
+          
+          <table class="info-table">
+            <tr><td class="label">Élève / Student :</td><td class="value">${student.name}</td></tr>
+            <tr><td class="label">Montant Payé / Amount Paid :</td><td class="value" style="color: green;">${parseFloat(payAmount).toLocaleString()} ${currency}</td></tr>
+            <tr><td class="label">Mode de Paiement / Payment Method :</td><td class="value">${payMethod}</td></tr>
+            <tr><td class="label">Numéro du compte / Account Number :</td><td class="value">${payPhone}</td></tr>
+          </table>
+
+          <div class="stamp-area">
+            <strong>Signature / EduTrack Paiement en Ligne</strong>
+            <br/><br/><br/><br/>
+            _________________________
+          </div>
+
+          <div class="footer">
+            Document généré électroniquement par EduTrack. Validé automatiquement via Mobile Money.
+          </div>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 
   if (loading) {
@@ -506,6 +559,27 @@ export default function ParentPortal() {
                   </div>
                   <h4 className="font-bold text-[#1E3A5F]">Paiement Validé avec succès !</h4>
                   <p className="text-xs text-slate-500">Un SMS de confirmation a été envoyé sur votre téléphone mobile.</p>
+                  
+                  <div className="pt-4 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadReceipt}
+                      className="w-full py-2.5 bg-[#1E3A5F] hover:bg-[#152943] text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Télécharger le reçu
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaySuccess(false);
+                        setPayModalOpen(false);
+                      }}
+                      className="w-full py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                    >
+                      Fermer
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>

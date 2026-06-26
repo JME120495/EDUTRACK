@@ -90,6 +90,7 @@ export default function StudentsPage() {
 
   // CSV Import state
   const [csvText, setCsvText] = useState('');
+  const [importClassId, setImportClassId] = useState('');
 
   // Tab State
   const [activeTab, setActiveTab] = useState('students'); // 'students' or 'parents'
@@ -224,6 +225,7 @@ export default function StudentsPage() {
       setClasses(classesData);
       if (classesData.length > 0) {
         setNewClassId(classesData[0].id);
+        setImportClassId(classesData[0].id);
       }
       if (studentsData.length > 0 && !selectedStudentId) {
         setSelectedStudentId(studentsData[0].id);
@@ -331,9 +333,9 @@ export default function StudentsPage() {
     try {
       const result = await apiFetch('/eleves/import-csv', {
         method: 'POST',
-        body: { csvContent: csvText }
+        body: { csvText, classId: importClassId }
       });
-      alert(`Successfully imported ${result.count} students!`);
+      alert(`Successfully imported ${result.count || result.importedCount} students!`);
       setImportModalOpen(false);
       setCsvText('');
       loadData();
@@ -1205,8 +1207,25 @@ export default function StudentsPage() {
 
             <form onSubmit={handleCsvImport} className="p-6 space-y-4">
               <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-amber-800 text-xs leading-relaxed space-y-1">
-                <p className="font-bold">Instructions:</p>
-                <p>{t('students.csvHelp')}</p>
+                <p className="font-bold">Instructions: Le fichier doit contenir 10 colonnes exactes :</p>
+                <p className="font-mono bg-white p-2 rounded border border-amber-100">Nom, Matricule, Sexe, Date de Naissance (jj/mm/aaaa), Lieu de Naissance, Adresse, Maladie (Oui/Non), Handicap (Oui/Non), Nom Parent, Téléphone Parent</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                  Classe de destination
+                </label>
+                <select
+                  required
+                  value={importClassId}
+                  onChange={(e) => setImportClassId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none font-semibold text-slate-800 mb-3"
+                >
+                  <option value="">Sélectionnez une classe...</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -1224,7 +1243,7 @@ export default function StudentsPage() {
                   rows="8"
                   value={csvText}
                   onChange={(e) => setCsvText(e.target.value)}
-                  placeholder={t('students.csvPlaceholder')}
+                  placeholder="Ex: Jean Dupont, MAT123, M, 30/12/2010, Yaoundé, Quartier X, Non, Non, Paul Dupont, +237600000000"
                   className="w-full p-3 text-xs font-mono border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
                 />
               </div>
