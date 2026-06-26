@@ -22,10 +22,10 @@ router.get('/eleve/:eleveId', auth, ensureParentAccess('eleveId'), async (req, r
 
 // Register absence
 router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
-  const { eleveId, sequenceId, date, hours, justified, reason } = req.body;
+  const { eleveId, sequenceId, date, hours, justified, reason, isLateness } = req.body;
   try {
-    if (!eleveId || !sequenceId || !hours) {
-      return res.status(400).json({ message: 'Student ID, Sequence ID, and hours are required' });
+    if (!eleveId || !sequenceId) {
+      return res.status(400).json({ message: 'Student ID and Sequence ID are required' });
     }
 
     const absence = await prisma.absence.create({
@@ -33,9 +33,10 @@ router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVEILLA
         eleveId,
         sequenceId,
         date: date ? new Date(date) : new Date(),
-        hours: parseFloat(hours),
+        hours: parseFloat(hours || 0),
         justified: justified || false,
-        reason: reason || ''
+        reason: reason || '',
+        isLateness: isLateness || false
       }
     });
 
@@ -89,7 +90,7 @@ router.get('/classe/:classId/date/:dateString', auth, async (req, res) => {
 
 // Bulk register absences for a class (roll call)
 router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVEILLANT']), async (req, res) => {
-  const { classId, sequenceId, date, absences } = req.body; // absences: Array of { eleveId, hours, reason }
+  const { classId, sequenceId, date, absences } = req.body; // absences: Array of { eleveId, hours, reason, isLateness }
   try {
     if (!classId || !sequenceId || !date || !Array.isArray(absences)) {
       return res.status(400).json({ message: 'Class ID, Sequence ID, Date, and absences list are required' });
@@ -119,9 +120,10 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVE
       eleveId: item.eleveId,
       sequenceId,
       date: parsedDate,
-      hours: parseFloat(item.hours || 1),
+      hours: parseFloat(item.hours || (item.isLateness ? 0 : 1)),
       justified: false,
-      reason: item.reason || ''
+      reason: item.reason || '',
+      isLateness: item.isLateness || false
     }));
 
     if (toCreate.length > 0) {

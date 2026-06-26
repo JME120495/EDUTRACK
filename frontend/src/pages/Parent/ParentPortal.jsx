@@ -38,6 +38,7 @@ export default function ParentPortal() {
   const [payments, setPayments] = useState([]);
   const [timetable, setTimetable] = useState([]);
   const [creneaux, setCreneaux] = useState([]);
+  const [absences, setAbsences] = useState([]);
 
   // Payment Modal States
   const [payModalOpen, setPayModalOpen] = useState(false);
@@ -102,6 +103,15 @@ export default function ParentPortal() {
     } catch (e) {
       console.error('Failed to load child bulletins:', e);
       setBulletins([]);
+    }
+
+    // Load absences
+    try {
+      const absencesData = await apiFetch(`/absences/eleve/${childId}`);
+      setAbsences(Array.isArray(absencesData) ? absencesData : []);
+    } catch (e) {
+      console.error('Failed to load child absences:', e);
+      setAbsences([]);
     }
 
     // Load payments
@@ -409,6 +419,53 @@ export default function ParentPortal() {
               ))
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Absences & Retards */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+          <Clock className="h-5 w-5 text-[#1E3A5F]" />
+          <h3 className="font-bold text-[#1E3A5F] font-outfit">Présences & Retards</h3>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-600 border-collapse">
+            <thead className="bg-slate-50 border-b border-slate-200 uppercase font-semibold text-slate-700">
+              <tr>
+                <th className="px-4 py-3">Date</th>
+                <th className="px-4 py-3">Séquence</th>
+                <th className="px-4 py-3 text-center">Statut</th>
+                <th className="px-4 py-3 text-center">Heures</th>
+                <th className="px-4 py-3">Motif</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {absences.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-4 py-6 text-center text-slate-400">Aucune absence ou retard enregistré.</td>
+                </tr>
+              ) : (
+                absences.map(a => (
+                  <tr key={a.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">{new Date(a.date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-500">{a.sequence?.name}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        a.isLateness 
+                          ? 'bg-orange-100 text-orange-700 border border-orange-200' 
+                          : 'bg-rose-100 text-rose-700 border border-rose-200'
+                      }`}>
+                        {a.isLateness ? 'En retard' : 'Absent'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-black text-slate-800 text-center">{a.hours > 0 ? a.hours : '-'}</td>
+                    <td className="px-4 py-3">{a.reason || '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

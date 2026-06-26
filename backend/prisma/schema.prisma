@@ -264,6 +264,7 @@ model Absence {
   hours      Float    @default(1.0)
   justified  Boolean  @default(false)
   reason     String?
+  isLateness Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

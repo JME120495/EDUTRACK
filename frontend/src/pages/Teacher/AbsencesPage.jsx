@@ -22,7 +22,7 @@ export default function AbsencesPage() {
 
   // Attendance State (Students)
   const [students, setStudents] = useState([]);
-  const [absencesState, setAbsencesState] = useState({}); // studentId -> { isAbsent: bool, hours: number, reason: string }
+  const [absencesState, setAbsencesState] = useState({}); // studentId -> { isAbsent: bool, isLateness: bool, hours: number, reason: string }
   const [teacherHoursForClass, setTeacherHoursForClass] = useState(2);
   
   // Attendance State (Teachers)
@@ -111,6 +111,7 @@ export default function AbsencesPage() {
         const found = absencesData.find(a => a.eleveId === student.id);
         initialAbsences[student.id] = {
           isAbsent: !!found,
+          isLateness: found ? (found.isLateness || false) : false,
           hours: found ? found.hours : currentTeacherHours,
           reason: found ? (found.reason || '') : ''
         };
@@ -147,10 +148,16 @@ export default function AbsencesPage() {
     }
   }
 
-  const handleToggleAbsent = (studentId) => {
+  const handleStatusChange = (studentId, status) => {
     setAbsencesState(prev => {
-      const current = prev[studentId] || { isAbsent: false, hours: teacherHoursForClass, reason: '' };
-      return { ...prev, [studentId]: { ...current, isAbsent: !current.isAbsent } };
+      const current = prev[studentId] || { isAbsent: false, isLateness: false, hours: teacherHoursForClass, reason: '' };
+      if (status === 'PRESENT') {
+        return { ...prev, [studentId]: { ...current, isAbsent: false, isLateness: false } };
+      } else if (status === 'RETARD') {
+        return { ...prev, [studentId]: { ...current, isAbsent: true, isLateness: true, hours: 0 } };
+      } else {
+        return { ...prev, [studentId]: { ...current, isAbsent: true, isLateness: false, hours: teacherHoursForClass } };
+      }
     });
   };
 
@@ -179,7 +186,8 @@ export default function AbsencesPage() {
         .map(studentId => ({
           eleveId: studentId,
           hours: absencesState[studentId].hours,
-          reason: absencesState[studentId].reason
+          reason: absencesState[studentId].reason,
+          isLateness: absencesState[studentId].isLateness
         }));
 
       await apiFetch('/absences/bulk', {
@@ -411,17 +419,19 @@ export default function AbsencesPage() {
                               {student.matricule}
                             </td>
                             <td className="px-6 py-4 text-center">
-                              <button
-                                type="button"
-                                onClick={() => handleToggleAbsent(student.id)}
-                                className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-200 ${
+                              <select
+                                value={state.isAbsent ? (state.isLateness ? 'RETARD' : 'ABSENT') : 'PRESENT'}
+                                onChange={(e) => handleStatusChange(student.id, e.target.value)}
+                                className={`px-2 py-1 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 outline-none ${
                                   state.isAbsent 
-                                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm' 
-                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-250 hover:bg-emerald-100'
+                                    ? (state.isLateness ? 'bg-orange-100 text-orange-700 border border-orange-300' : 'bg-rose-100 text-rose-700 border border-rose-300')
+                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-250'
                                 }`}
                               >
-                                {state.isAbsent ? 'Absent' : 'Présent'}
-                              </button>
+                                <option value="PRESENT">Présent</option>
+                                <option value="RETARD">Retard</option>
+                                <option value="ABSENT">Absent</option>
+                              </select>
                             </td>
                             <td className="px-6 py-4">
                               <input
