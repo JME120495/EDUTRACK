@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../api';
 import { 
-  Users, DollarSign, Activity, LogOut, Plus, ShieldCheck
+  Users, DollarSign, Activity, LogOut, Plus, ShieldCheck, Key
 } from 'lucide-react';
+import PlatformChangePasswordModal from '../../components/Platform/PlatformChangePasswordModal';
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function SuperAdminDashboard() {
   const [creating, setCreating] = useState(false);
   const [editingCommission, setEditingCommission] = useState(null);
   const [newCommissionValue, setNewCommissionValue] = useState('');
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const user = JSON.parse(localStorage.getItem('platform_user') || '{}');
 
@@ -65,16 +67,17 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  const handleUpdateCommission = async (id) => {
-    if (!newCommissionValue) return;
+  const handleUpdateCommission = async (id, currentRate) => {
+    const newRate = prompt("Nouveau pourcentage de commission (%) :", currentRate);
+    if (!newRate || isNaN(newRate) || newRate < 0 || newRate > 100) return;
+    
     const token = localStorage.getItem('platform_token');
     try {
       await apiFetch(`/platform/admin/influencers/${id}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` },
-        body: { commissionRate: parseFloat(newCommissionValue) }
+        body: { commissionRate: parseFloat(newRate) }
       });
-      setEditingCommission(null);
       fetchData();
     } catch (err) {
       alert(err.message);
@@ -119,6 +122,7 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-inter">
+      <PlatformChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
       {/* Topbar */}
       <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
@@ -130,9 +134,14 @@ export default function SuperAdminDashboard() {
             <p className="text-sm text-slate-500">Contrôle global EduTrack</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors font-medium">
-          <LogOut className="h-5 w-5" /> Déconnexion
-        </button>
+        <div className="flex items-center gap-6">
+          <button onClick={() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+            <Key className="h-4 w-4" /> Mot de passe
+          </button>
+          <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors font-medium">
+            <LogOut className="h-5 w-5" /> Déconnexion
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">

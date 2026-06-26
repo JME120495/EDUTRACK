@@ -5,12 +5,14 @@ import {
   Users, DollarSign, TrendingUp, Copy, CheckCircle2,
   LogOut, Link as LinkIcon, Building2
 } from 'lucide-react';
+import PlatformChangePasswordModal from '../../components/Platform/PlatformChangePasswordModal';
 
 export default function InfluencerDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const user = JSON.parse(localStorage.getItem('platform_user') || '{}');
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function InfluencerDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-inter">
+      <PlatformChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
       {/* Topbar */}
       <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
@@ -62,9 +65,14 @@ export default function InfluencerDashboard() {
             <p className="text-sm text-slate-500">Bienvenue, {user.name}</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors font-medium">
-          <LogOut className="h-5 w-5" /> Déconnexion
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+            Changer mot de passe
+          </button>
+          <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors font-medium">
+            <LogOut className="h-5 w-5" /> Déconnexion
+          </button>
+        </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">

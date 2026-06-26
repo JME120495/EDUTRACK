@@ -46,6 +46,27 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// PUT /platform/change-password
+router.put('/change-password', platformAuth, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    const user = await prisma.platformUser.findUnique({ where: { id: req.platformUser.id } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) return res.status(400).json({ message: 'Mot de passe actuel incorrect' });
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await prisma.platformUser.update({
+      where: { id: user.id },
+      data: { passwordHash: newHash }
+    });
+    res.json({ message: 'Mot de passe modifié avec succès' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /platform/influencer/dashboard
 router.get('/influencer/dashboard', platformAuth, requirePlatformRole(['INFLUENCER']), async (req, res) => {
   try {
