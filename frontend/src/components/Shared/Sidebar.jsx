@@ -182,6 +182,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
       label: 'Messagerie',
       icon: MessageSquare,
       roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT']
+    },
+    {
+      path: '/platform/login',
+      label: 'Portail Partenaire',
+      icon: User,
+      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
     }
   ];
 
@@ -221,7 +227,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
           EduTrack School Management
         </p>
         <p className="text-[9px] text-slate-400 mt-0.5">
-          v1.0.0 &copy; 2026
+          v1.1.0 &copy; 2026
         </p>
       </div>
     </div>
