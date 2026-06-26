@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
-import { Plus, X, GraduationCap, School, BookOpen, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, X, GraduationCap, School, BookOpen, AlertCircle, RefreshCw, Upload } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
+import * as XLSX from 'xlsx';
 
 export default function ClassesPage() {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ export default function ClassesPage() {
   // Modal State
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   // Form State
   const [className, setClassName] = useState('');
@@ -81,6 +83,56 @@ export default function ClassesPage() {
     }
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (!jsonData || jsonData.length === 0) {
+          alert("Le fichier est vide ou mal formaté.");
+          return;
+        }
+
+        const classesToImport = jsonData.map(row => {
+          // Detect columns like "Nom", "Name", "Classe", "Class"
+          const name = row['Nom'] || row['Name'] || row['Classe'] || row['Class'];
+          return {
+            name: name,
+            anneeScolaireId: selectedYearId
+          };
+        }).filter(c => c.name); // Only keep ones that found a valid name
+
+        if (classesToImport.length === 0) {
+          alert("Aucune classe trouvée. Assurez-vous d'avoir une colonne 'Nom' ou 'Classe'.");
+          return;
+        }
+
+        const res = await apiFetch('/classes/bulk', {
+          method: 'POST',
+          body: { classes: classesToImport }
+        });
+
+        alert(`${res.count} classes importées avec succès !`);
+        loadData(); // refresh list
+      } catch (err) {
+        alert(err.message || "Erreur lors de l'import");
+      } finally {
+        setImporting(false);
+        e.target.value = null; // reset input
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -95,13 +147,20 @@ export default function ClassesPage() {
         </div>
 
         {user.role === 'DIRECTOR' && (
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md shrink-0"
-          >
-            <Plus className="h-4.5 w-4.5" />
-            <span>{t('classes.addBtn') || "Créer une classe"}</span>
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <label className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50">
+              <Upload className="h-4.5 w-4.5" />
+              <span>{importing ? "Import..." : "Importer"}</span>
+              <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} disabled={importing} />
+            </label>
+            <button
+              onClick={() => setModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md"
+            >
+              <Plus className="h-4.5 w-4.5" />
+              <span>{t('classes.addBtn') || "Créer une classe"}</span>
+            </button>
+          </div>
         )}
       </div>
 

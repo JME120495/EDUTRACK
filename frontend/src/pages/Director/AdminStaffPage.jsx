@@ -89,7 +89,10 @@ export default function AdminStaffPage() {
 
   const handleOpenAssignModal = (staff) => {
     setSelectedStaff(staff);
-    const assignedIds = classesList.filter(c => c.censeur?.id === staff.id || c.censeurId === staff.id).map(c => c.id);
+    const assignedIds = classesList.filter(c => 
+      (staff.role === 'CENSEUR' && (c.censeur?.id === staff.id || c.censeurId === staff.id)) ||
+      (staff.role === 'SURVEILLANT' && (c.surveillant?.id === staff.id || c.surveillantId === staff.id))
+    ).map(c => c.id);
     setSelectedClassIds(assignedIds);
     setAssignModalOpen(true);
   };
@@ -156,9 +159,11 @@ export default function AdminStaffPage() {
                 <tr><td colSpan="5" className="px-6 py-8 text-center">Chargement...</td></tr>
               ) : staffList.length === 0 ? (
                 <tr><td colSpan="5" className="px-6 py-8 text-center">Aucun membre du personnel administratif.</td></tr>
-              ) : (
                 staffList.map(s => {
-                  const assignedClasses = classesList.filter(c => c.censeur?.id === s.id || c.censeurId === s.id);
+                  const assignedClasses = classesList.filter(c => 
+                    (s.role === 'CENSEUR' && (c.censeur?.id === s.id || c.censeurId === s.id)) ||
+                    (s.role === 'SURVEILLANT' && (c.surveillant?.id === s.id || c.surveillantId === s.id))
+                  );
                   return (
                   <tr key={s.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4 font-bold text-slate-800">{s.name}</td>
@@ -172,7 +177,7 @@ export default function AdminStaffPage() {
                       <div className="text-slate-400 text-xs">{s.email}</div>
                     </td>
                     <td className="px-6 py-4 text-slate-500">
-                      {s.role === 'CENSEUR' ? (
+                      {['CENSEUR', 'SURVEILLANT'].includes(s.role) ? (
                         assignedClasses.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {assignedClasses.map(c => (
@@ -187,7 +192,7 @@ export default function AdminStaffPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 flex gap-2">
-                      {s.role === 'CENSEUR' && (
+                      {['CENSEUR', 'SURVEILLANT'].includes(s.role) && (
                         <button onClick={() => handleOpenAssignModal(s)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Assigner des classes">
                           <BookOpen className="h-4 w-4" />
                         </button>
@@ -251,10 +256,12 @@ export default function AdminStaffPage() {
               <button onClick={() => setAssignModalOpen(false)}><X className="h-5 w-5 text-slate-500" /></button>
             </div>
             <form onSubmit={handleAssignClasses} className="p-6 space-y-4">
-              <p className="text-sm text-slate-500 mb-4">Sélectionnez les classes que ce Censeur va gérer :</p>
+              <p className="text-sm text-slate-500 mb-4">Sélectionnez les classes que ce {selectedStaff.role === 'CENSEUR' ? 'Censeur' : 'Surveillant'} va gérer :</p>
               
               <div className="space-y-2 max-h-60 overflow-y-auto">
-                {classesList.map(c => (
+                {classesList.map(c => {
+                  const currentAssignee = selectedStaff.role === 'CENSEUR' ? c.censeur : c.surveillant;
+                  return (
                   <label key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
                     <input 
                       type="checkbox" 
@@ -265,12 +272,12 @@ export default function AdminStaffPage() {
                     <div>
                       <div className="font-bold text-slate-800">{c.name}</div>
                       <div className="text-xs text-slate-400">
-                        {c.censeur?.id && c.censeur.id !== selectedStaff.id ? 
-                          `Gérée actuellement par ${c.censeur.name}` : ''}
+                        {currentAssignee?.id && currentAssignee.id !== selectedStaff.id ? 
+                          `Gérée actuellement par ${currentAssignee.name}` : ''}
                       </div>
                     </div>
                   </label>
-                ))}
+                )})}
                 {classesList.length === 0 && <p className="text-slate-500 text-sm italic">Aucune classe disponible.</p>}
               </div>
 

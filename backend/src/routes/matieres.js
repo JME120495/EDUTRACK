@@ -55,6 +55,35 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
   }
 });
 
+// Create multiple subjects (bulk import)
+router.post('/bulk', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { subjects } = req.body; // array of { nameFr, nameEn, code, coefficient, volumeHoraire }
+  try {
+    if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
+      return res.status(400).json({ message: 'A valid array of subjects is required' });
+    }
+
+    const dataToInsert = subjects.map(s => ({
+      schoolId: req.user.schoolId,
+      nameFr: s.nameFr || s.nameEn || 'Matière',
+      nameEn: s.nameEn || s.nameFr || 'Subject',
+      code: s.code || (s.nameFr ? s.nameFr.substring(0, 3).toUpperCase() : 'SUB'),
+      coefficient: parseFloat(s.coefficient) || 1.0,
+      volumeHoraire: s.volumeHoraire ? parseInt(s.volumeHoraire, 10) : 0
+    }));
+
+    const result = await prisma.matiere.createMany({
+      data: dataToInsert,
+      skipDuplicates: true
+    });
+
+    res.status(201).json({ message: 'Subjects imported successfully', count: result.count });
+  } catch (err) {
+    console.error('[Subjects Bulk] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Update subject (Director only)
 router.put('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { nameFr, nameEn, code, coefficient, volumeHoraire } = req.body;

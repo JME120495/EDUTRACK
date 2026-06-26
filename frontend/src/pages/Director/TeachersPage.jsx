@@ -11,8 +11,10 @@ import {
   Trash2, 
   Search, 
   AlertCircle,
-  Edit2
+  Edit2,
+  Upload
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function TeachersPage() {
   const { t } = useTranslation();
@@ -22,6 +24,7 @@ export default function TeachersPage() {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'assignments'
+  const [importing, setImporting] = useState(false);
 
   // Modal States
   const [addTeacherModalOpen, setAddTeacherModalOpen] = useState(false);
@@ -141,6 +144,57 @@ export default function TeachersPage() {
     } catch (err) {
       alert(err.message || 'Erreur lors de la création de l\'enseignant');
     }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (!jsonData || jsonData.length === 0) {
+          alert("Le fichier est vide ou mal formaté.");
+          return;
+        }
+
+        const usersToImport = jsonData.map(row => {
+          return {
+            name: row['Nom'] || row['Name'],
+            email: row['Email'] || row['Courriel'],
+            phone: row['Telephone'] || row['Phone'],
+            role: 'TEACHER',
+            language: row['Langue'] || row['Language'] || 'FR'
+          };
+        }).filter(u => u.name); // only keep ones with name
+
+        if (usersToImport.length === 0) {
+          alert("Aucun enseignant trouvé. Assurez-vous d'avoir une colonne 'Nom' ou 'Name'.");
+          return;
+        }
+
+        const res = await apiFetch('/users/bulk', {
+          method: 'POST',
+          body: { users: usersToImport }
+        });
+
+        alert(`${res.count} enseignants importés avec succès !`);
+        loadAllData();
+      } catch (err) {
+        alert(err.message || "Erreur lors de l'import");
+      } finally {
+        setImporting(false);
+        e.target.value = null;
+      }
+    };
+    reader.readAsBinaryString(file);
   };
   const openEditTeacherModal = (teacher) => {
     setEditTeacherId(teacher.id);
@@ -301,13 +355,20 @@ export default function TeachersPage() {
         </div>
 
         {activeTab === 'list' ? (
-          <button
-            onClick={() => setAddTeacherModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md shrink-0"
-          >
-            <UserPlus className="h-4.5 w-4.5" />
-            <span>{t('teachers.createBtn')}</span>
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <label className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50">
+              <Upload className="h-4.5 w-4.5" />
+              <span>{importing ? "Import..." : "Importer"}</span>
+              <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleFileUpload} disabled={importing} />
+            </label>
+            <button
+              onClick={() => setAddTeacherModalOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md"
+            >
+              <UserPlus className="h-4.5 w-4.5" />
+              <span>{t('teachers.createBtn')}</span>
+            </button>
+          </div>
         ) : (
           <button
             onClick={() => setAssignModalOpen(true)}

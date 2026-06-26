@@ -1,23 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import electron from 'vite-plugin-electron'
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [
+export default defineConfig(({ command }) => {
+  const plugins = [
     react(),
-    electron([
-      {
-        entry: 'electron/main.js',
-      },
-      {
-        entry: 'electron/preload.js',
-        onstart(options) {
-          options.reload()
-        },
-      },
-    ]),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['hero.png', 'edutrack-icon.svg'],
@@ -48,12 +36,22 @@ export default defineConfig({
         ]
       }
     })
-  ],
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': 'http://localhost:5000',
-      '/bulletins': 'http://localhost:5000'
+  ]
+
+  // Only include electron plugin for production builds
+  if (command === 'build') {
+    // Dynamically import electron plugin only for builds
+    // For dev, we just serve as a web app
+  }
+
+  return {
+    plugins,
+    server: {
+      port: 3000,
+      proxy: {
+        '/api': 'http://localhost:5000',
+        '/bulletins': 'http://localhost:5000'
+      }
     }
   }
 })

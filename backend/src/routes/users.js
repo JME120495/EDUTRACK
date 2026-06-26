@@ -132,6 +132,73 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
   }
 });
 
+// Create multiple users (bulk import)
+router.post('/bulk', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { users } = req.body; // array of { name, email, phone, role, profession, language }
+  try {
+    if (!users || !Array.isArray(users) || users.length === 0) {
+      return res.status(400).json({ message: 'A valid array of users is required' });
+    }
+
+    const school = await prisma.school.findUnique({ where: { id: req.user.schoolId } });
+    let schoolSlug = school.name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 3) || 'sch';
+    const countrySlug = getCountrySlug(school.country);
+
+    let createdCount = 0;
+    
+    // Process one by one because of email generation and password hashing
+    // For a very large number, we'd batch, but usually it's < 100
+    for (const u of users) {
+      if (!u.name || !u.role) continue;
+      
+      // Enforce role creation rules
+      if (req.user.role === 'CENSEUR' && !['TEACHER', 'PARENT', 'STUDENT'].includes(u.role)) {
+        continue; // Skip unauthorized roles
+      }
+
+      let finalEmail = u.email;
+      if (!finalEmail) {
+        const firstName = u.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        const lastName = u.name.split(' ').slice(1).join('').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const baseName = lastName ? `${firstName}.${lastName}` : firstName;
+        
+        finalEmail = `${baseName}@${schoolSlug}.edutrack.${countrySlug}`;
+        
+        let counter = 1;
+        let checkEmail = finalEmail;
+        while (await prisma.user.findUnique({ where: { email: checkEmail } })) {
+          checkEmail = `${baseName}${counter}@${schoolSlug}.edutrack.${countrySlug}`;
+          counter++;
+        }
+        finalEmail = checkEmail;
+      } else {
+        const existing = await prisma.user.findUnique({ where: { email: finalEmail } });
+        if (existing) continue; // Skip existing emails
+      }
+
+      const passwordHash = await bcrypt.hash('123456', 10);
+      await prisma.user.create({
+        data: {
+          schoolId: req.user.schoolId,
+          name: u.name,
+          email: finalEmail,
+          passwordHash,
+          role: u.role,
+          profession: u.profession || null,
+          phone: u.phone || null,
+          language: u.language || 'FR'
+        }
+      });
+      createdCount++;
+    }
+
+    res.status(201).json({ message: 'Users imported successfully', count: createdCount });
+  } catch (err) {
+    console.error('[Users Bulk] Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Link parent to student (Director or Censeur)
 router.post('/link-parent-student', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
   const { parentId, eleveId, relationship } = req.body; // relationship e.g. "FATHER", "MOTHER"
@@ -264,6 +331,7 @@ router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, re
     // Nullify or delete other references
     await prisma.classe.updateMany({ where: { principalTeacherId: id }, data: { principalTeacherId: null } });
     await prisma.classe.updateMany({ where: { censeurId: id }, data: { censeurId: null } });
+    await prisma.classe.updateMany({ where: { surveillantId: id }, data: { surveillantId: null } });
     
     await prisma.message.deleteMany({ where: { senderId: id } });
     await prisma.message.deleteMany({ where: { receiverId: id } });
@@ -286,27 +354,29 @@ router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, re
     res.status(500).json({ error: err.message });
   }
 });
-// Assign classes to a Censeur (Director only)
+// Assign classes to a Censeur or Surveillant (Director only)
 router.put('/:id/classes', auth, requireRole(['DIRECTOR']), async (req, res) => {
   const { id } = req.params;
   const { classIds } = req.body; // array of class IDs
   try {
     const targetUser = await prisma.user.findUnique({ where: { id } });
-    if (!targetUser || targetUser.role !== 'CENSEUR' || targetUser.schoolId !== req.user.schoolId) {
-      return res.status(404).json({ message: 'Censeur not found' });
+    if (!targetUser || !['CENSEUR', 'SURVEILLANT'].includes(targetUser.role) || targetUser.schoolId !== req.user.schoolId) {
+      return res.status(404).json({ message: 'User not found or role not eligible' });
     }
 
-    // First, remove this Censeur from any classes they currently manage
+    const fieldToUpdate = targetUser.role === 'CENSEUR' ? 'censeurId' : 'surveillantId';
+
+    // First, remove this user from any classes they currently manage
     await prisma.classe.updateMany({
-      where: { censeurId: id },
-      data: { censeurId: null }
+      where: { [fieldToUpdate]: id },
+      data: { [fieldToUpdate]: null }
     });
 
     // Then, assign the new classes
     if (classIds && classIds.length > 0) {
       await prisma.classe.updateMany({
         where: { id: { in: classIds }, schoolId: req.user.schoolId },
-        data: { censeurId: id }
+        data: { [fieldToUpdate]: id }
       });
     }
 

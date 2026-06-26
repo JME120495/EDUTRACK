@@ -71,6 +71,7 @@ model User {
   updatedAt       DateTime                  @updatedAt
   principalClasses Classe[]                 @relation("PrincipalTeacher")
   supervisedClasses Classe[]                @relation("CenseurClasses")
+  supervisedClassesAsSurveillant Classe[]   @relation("SurveillantClasses")
   taughtSubjects  EnseignantMatiereClasse[]
   children        ParentEleve[]
   timetables      EmploiDuTemps[]
@@ -110,6 +111,8 @@ model Classe {
   principalTeacher   User?                     @relation("PrincipalTeacher", fields: [principalTeacherId], references: [id])
   censeurId          String?
   censeur            User?                     @relation("CenseurClasses", fields: [censeurId], references: [id])
+  surveillantId      String?
+  surveillant        User?                     @relation("SurveillantClasses", fields: [surveillantId], references: [id])
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   eleves             Eleve[]

@@ -38,6 +38,7 @@ export default function GradeEntryPage() {
   const [draftStatus, setDraftStatus] = useState({}); // studentId -> boolean (isDraft)
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [importingSubjects, setImportingSubjects] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -107,6 +108,58 @@ export default function GradeEntryPage() {
     } catch (err) {
       alert(err.message || 'Failed to create subject');
     }
+  };
+
+  const handleImportSubjects = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImportingSubjects(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const data = evt.target.result;
+        const workbook = XLSX.read(data, { type: 'binary' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (!jsonData || jsonData.length === 0) {
+          alert("Le fichier est vide ou mal formaté.");
+          return;
+        }
+
+        const subjectsToImport = jsonData.map(row => {
+          return {
+            nameFr: row['Nom (FR)'] || row['Name'] || row['Nom'],
+            nameEn: row['Nom (EN)'] || row['Name'] || row['Nom'],
+            code: row['Code'] || row['CODE'],
+            coefficient: row['Coefficient'] || row['Coef'],
+            volumeHoraire: row['Volume'] || row['Heures']
+          };
+        }).filter(s => s.nameFr || s.nameEn);
+
+        if (subjectsToImport.length === 0) {
+          alert("Aucune matière trouvée. Assurez-vous d'avoir une colonne 'Nom (FR)' ou 'Nom'.");
+          return;
+        }
+
+        const res = await apiFetch('/matieres/bulk', {
+          method: 'POST',
+          body: { subjects: subjectsToImport }
+        });
+
+        alert(`${res.count} matières importées avec succès !`);
+        const subjectsData = await apiFetch('/matieres');
+        setSubjects(subjectsData);
+      } catch (err) {
+        alert(err.message || "Erreur lors de l'import des matières");
+      } finally {
+        setImportingSubjects(false);
+        e.target.value = null; // reset input
+      }
+    };
+    reader.readAsBinaryString(file);
   };
 
   async function loadSelectors() {
@@ -543,13 +596,19 @@ export default function GradeEntryPage() {
         <div>
           <div className="flex justify-between items-center mb-1">
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">{t('grades.filters.subject')}</label>
-            <button
-              type="button"
-              onClick={() => setSubjectModalOpen(true)}
-              className="text-[10px] font-black text-[#1E3A5F] hover:text-[#F5A623] uppercase tracking-wider focus:outline-none transition-colors"
-            >
-              {t('grades.filters.add')}
-            </button>
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider focus:outline-none transition-colors cursor-pointer disabled:opacity-50">
+                {importingSubjects ? "IMPORT..." : "IMPORT"}
+                <input type="file" accept=".xlsx, .xls, .csv" className="hidden" onChange={handleImportSubjects} disabled={importingSubjects} />
+              </label>
+              <button
+                type="button"
+                onClick={() => setSubjectModalOpen(true)}
+                className="text-[10px] font-black text-[#1E3A5F] hover:text-[#F5A623] uppercase tracking-wider focus:outline-none transition-colors"
+              >
+                {t('grades.filters.add')}
+              </button>
+            </div>
           </div>
           <select
             value={selectedSubjectId}
