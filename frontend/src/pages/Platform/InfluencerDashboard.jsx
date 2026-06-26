@@ -66,7 +66,7 @@ export default function InfluencerDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+          <button onClick={() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors font-medium">
             Changer mot de passe
           </button>
           <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors font-medium">

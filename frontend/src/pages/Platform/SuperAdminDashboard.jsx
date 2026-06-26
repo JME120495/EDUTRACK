@@ -135,7 +135,7 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <button onClick={() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors font-medium">
+          <button onClick={() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-medium">
             <Key className="h-4 w-4" /> Mot de passe
           </button>
           <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors font-medium">
