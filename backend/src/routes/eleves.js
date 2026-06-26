@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const prisma = require('../db');
+const bcrypt = require('bcryptjs');
 
 function getCountrySlug(countryName) {
   if (!countryName) return 'cm';
@@ -321,7 +322,7 @@ router.post('/import-csv', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (re
 
       // --- Subscription Plan Check ---
       const schoolId = req.user.schoolId;
-      const currentPlan = req.user.school.subscriptionPlan || 'PREMIUM';
+      const currentPlan = req.user.school?.subscriptionPlan || 'PREMIUM';
       const currentStudentsCount = await prisma.eleve.count({ where: { class: { schoolId } } });
 
       if (currentPlan === 'ESSENTIAL' && currentStudentsCount >= 300) {
