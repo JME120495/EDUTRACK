@@ -182,12 +182,6 @@ export default function Sidebar({ mobileOpen, onClose }) {
       label: 'Messagerie',
       icon: MessageSquare,
       roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT']
-    },
-    {
-      path: '/platform/login',
-      label: 'Portail Partenaire',
-      icon: User,
-      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
     }
   ];
 
