@@ -644,9 +644,9 @@ export default function StudentsPage() {
         {loading ? (
           <div className="py-20 text-center text-slate-400">Loading student registry...</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[calc(100vh-280px)] relative">
             <table className="w-full border-collapse text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 uppercase text-xs font-semibold tracking-wider">
+              <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 uppercase text-xs font-semibold tracking-wider sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-6 py-4">
                     <input 
