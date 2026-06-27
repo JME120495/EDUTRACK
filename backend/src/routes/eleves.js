@@ -4,7 +4,6 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const prisma = require('../db');
-const bcrypt = require('bcryptjs');
 
 function getCountrySlug(countryName) {
   if (!countryName) return 'cm';
