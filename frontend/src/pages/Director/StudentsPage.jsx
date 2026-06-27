@@ -214,6 +214,23 @@ export default function StudentsPage() {
     alert('Junction deleted locally (mock). Re-link parent to change settings.');
   };
 
+  const handleUpdateRelationship = async (parentId, eleveId, relationship) => {
+    try {
+      await apiFetch('/users/parent-links', {
+        method: 'PUT',
+        body: { parentId, eleveId, relationship }
+      });
+      // Update local state without full reload
+      setLinks(prev => prev.map(l => 
+        (l.parentId === parentId && l.eleveId === eleveId) 
+          ? { ...l, relationship } 
+          : l
+      ));
+    } catch (e) {
+      alert(e.message || 'Failed to update relationship');
+    }
+  };
+
   async function loadData() {
     try {
       setLoading(true);
@@ -761,8 +778,17 @@ export default function StudentsPage() {
                           return (
                             <div className="space-y-1">
                               {studentParents.map((p, pIdx) => (
-                                <div key={pIdx} className="text-xs font-semibold text-slate-700">
-                                  {p.parent?.name} <span className="text-[10px] text-slate-400">({p.relationship})</span>
+                                <div key={pIdx} className="text-xs font-semibold text-slate-700 flex items-center gap-1 flex-wrap">
+                                  {p.parent?.name}
+                                  <select
+                                    value={p.relationship || 'GUARDIAN'}
+                                    onChange={(e) => handleUpdateRelationship(p.parentId, p.eleveId, e.target.value)}
+                                    className="text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#1E3A5F]"
+                                  >
+                                    <option value="FATHER">{t('students.relationship.father') || 'Père'}</option>
+                                    <option value="MOTHER">{t('students.relationship.mother') || 'Mère'}</option>
+                                    <option value="GUARDIAN">{t('students.relationship.guardian') || 'Tuteur'}</option>
+                                  </select>
                                 </div>
                               ))}
                             </div>

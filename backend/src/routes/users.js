@@ -239,6 +239,30 @@ router.get('/parent-links', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (r
   }
 });
 
+// Update parent-student link (Director or Censeur)
+router.put('/parent-links', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
+  const { parentId, eleveId, relationship } = req.body;
+  try {
+    if (!parentId || !eleveId || !relationship) {
+      return res.status(400).json({ message: 'Parent ID, Student ID, and relationship are required' });
+    }
+
+    const updated = await prisma.parentEleve.update({
+      where: {
+        parentId_eleveId: {
+          parentId,
+          eleveId
+        }
+      },
+      data: { relationship }
+    });
+
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Update personal language preference (All roles)
 router.put('/me/language', auth, async (req, res) => {
   const { language } = req.body;
