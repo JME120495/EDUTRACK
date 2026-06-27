@@ -159,6 +159,7 @@ export default function AdminStaffPage() {
                 <tr><td colSpan="5" className="px-6 py-8 text-center">Chargement...</td></tr>
               ) : staffList.length === 0 ? (
                 <tr><td colSpan="5" className="px-6 py-8 text-center">Aucun membre du personnel administratif.</td></tr>
+              ) : (
                 staffList.map(s => {
                   const assignedClasses = classesList.filter(c => 
                     (s.role === 'CENSEUR' && (c.censeur?.id === s.id || c.censeurId === s.id)) ||

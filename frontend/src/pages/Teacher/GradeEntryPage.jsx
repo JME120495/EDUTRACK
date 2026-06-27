@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
 import { AuthContext } from '../../context/AuthContext';
-import { Save, CheckSquare, RefreshCw, AlertTriangle, Wifi, WifiOff, Plus, X, FileDown, FileUp } from 'lucide-react';
+import { Save, CheckSquare, RefreshCw, AlertTriangle, Wifi, WifiOff, Plus, X, FileDown, FileUp, Book, PenTool, MessageSquare } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const BEHAVIOR_PRESETS = [
