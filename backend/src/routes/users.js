@@ -356,6 +356,7 @@ router.delete('/:id', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, re
     await prisma.classe.updateMany({ where: { principalTeacherId: id }, data: { principalTeacherId: null } });
     await prisma.classe.updateMany({ where: { censeurId: id }, data: { censeurId: null } });
     await prisma.classe.updateMany({ where: { surveillantId: id }, data: { surveillantId: null } });
+    await prisma.classe.updateMany({ where: { intendantId: id }, data: { intendantId: null } });
     
     await prisma.message.deleteMany({ where: { senderId: id } });
     await prisma.message.deleteMany({ where: { receiverId: id } });
@@ -384,11 +385,11 @@ router.put('/:id/classes', auth, requireRole(['DIRECTOR']), async (req, res) => 
   const { classIds } = req.body; // array of class IDs
   try {
     const targetUser = await prisma.user.findUnique({ where: { id } });
-    if (!targetUser || !['CENSEUR', 'SURVEILLANT'].includes(targetUser.role) || targetUser.schoolId !== req.user.schoolId) {
+    if (!targetUser || !['CENSEUR', 'SURVEILLANT', 'INTENDANT'].includes(targetUser.role) || targetUser.schoolId !== req.user.schoolId) {
       return res.status(404).json({ message: 'User not found or role not eligible' });
     }
 
-    const fieldToUpdate = targetUser.role === 'CENSEUR' ? 'censeurId' : 'surveillantId';
+    const fieldToUpdate = targetUser.role === 'CENSEUR' ? 'censeurId' : targetUser.role === 'SURVEILLANT' ? 'surveillantId' : 'intendantId';
 
     // First, remove this user from any classes they currently manage
     await prisma.classe.updateMany({

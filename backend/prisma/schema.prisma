@@ -1,7 +1,6 @@
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -72,6 +71,7 @@ model User {
   principalClasses Classe[]                 @relation("PrincipalTeacher")
   supervisedClasses Classe[]                @relation("CenseurClasses")
   supervisedClassesAsSurveillant Classe[]   @relation("SurveillantClasses")
+  supervisedClassesAsIntendant Classe[]     @relation("IntendantClasses")
   taughtSubjects  EnseignantMatiereClasse[]
   children        ParentEleve[]
   timetables      EmploiDuTemps[]
@@ -113,6 +113,8 @@ model Classe {
   censeur            User?                     @relation("CenseurClasses", fields: [censeurId], references: [id])
   surveillantId      String?
   surveillant        User?                     @relation("SurveillantClasses", fields: [surveillantId], references: [id])
+  intendantId        String?
+  intendant          User?                     @relation("IntendantClasses", fields: [intendantId], references: [id])
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   eleves             Eleve[]

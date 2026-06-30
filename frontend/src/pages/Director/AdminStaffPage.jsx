@@ -91,7 +91,8 @@ export default function AdminStaffPage() {
     setSelectedStaff(staff);
     const assignedIds = classesList.filter(c => 
       (staff.role === 'CENSEUR' && (c.censeur?.id === staff.id || c.censeurId === staff.id)) ||
-      (staff.role === 'SURVEILLANT' && (c.surveillant?.id === staff.id || c.surveillantId === staff.id))
+      (staff.role === 'SURVEILLANT' && (c.surveillant?.id === staff.id || c.surveillantId === staff.id)) ||
+      (staff.role === 'INTENDANT' && (c.intendant?.id === staff.id || c.intendantId === staff.id))
     ).map(c => c.id);
     setSelectedClassIds(assignedIds);
     setAssignModalOpen(true);
@@ -163,7 +164,8 @@ export default function AdminStaffPage() {
                 staffList.map(s => {
                   const assignedClasses = classesList.filter(c => 
                     (s.role === 'CENSEUR' && (c.censeur?.id === s.id || c.censeurId === s.id)) ||
-                    (s.role === 'SURVEILLANT' && (c.surveillant?.id === s.id || c.surveillantId === s.id))
+                    (s.role === 'SURVEILLANT' && (c.surveillant?.id === s.id || c.surveillantId === s.id)) ||
+                    (s.role === 'INTENDANT' && (c.intendant?.id === s.id || c.intendantId === s.id))
                   );
                   return (
                   <tr key={s.id} className="hover:bg-slate-50">
@@ -178,7 +180,7 @@ export default function AdminStaffPage() {
                       <div className="text-slate-400 text-xs">{s.email}</div>
                     </td>
                     <td className="px-6 py-4 text-slate-500">
-                      {['CENSEUR', 'SURVEILLANT'].includes(s.role) ? (
+                      {['CENSEUR', 'SURVEILLANT', 'INTENDANT'].includes(s.role) ? (
                         assignedClasses.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {assignedClasses.map(c => (
@@ -193,7 +195,7 @@ export default function AdminStaffPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 flex gap-2">
-                      {['CENSEUR', 'SURVEILLANT'].includes(s.role) && (
+                      {['CENSEUR', 'SURVEILLANT', 'INTENDANT'].includes(s.role) && (
                         <button onClick={() => handleOpenAssignModal(s)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Assigner des classes">
                           <BookOpen className="h-4 w-4" />
                         </button>
@@ -257,11 +259,11 @@ export default function AdminStaffPage() {
               <button onClick={() => setAssignModalOpen(false)}><X className="h-5 w-5 text-slate-500" /></button>
             </div>
             <form onSubmit={handleAssignClasses} className="p-6 space-y-4">
-              <p className="text-sm text-slate-500 mb-4">Sélectionnez les classes que ce {selectedStaff.role === 'CENSEUR' ? 'Censeur' : 'Surveillant'} va gérer :</p>
+              <p className="text-sm text-slate-500 mb-4">Sélectionnez les classes que ce {selectedStaff.role === 'CENSEUR' ? 'Censeur' : selectedStaff.role === 'SURVEILLANT' ? 'Surveillant' : 'Intendant'} va gérer :</p>
               
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {classesList.map(c => {
-                  const currentAssignee = selectedStaff.role === 'CENSEUR' ? c.censeur : c.surveillant;
+                  const currentAssignee = selectedStaff.role === 'CENSEUR' ? c.censeur : selectedStaff.role === 'SURVEILLANT' ? c.surveillant : c.intendant;
                   return (
                   <label key={c.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
                     <input 
