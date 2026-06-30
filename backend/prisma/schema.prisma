@@ -620,6 +620,8 @@ model PlatformUser {
   role            String   // "SUPER_ADMIN" ou "INFLUENCER"
   commissionRate  Float    @default(30.0)
   referralCode    String?  @unique
+  otpCode         String?
+  otpExpires      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   referredSchools School[]

@@ -67,6 +67,57 @@ router.put('/change-password', platformAuth, async (req, res) => {
   }
 });
 
+// POST /platform/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  try {
+    if (!email) return res.status(400).json({ message: "L'email est requis" });
+    const user = await prisma.platformUser.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: 'Utilisateur introuvable' });
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await prisma.platformUser.update({
+      where: { id: user.id },
+      data: { otpCode, otpExpires }
+    });
+
+    const { sendPasswordResetEmail } = require('../services/emailService');
+    await sendPasswordResetEmail(user.email, otpCode, user.name);
+
+    res.json({ message: 'Code de réinitialisation envoyé à votre adresse e-mail' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /platform/reset-password
+router.post('/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+  try {
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ message: 'Tous les champs sont requis' });
+    }
+    const user = await prisma.platformUser.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: 'Utilisateur introuvable' });
+
+    if (user.otpCode !== code || user.otpExpires < new Date()) {
+      return res.status(400).json({ message: 'Code invalide ou expiré' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await prisma.platformUser.update({
+      where: { id: user.id },
+      data: { passwordHash: newHash, otpCode: null, otpExpires: null }
+    });
+
+    res.json({ message: 'Mot de passe réinitialisé avec succès' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /platform/influencer/dashboard
 router.get('/influencer/dashboard', platformAuth, requirePlatformRole(['INFLUENCER']), async (req, res) => {
   try {
