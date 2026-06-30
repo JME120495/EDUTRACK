@@ -3,12 +3,12 @@ const nodemailer = require('nodemailer');
 // Ensure transporter is configured with environment variables
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 465,
-    secure: process.env.SMTP_PORT == 465 || true, 
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, 
     auth: {
-      user: process.env.SMTP_USER || 'edutrack.cm@gmail.com',
-      pass: process.env.SMTP_PASS || 'gxmi xnfe qusc vhgb',
+      user: 'edutrack.cm@gmail.com',
+      pass: 'gxmi xnfe qusc vhgb',
     },
     tls: {
       rejectUnauthorized: false
