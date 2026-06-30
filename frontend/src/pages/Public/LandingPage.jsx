@@ -446,6 +446,27 @@ export default function LandingPage() {
           >
             <motion.div variants={fadeIn} className="p-6">
               <div className="w-16 h-16 mx-auto bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4">
+                <Users className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">{i18n.language === 'fr' ? 'Adaptation Culturelle' : 'Cultural Adaptation'}</h3>
+              <p className="text-slate-400">{i18n.language === 'fr' ? 'Conçu pour l\'Afrique : Séquences, Censeur, Intendant, Moratoires et Franc CFA.' : 'Built for Africa: Sequences, Censeur, Bursar, Moratoriums and local currencies.'}</p>
+            </motion.div>
+            <motion.div variants={fadeIn} className="p-6">
+              <div className="w-16 h-16 mx-auto bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">{i18n.language === 'fr' ? 'Centralisation Totale' : 'Total Centralization'}</h3>
+              <p className="text-slate-400">{i18n.language === 'fr' ? 'Finances, Pédagogie, Vie Scolaire et RH réunies sur une seule et même plateforme.' : 'Finances, Pedagogy, School Life and HR all united on a single platform.'}</p>
+            </motion.div>
+            <motion.div variants={fadeIn} className="p-6">
+              <div className="w-16 h-16 mx-auto bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">{i18n.language === 'fr' ? 'Transparence & Sécurité' : 'Transparency & Security'}</h3>
+              <p className="text-slate-400">{i18n.language === 'fr' ? 'Portails parents/élèves séparés, génération de PDF professionnels et sécurité cloud.' : 'Dedicated parent/student portals, professional PDF generation and cloud security.'}</p>
+            </motion.div>
+            <motion.div variants={fadeIn} className="p-6">
+              <div className="w-16 h-16 mx-auto bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4">
                 <Smartphone className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">{i18n.language === 'fr' ? 'Paiement Mobile Money' : 'Mobile Money Payment'}</h3>
@@ -794,7 +815,7 @@ export default function LandingPage() {
 const featuresList = (lang) => [
   {
     title: lang === 'en' ? 'Security & Multi-Role Portals' : 'Sécurité & Portails multi-rôles',
-    desc: lang === 'en' ? 'Dedicated bilingual portals for Director, Master, Bursar, Teacher, Parent, and Student.' : 'Des espaces de travail dédiés et bilingues pour le Directeur, Censeur, Intendant, Enseignant, Parent et Élève.',
+    desc: lang === 'en' ? 'Dedicated bilingual portals for Director, Censeur, Intendant, Teacher, Parent, and Student.' : 'Des espaces de travail dédiés et bilingues pour le Directeur, Censeur, Intendant, Enseignant, Parent et Élève.',
     details: lang === 'en' ? [
       'Strict role-based access control (RBAC). Parents only see their child, teachers only their classes.',
       'Instant toggle between French and English across the entire platform.',
@@ -807,8 +828,8 @@ const featuresList = (lang) => [
     icon: <ShieldCheck className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Administration' : 'Administration',
-    desc: lang === 'en' ? 'Simplify your enrollment process and keep track of your student body effortlessly.' : 'Simplifiez vos inscriptions et gardez le contrôle total sur vos effectifs en toute simplicité.',
+    title: lang === 'en' ? 'Administration' : 'Administration & Centralisation',
+    desc: lang === 'en' ? 'Simplify your enrollment process and keep track of your student body effortlessly.' : 'Simplifiez vos inscriptions et centralisez vos données (Finances + Pédagogie + RH).',
     details: lang === 'en' ? [
       'Fast student enrollment and massive CSV data import.',
       'Automatic generation of student ID cards with integrated QR codes.',
@@ -822,21 +843,21 @@ const featuresList = (lang) => [
   },
   {
     title: lang === 'en' ? 'Pedagogy' : 'Pédagogie',
-    desc: lang === 'en' ? 'Automate academic tracking from timetable creation to report cards.' : 'Automatisez le suivi académique, de la création de l\'emploi du temps à l\'édition des bulletins.',
+    desc: lang === 'en' ? 'Automate academic tracking (Sequences, Terms) from timetable creation to report cards.' : 'Automatisez le suivi académique (Séquences et Trimestres), des emplois du temps aux bulletins.',
     details: lang === 'en' ? [
       'Conflict-free timetable creation and management.',
-      'Grade entry via intuitive interface or Excel import by teachers.',
+      'Grade entry by sequence via intuitive interface or Excel import.',
       'Automatic generation of term report cards with instant GPA calculations.'
     ] : [
       'Création et gestion des emplois du temps sans conflits.',
-      'Saisie des notes sur interface intuitive ou import Excel par les enseignants.',
+      'Saisie des notes par Séquence sur interface intuitive ou import Excel.',
       'Génération automatique des bulletins trimestriels avec calcul instantané des moyennes.'
     ],
     icon: <GraduationCap className="w-6 h-6" />
   },
   {
     title: lang === 'en' ? 'Discipline' : 'Discipline',
-    desc: lang === 'en' ? 'Maintain order and track student behavior meticulously.' : 'Maintenez l\'ordre et suivez le comportement des élèves de manière très rigoureuse.',
+    desc: lang === 'en' ? 'Maintain order and track student behavior meticulously under the Censeur.' : 'Maintenez l\'ordre et suivez le comportement des élèves de manière rigoureuse sous l\'œil du Censeur.',
     details: lang === 'en' ? [
       'Fast electronic roll call in class by the teacher.',
       'Absence justification system directly accessible by parents.',
@@ -849,14 +870,14 @@ const featuresList = (lang) => [
     icon: <Gavel className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Finances' : 'Finances & Trésorerie',
-    desc: lang === 'en' ? 'A robust system to track tuition fees and handle payments seamlessly.' : 'Un système robuste pour suivre la scolarité et gérer les paiements sans friction.',
+    title: lang === 'en' ? 'Finances & Bursary' : 'Finances & Intendance',
+    desc: lang === 'en' ? 'A robust system for the Intendant to track tuition fees and handle payments.' : 'Un système robuste pour l\'Intendant, permettant de suivre la scolarité et la comptabilité.',
     details: lang === 'en' ? [
-      'Strict tracking of tuition installments and partial payments.',
+      'Strict tracking of tuition installments and moratoriums (payment delays).',
       'Automatic reminders to parents for unpaid fees via internal messaging.',
       'Instantly printable professional payment receipts.'
     ] : [
-      'Suivi rigoureux des paiements de scolarité par tranches et paiements partiels.',
+      'Suivi rigoureux des paiements de scolarité par tranches et gestion des Moratoires.',
       'Relances automatiques aux parents pour les impayés via la messagerie interne.',
       'Génération instantanée de reçus de paiement professionnels imprimables.'
     ],
@@ -896,11 +917,11 @@ const featuresList = (lang) => [
     details: lang === 'en' ? [
       'Fully digitized book inventory with advanced search.',
       'Loan and return tracking with deadline alerts.',
-      'Student reading history shared directly with the Discipline Master.'
+      'Student reading history shared directly with the administration.'
     ] : [
       'Inventaire numérisé complet des ouvrages avec recherche avancée.',
       'Suivi précis des emprunts et retours avec alertes de délais.',
-      'Historique de lecture des élèves partagé directement avec le Censeur.'
+      'Historique de lecture des élèves partagé avec l\'administration.'
     ],
     icon: <BookOpen className="w-6 h-6" />
   }
