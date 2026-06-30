@@ -22,7 +22,7 @@ router.get('/classe/:classId', auth, async (req, res) => {
 
     // Get tuition fee for this class
     const activeYear = await prisma.anneeScolaire.findFirst({
-      where: { schoolId: req.user.schoolId, active: true }
+      where: req.selectedYearId ? { schoolId: req.user.schoolId, id: req.selectedYearId } : { schoolId: req.user.schoolId, active: true }
     });
 
     let totalTuition = 0;
@@ -316,7 +316,7 @@ router.post('/unpaid-alerts', auth, requireRole(['DIRECTOR', 'INTENDANT']), asyn
     }
 
     const activeYear = await prisma.anneeScolaire.findFirst({
-      where: { schoolId: req.user.schoolId, active: true }
+      where: req.selectedYearId ? { schoolId: req.user.schoolId, id: req.selectedYearId } : { schoolId: req.user.schoolId, active: true }
     });
 
     if (!activeYear) {
@@ -398,7 +398,7 @@ router.post('/send-reminder', auth, requireRole(['DIRECTOR', 'INTENDANT']), asyn
 router.post('/send-unpaid-reminders-all', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (req, res) => {
   try {
     const activeYear = await prisma.anneeScolaire.findFirst({
-      where: { schoolId: req.user.schoolId, active: true }
+      where: req.selectedYearId ? { schoolId: req.user.schoolId, id: req.selectedYearId } : { schoolId: req.user.schoolId, active: true }
     });
 
     if (!activeYear) {

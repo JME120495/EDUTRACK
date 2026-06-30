@@ -7,7 +7,7 @@ const { auth, requireRole } = require('../middlewares/authMiddleware');
 router.get('/', auth, async (req, res) => {
   try {
     const activeYear = await prisma.anneeScolaire.findFirst({
-      where: { schoolId: req.user.schoolId, active: true }
+      where: req.selectedYearId ? { schoolId: req.user.schoolId, id: req.selectedYearId } : { schoolId: req.user.schoolId, active: true }
     });
 
     if (!activeYear) {

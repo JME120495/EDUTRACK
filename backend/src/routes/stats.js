@@ -10,7 +10,7 @@ router.get('/dashboard', auth, requireRole(['DIRECTOR']), async (req, res) => {
   try {
     // Active Year
     const activeYear = await prisma.anneeScolaire.findFirst({
-      where: { schoolId, active: true }
+      where: req.selectedYearId ? { schoolId, id: req.selectedYearId } : { schoolId, active: true }
     });
 
     // 1. Students Count & Demographics (only for active year)

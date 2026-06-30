@@ -50,6 +50,7 @@ async function auth(req, res, next) {
     }
 
     req.user = user;
+    req.selectedYearId = req.headers['x-academic-year'] || null;
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid or expired token' });

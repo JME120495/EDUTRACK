@@ -187,9 +187,10 @@ router.post('/tranches', auth, requireRole(['DIRECTOR', 'INTENDANT']), async (re
 // Get installments by class
 router.get('/tranches/classe/:classId', auth, async (req, res) => {
   const { classId } = req.params;
+  const schoolId = req.user.schoolId;
   try {
     const activeYear = await prisma.anneeScolaire.findFirst({
-      where: { schoolId: req.user.schoolId, active: true }
+      where: req.selectedYearId ? { schoolId, id: req.selectedYearId } : { schoolId, active: true }
     });
 
     if (!activeYear) {

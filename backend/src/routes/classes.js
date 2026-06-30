@@ -6,8 +6,14 @@ const { auth, requireRole } = require('../middlewares/authMiddleware');
 // Get all classes
 router.get('/', auth, async (req, res) => {
   try {
+    const activeYear = await prisma.anneeScolaire.findFirst({
+      where: req.selectedYearId ? { schoolId: req.user.schoolId, id: req.selectedYearId } : { schoolId: req.user.schoolId, active: true }
+    });
+    
+    if (!activeYear) return res.json([]);
+
     const classes = await prisma.classe.findMany({
-      where: { schoolId: req.user.schoolId },
+      where: { schoolId: req.user.schoolId, anneeScolaireId: activeYear.id },
       include: {
         principalTeacher: {
           select: { id: true, name: true, email: true }

@@ -61,8 +61,14 @@ const uploadPhoto = multer({
 // Get all students
 router.get('/', auth, async (req, res) => {
   try {
+    const activeYear = await prisma.anneeScolaire.findFirst({
+      where: req.selectedYearId ? { schoolId: req.user.schoolId, id: req.selectedYearId } : { schoolId: req.user.schoolId, active: true }
+    });
+    
+    if (!activeYear) return res.json([]);
+
     const eleves = await prisma.eleve.findMany({
-      where: { class: { schoolId: req.user.schoolId } },
+      where: { class: { schoolId: req.user.schoolId, anneeScolaireId: activeYear.id } },
       include: { class: true, user: { select: { email: true } } }
     });
     res.json(eleves);

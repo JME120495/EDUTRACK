@@ -2,10 +2,12 @@ export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 
 
 export async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('edutrack_token');
+  const selectedYearId = localStorage.getItem('edutrack_selected_year_id');
 
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(selectedYearId ? { 'X-Academic-Year': selectedYearId } : {}),
     ...options.headers,
   };
 

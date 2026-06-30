@@ -8,6 +8,11 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('edutrack_token'));
   const [loading, setLoading] = useState(true);
+  
+  // Academic Year State
+  const [academicYears, setAcademicYears] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(null);
+  
   const { i18n } = useTranslation();
 
   useEffect(() => {
@@ -30,6 +35,25 @@ export function AuthProvider({ children }) {
         if (decoded.language) {
           i18n.changeLanguage(decoded.language.toLowerCase());
         }
+        
+        // Fetch academic years globally after user is decoded
+        apiFetch('/annees').then(years => {
+          setAcademicYears(years);
+          const savedYearId = localStorage.getItem('edutrack_selected_year_id');
+          if (savedYearId) {
+            const found = years.find(y => y.id === savedYearId);
+            if (found) {
+              setSelectedYear(found);
+              return;
+            }
+          }
+          const active = years.find(y => y.active) || years[0];
+          if (active) {
+            setSelectedYear(active);
+            localStorage.setItem('edutrack_selected_year_id', active.id);
+          }
+        }).catch(err => console.error("Failed to load academic years:", err));
+        
       } catch (err) {
         console.error('Failed to parse token:', err);
         logout();
@@ -108,6 +132,13 @@ export function AuthProvider({ children }) {
     i18n.changeLanguage(lang.toLowerCase());
   };
 
+  const changeAcademicYear = (year) => {
+    setSelectedYear(year);
+    localStorage.setItem('edutrack_selected_year_id', year.id);
+    // Force reload window to refetch all dashboard components with the new header
+    window.location.reload();
+  };
+
   const isAuthenticated = !!token;
 
   return (
@@ -123,7 +154,10 @@ export function AuthProvider({ children }) {
         loginParentOtp,
         logout,
         isAuthenticated,
-        updateLanguage
+        updateLanguage,
+        academicYears,
+        selectedYear,
+        changeAcademicYear
       }}
     >
       {!loading && children}

@@ -5,10 +5,11 @@ import { AuthContext } from '../../context/AuthContext';
 import { Globe, LogOut, Menu, X, User } from 'lucide-react';
 
 export default function Navbar({ onMobileMenuToggle }) {
-  const { user, logout, updateLanguage } = useContext(AuthContext);
+  const { user, logout, updateLanguage, academicYears, selectedYear, changeAcademicYear } = useContext(AuthContext);
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -54,8 +55,52 @@ export default function Navbar({ onMobileMenuToggle }) {
           title="Toggle Language"
         >
           <Globe className="h-3.5 w-3.5 text-amber-300" />
-          <span>{i18n.language.toUpperCase() === 'FR' ? '🇫🇷 FR' : '🇬🇧 EN'}</span>
+          <span className="hidden sm:inline">{i18n.language.toUpperCase() === 'FR' ? '🇫🇷 FR' : '🇬🇧 EN'}</span>
         </button>
+
+        {/* Academic Year Switcher */}
+        {academicYears && academicYears.length > 0 && selectedYear && (
+          <div className="relative">
+            <button
+              onClick={() => setYearDropdownOpen(!yearDropdownOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/20 hover:bg-indigo-500/30 transition-all border border-indigo-400/30 text-xs font-semibold whitespace-nowrap"
+            >
+              <span className="text-indigo-200">📅</span>
+              <span className="text-white hidden sm:inline">{selectedYear.label}</span>
+            </button>
+            
+            {yearDropdownOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setYearDropdownOpen(false)}
+                />
+                <div className="absolute right-0 mt-2 w-48 rounded-xl bg-white text-[#1E3A5F] border border-slate-200 shadow-2xl z-20 py-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Année Scolaire
+                    </p>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {academicYears.map((year) => (
+                      <button
+                        key={year.id}
+                        onClick={() => {
+                          changeAcademicYear(year);
+                          setYearDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-indigo-50 flex items-center justify-between transition-colors ${selectedYear.id === year.id ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600'}`}
+                      >
+                        {year.label}
+                        {year.active && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Actuelle</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* User profile dropdown */}
         <div className="relative">
