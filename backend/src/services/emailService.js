@@ -5,10 +5,10 @@ const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT) : 465,
-    secure: process.env.SMTP_PORT == 465, // true for 465, false for other ports
+    secure: process.env.SMTP_PORT == 465 || true, 
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: process.env.SMTP_USER || 'edutrack.cm@gmail.com',
+      pass: process.env.SMTP_PASS || 'gxmi xnfe qusc vhgb',
     },
     tls: {
       rejectUnauthorized: false
@@ -42,14 +42,17 @@ const sendVerificationEmail = async (to, token, userName) => {
   `;
 
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    const smtpUser = process.env.SMTP_USER || 'edutrack.cm@gmail.com';
+    const smtpPass = process.env.SMTP_PASS || 'gxmi xnfe qusc vhgb';
+    
+    if (!smtpUser || !smtpPass) {
       console.warn('[EmailService] SMTP credentials not set. Simulated Email verification link:', verificationLink);
       return;
     }
 
     const transporter = createTransporter();
     const info = await transporter.sendMail({
-      from: `"EduTrack Security" <${process.env.SMTP_USER}>`,
+      from: `"EduTrack Security" <${smtpUser}>`,
       to,
       subject: 'EduTrack - Confirmez votre inscription',
       html: htmlContent,
@@ -83,14 +86,17 @@ const sendPasswordResetEmail = async (to, otpCode, userName) => {
   `;
 
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    const smtpUser = process.env.SMTP_USER || 'edutrack.cm@gmail.com';
+    const smtpPass = process.env.SMTP_PASS || 'gxmi xnfe qusc vhgb';
+
+    if (!smtpUser || !smtpPass) {
       console.warn('[EmailService] SMTP credentials not set. Simulated OTP Code:', otpCode);
       return;
     }
 
     const transporter = createTransporter();
     const info = await transporter.sendMail({
-      from: `"EduTrack Security" <${process.env.SMTP_USER}>`,
+      from: `"EduTrack Security" <${smtpUser}>`,
       to,
       subject: 'EduTrack - Réinitialisation de mot de passe',
       html: htmlContent,
