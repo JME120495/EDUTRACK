@@ -119,6 +119,34 @@ export default function StudentsPage() {
   const photoInputRef = useRef(null);
   const [uploadingPhotoId, setUploadingPhotoId] = useState(null);
 
+  // Double Scrollbar Sync
+  const topScrollRef = useRef(null);
+  const tableScrollRef = useRef(null);
+  const tableRef = useRef(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  useEffect(() => {
+    if (tableRef.current) {
+      setTableScrollWidth(tableRef.current.offsetWidth);
+    }
+  }, [students, search, selectedClass, selectedStatus, activeTab]);
+
+  const handleTopScroll = () => {
+    if (tableScrollRef.current && topScrollRef.current) {
+      if (tableScrollRef.current.scrollLeft !== topScrollRef.current.scrollLeft) {
+        tableScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+      }
+    }
+  };
+
+  const handleTableScroll = () => {
+    if (topScrollRef.current && tableScrollRef.current) {
+      if (topScrollRef.current.scrollLeft !== tableScrollRef.current.scrollLeft) {
+        topScrollRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
+      }
+    }
+  };
+
   useEffect(() => {
     loadData();
     loadParentsData();
@@ -657,12 +685,26 @@ export default function StudentsPage() {
       </div>
 
       {/* Table Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         {loading ? (
           <div className="py-20 text-center text-slate-400">Loading student registry...</div>
         ) : (
-          <div className="overflow-auto max-h-[calc(100vh-280px)] relative">
-            <table className="w-full border-collapse text-left text-sm text-slate-600">
+          <>
+            {/* Top horizontal scrollbar */}
+            <div 
+              ref={topScrollRef}
+              onScroll={handleTopScroll}
+              className="overflow-x-auto w-full border-b border-slate-100 custom-scrollbar-top"
+            >
+              <div style={{ width: tableScrollWidth ? `${tableScrollWidth}px` : '100%', height: '1px' }}></div>
+            </div>
+
+            <div 
+              ref={tableScrollRef}
+              onScroll={handleTableScroll}
+              className="overflow-auto max-h-[calc(100vh-280px)] relative w-full"
+            >
+              <table ref={tableRef} className="w-full border-collapse text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 uppercase text-xs font-semibold tracking-wider sticky top-0 z-10 shadow-sm">
                 <tr>
                   <th className="px-6 py-4">
@@ -871,6 +913,7 @@ export default function StudentsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
