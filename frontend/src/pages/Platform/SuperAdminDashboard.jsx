@@ -111,6 +111,49 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  const handleDeleteSchool = async (id, name) => {
+    const confirmation = window.prompt(`ATTENTION: La suppression est IRRÉVERSIBLE. Toutes les données de l'école (utilisateurs, classes, notes) seront effacées.\n\nPour confirmer, tapez "SUPPRIMER" :`);
+    if (confirmation !== "SUPPRIMER") {
+      if (confirmation !== null) alert("Suppression annulée. Le mot 'SUPPRIMER' n'a pas été saisi correctement.");
+      return;
+    }
+    
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch(`/platform/admin/schools/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleChangePlan = async (id, currentPlan) => {
+    const newPlan = window.prompt(`Changer le forfait (ESSENTIAL, STANDARD, PREMIUM, CUSTOM) :\nActuel: ${currentPlan}`, currentPlan);
+    if (!newPlan) return;
+    
+    const validPlans = ['ESSENTIAL', 'STANDARD', 'PREMIUM', 'CUSTOM'];
+    const uppercasePlan = newPlan.toUpperCase().trim();
+    
+    if (!validPlans.includes(uppercasePlan)) {
+      alert(`Forfait invalide. Choisissez parmi: ${validPlans.join(', ')}`);
+      return;
+    }
+
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch(`/platform/admin/schools/${id}/plan`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { subscriptionPlan: uppercasePlan }
+      });
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('platform_token');
@@ -316,7 +359,10 @@ export default function SuperAdminDashboard() {
                         <div className="text-xs text-slate-400">{school.city || 'Ville inconnue'}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded-md text-xs">{school.subscriptionPlan}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded-md text-xs">{school.subscriptionPlan}</span>
+                          <button onClick={() => handleChangePlan(school.id, school.subscriptionPlan)} className="text-xs text-indigo-500 hover:underline">Modifier</button>
+                        </div>
                         <div className="text-xs text-slate-500 mt-1">
                           Inscrite le: {new Date(school.createdAt).toLocaleDateString()}
                         </div>
@@ -329,12 +375,20 @@ export default function SuperAdminDashboard() {
                           <span className={`px-2 py-1 rounded-md text-xs font-bold ${school.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                             {school.isActive ? 'ACTIF' : 'BLOQUÉ'}
                           </span>
-                          <button 
-                            onClick={() => handleToggleSchoolStatus(school.id)}
-                            className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${school.isActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
-                          >
-                            {school.isActive ? 'Bloquer l\'accès' : 'Valider / Activer'}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => handleToggleSchoolStatus(school.id)}
+                              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${school.isActive ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                            >
+                              {school.isActive ? 'Bloquer' : 'Activer'}
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteSchool(school.id, school.name)}
+                              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>

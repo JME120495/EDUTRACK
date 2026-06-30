@@ -52,7 +52,7 @@ model School {
 model User {
   id              String                    @id @default(uuid())
   schoolId        String
-  school          School                    @relation(fields: [schoolId], references: [id])
+  school          School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   name            String
   email           String                    @unique
   passwordHash    String
@@ -91,7 +91,7 @@ model User {
 model AnneeScolaire {
   id             String           @id @default(uuid())
   schoolId       String
-  school         School           @relation(fields: [schoolId], references: [id])
+  school         School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   label          String           // e.g. "2025-2026"
   active         Boolean          @default(false)
   createdAt      DateTime         @default(now())
@@ -104,9 +104,9 @@ model AnneeScolaire {
 model Classe {
   id                 String                    @id @default(uuid())
   schoolId           String
-  school             School                    @relation(fields: [schoolId], references: [id])
+  school             School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   anneeScolaireId    String
-  anneeScolaire      AnneeScolaire             @relation(fields: [anneeScolaireId], references: [id])
+  anneeScolaire      AnneeScolaire             @relation(fields: [anneeScolaireId], references: [id], onDelete: Cascade)
   name               String                    // e.g. "6ème A"
   principalTeacherId String?
   principalTeacher   User?                     @relation("PrincipalTeacher", fields: [principalTeacherId], references: [id])
@@ -138,7 +138,7 @@ model Eleve {
   hasDisability Boolean      @default(false)
   medicalNotes String?
   classId      String
-  class       Classe        @relation(fields: [classId], references: [id])
+  class       Classe        @relation(fields: [classId], references: [id], onDelete: Cascade)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   parents     ParentEleve[]
@@ -150,15 +150,15 @@ model Eleve {
   sanctions   Sanction[]
   bookLoans   BookLoan[]
   userId      String?       @unique
-  user        User?         @relation(fields: [userId], references: [id])
+  user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   isStudentCouncil Boolean  @default(false)
 }
 
 model ParentEleve {
   parentId     String
-  parent       User     @relation(fields: [parentId], references: [id])
+  parent       User     @relation(fields: [parentId], references: [id], onDelete: Cascade)
   eleveId      String
-  eleve        Eleve    @relation(fields: [eleveId], references: [id])
+  eleve        Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
   relationship String?  // "FATHER", "MOTHER", "GUARDIAN"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -169,7 +169,7 @@ model ParentEleve {
 model Matiere {
   id              String                    @id @default(uuid())
   schoolId        String
-  school          School                    @relation(fields: [schoolId], references: [id])
+  school          School                    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   nameFr          String
   nameEn          String
   code            String                    // e.g. "MATH"
@@ -186,11 +186,11 @@ model Matiere {
 model EnseignantMatiereClasse {
   id        String   @id @default(uuid())
   teacherId String
-  teacher   User     @relation(fields: [teacherId], references: [id])
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   matiereId String
-  matiere   Matiere  @relation(fields: [matiereId], references: [id])
+  matiere   Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
   classId   String
-  class     Classe   @relation(fields: [classId], references: [id])
+  class     Classe   @relation(fields: [classId], references: [id], onDelete: Cascade)
   coefficient Float?
   hourlyRate  Float    @default(0.0)
   hoursTaught Float    @default(0.0)
@@ -201,7 +201,7 @@ model EnseignantMatiereClasse {
 model CreneauHoraire {
   id        String          @id @default(uuid())
   schoolId  String
-  school    School          @relation(fields: [schoolId], references: [id])
+  school    School          @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   startTime String          // e.g. "08:00"
   endTime   String          // e.g. "10:00"
   label     String?         // e.g. "M1"
@@ -214,13 +214,13 @@ model CreneauHoraire {
 model EmploiDuTemps {
   id        String         @id @default(uuid())
   classId   String
-  class     Classe         @relation(fields: [classId], references: [id])
+  class     Classe         @relation(fields: [classId], references: [id], onDelete: Cascade)
   teacherId String
-  teacher   User           @relation(fields: [teacherId], references: [id])
+  teacher   User           @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   matiereId String
-  matiere   Matiere        @relation(fields: [matiereId], references: [id])
+  matiere   Matiere        @relation(fields: [matiereId], references: [id], onDelete: Cascade)
   creneauId String
-  creneau   CreneauHoraire @relation(fields: [creneauId], references: [id])
+  creneau   CreneauHoraire @relation(fields: [creneauId], references: [id], onDelete: Cascade)
   dayOfWeek String         // "LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI", "SAMEDI"
   room      String?
   createdAt DateTime       @default(now())
@@ -230,7 +230,7 @@ model EmploiDuTemps {
 model Sequence {
   id              String        @id @default(uuid())
   anneeScolaireId String
-  anneeScolaire   AnneeScolaire @relation(fields: [anneeScolaireId], references: [id])
+  anneeScolaire   AnneeScolaire @relation(fields: [anneeScolaireId], references: [id], onDelete: Cascade)
   name            String        // e.g. "Séquence 1"
   term            Int           // 1, 2, or 3
   startDate       DateTime?
@@ -246,13 +246,13 @@ model Sequence {
 model Note {
   id         String   @id @default(uuid())
   eleveId    String
-  eleve      Eleve    @relation(fields: [eleveId], references: [id])
+  eleve      Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
   sequenceId String
-  sequence   Sequence @relation(fields: [sequenceId], references: [id])
+  sequence   Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   matiereId  String
-  matiere    Matiere  @relation(fields: [matiereId], references: [id])
+  matiere    Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
   teacherId  String
-  teacher    User     @relation(fields: [teacherId], references: [id])
+  teacher    User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   value      Float    // Grade out of 20
   isDraft    Boolean  @default(true)
   remarks    String?  // Behaviour / evaluation remarks
@@ -263,9 +263,9 @@ model Note {
 model Absence {
   id         String   @id @default(uuid())
   eleveId    String
-  eleve      Eleve    @relation(fields: [eleveId], references: [id])
+  eleve      Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
   sequenceId String
-  sequence   Sequence @relation(fields: [sequenceId], references: [id])
+  sequence   Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   date       DateTime @default(now())
   hours      Float    @default(1.0)
   justified  Boolean  @default(false)
@@ -278,9 +278,9 @@ model Absence {
 model Bulletin {
   id                 String           @id @default(uuid())
   eleveId            String
-  eleve              Eleve            @relation(fields: [eleveId], references: [id])
+  eleve              Eleve            @relation(fields: [eleveId], references: [id], onDelete: Cascade)
   sequenceId         String?
-  sequence           Sequence?        @relation(fields: [sequenceId], references: [id])
+  sequence           Sequence?        @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
   term               Int?             // If type == "TERM"
   type               String           // "SEQUENCE" or "TERM"
   average            Float
@@ -305,7 +305,7 @@ model BulletinDetail {
   bulletinId   String
   bulletin     Bulletin @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
   matiereId    String
-  matiere      Matiere  @relation(fields: [matiereId], references: [id])
+  matiere      Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
   noteValue    Float
   classAverage Float?
   minNote      Float?
@@ -321,9 +321,9 @@ model BulletinDetail {
 model FraisScolarite {
   id              String        @id @default(uuid())
   classId         String
-  class           Classe        @relation(fields: [classId], references: [id])
+  class           Classe        @relation(fields: [classId], references: [id], onDelete: Cascade)
   anneeScolaireId String
-  anneeScolaire   AnneeScolaire @relation(fields: [anneeScolaireId], references: [id])
+  anneeScolaire   AnneeScolaire @relation(fields: [anneeScolaireId], references: [id], onDelete: Cascade)
   totalAmount     Float
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -333,7 +333,7 @@ model FraisScolarite {
 model Paiement {
   id                   String   @id @default(uuid())
   eleveId              String
-  eleve                Eleve    @relation(fields: [eleveId], references: [id])
+  eleve                Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
   amount               Float
   paymentDate          DateTime @default(now())
   paymentMethod        String   // "MOBILE_MONEY", "WAVE", "CASH", "BANK"
@@ -344,7 +344,7 @@ model Paiement {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   installmentId        String?
-  installment          InstallmentConfig? @relation(fields: [installmentId], references: [id])
+  installment          InstallmentConfig? @relation(fields: [installmentId], references: [id], onDelete: Cascade)
 }
 
 model InstallmentConfig {
@@ -374,7 +374,7 @@ model Moratoire {
 model Transaction {
   id            String   @id @default(uuid())
   schoolId      String
-  school        School   @relation(fields: [schoolId], references: [id])
+  school        School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   type          String   // "INCOME" or "EXPENSE"
   category      String   // e.g. "TUITION", "SALARY", "RENT", "EQUIPMENT", "UTILITIES", "OTHER"
   amount        Float
@@ -576,9 +576,9 @@ model AccountingEntry {
   schoolId       String
   school         School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   journalId      String
-  journal        AccountingJournal @relation(fields: [journalId], references: [id])
+  journal        AccountingJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
   fiscalYearId   String
-  fiscalYear     AccountingFiscalYear @relation(fields: [fiscalYearId], references: [id])
+  fiscalYear     AccountingFiscalYear @relation(fields: [fiscalYearId], references: [id], onDelete: Cascade)
   date           DateTime
   reference      String?  // Pièce justificative (e.g. FACT-001)
   description    String   // Libellé de l'écriture
@@ -593,7 +593,7 @@ model AccountingLine {
   entryId     String
   entry       AccountingEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
   accountId   String
-  account     AccountingAccount @relation(fields: [accountId], references: [id])
+  account     AccountingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   debit       Float    @default(0.0)
   credit      Float    @default(0.0)
   description String?
@@ -633,7 +633,7 @@ model InfluencerEarning {
   influencerId    String
   influencer      PlatformUser @relation(fields: [influencerId], references: [id], onDelete: Cascade)
   schoolId        String
-  school          School       @relation(fields: [schoolId], references: [id])
+  school          School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   amountPaid      Float
   commission      Float
   date            DateTime     @default(now())

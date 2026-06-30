@@ -263,6 +263,40 @@ router.put('/admin/schools/:id/toggle-status', platformAuth, requirePlatformRole
   }
 });
 
+// DELETE /platform/admin/schools/:id
+router.delete('/admin/schools/:id', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  try {
+    const school = await prisma.school.findUnique({ where: { id: req.params.id } });
+    if (!school) return res.status(404).json({ message: 'School not found' });
+
+    await prisma.school.delete({
+      where: { id: req.params.id }
+    });
+    res.json({ message: 'École supprimée avec succès' });
+  } catch (err) {
+    console.error('Delete School Error:', err);
+    res.status(500).json({ error: 'Erreur lors de la suppression de l\'école (assurez-vous que la suppression en cascade est active).' });
+  }
+});
+
+// PUT /platform/admin/schools/:id/plan
+router.put('/admin/schools/:id/plan', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  try {
+    const { subscriptionPlan } = req.body;
+    if (!['ESSENTIAL', 'STANDARD', 'PREMIUM', 'CUSTOM'].includes(subscriptionPlan)) {
+      return res.status(400).json({ message: 'Plan invalide' });
+    }
+
+    const updated = await prisma.school.update({
+      where: { id: req.params.id },
+      data: { subscriptionPlan }
+    });
+    res.json({ message: 'Plan mis à jour avec succès', school: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // INIT SUPER ADMIN (One-time, or protected by a setup key)
 router.post('/init-super-admin', async (req, res) => {
   const { name, email, password } = req.body;
