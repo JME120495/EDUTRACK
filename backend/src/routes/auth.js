@@ -77,10 +77,17 @@ router.post('/register', async (req, res) => {
 
     await auditLog(req, 'REGISTER', 'User', user.id, { role: user.role, schoolId: user.schoolId });
     
-    // Send verification email asynchronously so it doesn't block the response
-    sendVerificationEmail(email, verificationToken, user.name).catch(e => 
-      console.error('[Auth] Background email sending failed:', e)
-    );
+    try {
+      await sendVerificationEmail(email, verificationToken, user.name);
+    } catch (e) {
+      console.error('[Auth] Background email sending failed:', e);
+      return res.status(201).json({
+        message: 'Inscription réussie, mais l\'envoi de l\'email a échoué.',
+        emailError: e.message,
+        requiresVerification: true,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, schoolId: user.schoolId, schoolName: school.name }
+      });
+    }
 
     res.status(201).json({
       message: 'Inscription réussie. Veuillez vérifier votre boîte mail.',
