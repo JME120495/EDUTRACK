@@ -476,7 +476,7 @@ router.post('/test-email', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': process.env.BREVO_API_KEY || '',
+        'api-key': (process.env.BREVO_API_KEY || '').trim(),
       },
       body: JSON.stringify({
         sender: { name: 'EduTrack Test', email: 'edutrack.cm@gmail.com' },

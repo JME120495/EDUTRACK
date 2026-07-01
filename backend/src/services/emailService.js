@@ -14,7 +14,7 @@ const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
  * @param {object} options - { to, subject, html, senderName }
  */
 const sendEmailViaBrevo = async ({ to, subject, html, senderName = 'EduTrack' }) => {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = (process.env.BREVO_API_KEY || '').trim();
   
   if (!apiKey) {
     console.warn('[EmailService] ⚠️ BREVO_API_KEY not set. Email NOT sent. Subject:', subject, '| To:', to);
