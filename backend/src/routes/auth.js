@@ -461,11 +461,16 @@ router.post('/test-email', async (req, res) => {
   const { to } = req.body;
   if (!to) return res.status(400).json({ message: 'Provide "to" email address' });
   
+  const rawKey = process.env.BREVO_API_KEY || '';
+  const cleanKey = rawKey.trim();
+  
   const diagnostics = {
     timestamp: new Date().toISOString(),
     method: 'Brevo HTTP API',
     env: {
-      BREVO_API_KEY: process.env.BREVO_API_KEY ? '✅ SET' : '❌ NOT SET',
+      BREVO_API_KEY: cleanKey ? '✅ SET' : '❌ NOT SET',
+      keyLength: cleanKey.length,
+      keyPrefix: cleanKey.substring(0, 10),
       FRONTEND_URL: process.env.FRONTEND_URL || '❌ NOT SET (will fallback to localhost)',
       NODE_ENV: process.env.NODE_ENV || 'not set'
     }
@@ -476,7 +481,7 @@ router.post('/test-email', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': (process.env.BREVO_API_KEY || '').trim(),
+        'api-key': cleanKey,
       },
       body: JSON.stringify({
         sender: { name: 'EduTrack Test', email: 'edutrack.cm@gmail.com' },
