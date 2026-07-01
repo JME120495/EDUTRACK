@@ -20,6 +20,10 @@ export default function SuperAdminDashboard() {
   const [newCommissionValue, setNewCommissionValue] = useState('');
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
+  // Bulk Selection States
+  const [selectedInfluencers, setSelectedInfluencers] = useState([]);
+  const [selectedSchools, setSelectedSchools] = useState([]);
+
   const user = JSON.parse(localStorage.getItem('platform_user') || '{}');
 
   const fetchData = async () => {
@@ -155,6 +159,105 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  // --- BULK ACTIONS ---
+  const handleBulkDeleteInfluencers = async () => {
+    if (selectedInfluencers.length === 0) return;
+    if (!window.confirm(`Voulez-vous vraiment supprimer ${selectedInfluencers.length} influenceur(s) ?`)) return;
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch('/platform/admin/influencers/bulk-delete', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { ids: selectedInfluencers }
+      });
+      setSelectedInfluencers([]);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleBulkDeleteSchools = async () => {
+    if (selectedSchools.length === 0) return;
+    const confirmation = window.prompt(`ATTENTION: La suppression de ${selectedSchools.length} école(s) est IRRÉVERSIBLE.\nTapez "SUPPRIMER" pour confirmer :`);
+    if (confirmation !== "SUPPRIMER") return;
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch('/platform/admin/schools/bulk-delete', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { ids: selectedSchools }
+      });
+      setSelectedSchools([]);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleBulkChangePlan = async () => {
+    if (selectedSchools.length === 0) return;
+    const newPlan = window.prompt(`Changer le forfait pour ${selectedSchools.length} école(s) (ESSENTIAL, STANDARD, PREMIUM, CUSTOM) :`);
+    if (!newPlan) return;
+    const uppercasePlan = newPlan.toUpperCase().trim();
+    if (!['ESSENTIAL', 'STANDARD', 'PREMIUM', 'CUSTOM'].includes(uppercasePlan)) {
+      alert(`Forfait invalide.`);
+      return;
+    }
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch('/platform/admin/schools/bulk-plan', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { ids: selectedSchools, subscriptionPlan: uppercasePlan }
+      });
+      setSelectedSchools([]);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleBulkToggleStatus = async (isActive) => {
+    if (selectedSchools.length === 0) return;
+    const token = localStorage.getItem('platform_token');
+    try {
+      await apiFetch('/platform/admin/schools/bulk-status', {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: { ids: selectedSchools, isActive }
+      });
+      setSelectedSchools([]);
+      fetchData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const toggleInfluencerSelection = (id) => {
+    setSelectedInfluencers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleAllInfluencers = () => {
+    if (selectedInfluencers.length === data.influencers.length && data.influencers.length > 0) {
+      setSelectedInfluencers([]);
+    } else {
+      setSelectedInfluencers(data.influencers.map(i => i.id));
+    }
+  };
+
+  const toggleSchoolSelection = (id) => {
+    setSelectedSchools(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
+  };
+
+  const toggleAllSchools = () => {
+    if (selectedSchools.length === data.schools.length && data.schools.length > 0) {
+      setSelectedSchools([]);
+    } else {
+      setSelectedSchools(data.schools.map(s => s.id));
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('platform_token');
     localStorage.removeItem('platform_user');
@@ -241,7 +344,22 @@ export default function SuperAdminDashboard() {
         {activeTab === 'influencers' && (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-800">Réseau d'Influenceurs</h3>
+              <div className="flex items-center gap-4">
+                <h3 className="text-lg font-bold text-slate-800">Réseau d'Influenceurs</h3>
+                {selectedInfluencers.length > 0 && (
+                  <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
+                    <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
+                      {selectedInfluencers.length} sélectionné(s)
+                    </span>
+                    <button 
+                      onClick={handleBulkDeleteInfluencers}
+                      className="text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
+                    >
+                      Supprimer la sélection
+                    </button>
+                  </div>
+                )}
+              </div>
               <button 
                 onClick={() => setShowCreate(!showCreate)}
                 className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors"
@@ -282,6 +400,14 @@ export default function SuperAdminDashboard() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
                   <tr>
+                    <th className="px-6 py-4 w-12">
+                      <input 
+                        type="checkbox" 
+                        className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        checked={data.influencers.length > 0 && selectedInfluencers.length === data.influencers.length}
+                        onChange={toggleAllInfluencers}
+                      />
+                    </th>
                     <th className="px-6 py-4">Influenceur</th>
                     <th className="px-6 py-4 text-center">Taux</th>
                     <th className="px-6 py-4">Code Parrainage</th>
@@ -293,6 +419,14 @@ export default function SuperAdminDashboard() {
                 <tbody className="divide-y divide-slate-100">
                   {data.influencers.map(inf => (
                     <tr key={inf.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <input 
+                          type="checkbox" 
+                          className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          checked={selectedInfluencers.includes(inf.id)}
+                          onChange={() => toggleInfluencerSelection(inf.id)}
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="font-medium text-slate-800">{inf.name}</div>
                         <div className="text-sm text-slate-500">{inf.email}</div>
@@ -327,7 +461,7 @@ export default function SuperAdminDashboard() {
                     </tr>
                   ))}
                   {data.influencers.length === 0 && (
-                    <tr><td colSpan="6" className="px-6 py-8 text-center text-slate-500">Aucun influenceur n'est encore enregistré.</td></tr>
+                    <tr><td colSpan="7" className="px-6 py-8 text-center text-slate-500">Aucun influenceur n'est encore enregistré.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -338,12 +472,53 @@ export default function SuperAdminDashboard() {
         {activeTab === 'schools' && (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="px-6 py-5 border-b border-slate-200">
-              <h3 className="text-lg font-bold text-slate-800">Écoles Inscrites sur EduTrack</h3>
+              <div className="flex items-center gap-4">
+                <h3 className="text-lg font-bold text-slate-800">Écoles Inscrites sur EduTrack</h3>
+                {selectedSchools.length > 0 && (
+                  <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
+                    <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full flex-shrink-0">
+                      {selectedSchools.length} sélectionné(s)
+                    </span>
+                    <button 
+                      onClick={handleBulkChangePlan}
+                      className="text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
+                    >
+                      Changer Forfait
+                    </button>
+                    <button 
+                      onClick={() => handleBulkToggleStatus(true)}
+                      className="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
+                    >
+                      Activer
+                    </button>
+                    <button 
+                      onClick={() => handleBulkToggleStatus(false)}
+                      className="text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
+                    >
+                      Bloquer
+                    </button>
+                    <button 
+                      onClick={handleBulkDeleteSchools}
+                      className="text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="p-0 overflow-auto">
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
                   <tr>
+                    <th className="px-6 py-4 w-12">
+                      <input 
+                        type="checkbox" 
+                        className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        checked={data.schools && data.schools.length > 0 && selectedSchools.length === data.schools.length}
+                        onChange={toggleAllSchools}
+                      />
+                    </th>
                     <th className="px-6 py-4">École</th>
                     <th className="px-6 py-4">Plan & Date</th>
                     <th className="px-6 py-4">Parrainé Par</th>
@@ -353,6 +528,14 @@ export default function SuperAdminDashboard() {
                 <tbody className="divide-y divide-slate-100">
                   {data.schools && data.schools.map(school => (
                     <tr key={school.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <input 
+                          type="checkbox" 
+                          className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          checked={selectedSchools.includes(school.id)}
+                          onChange={() => toggleSchoolSelection(school.id)}
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="font-bold text-slate-800">{school.name}</div>
                         <div className="text-sm text-slate-500">{school.email || 'Aucun email'} • {school.phone || 'Aucun tel'}</div>
@@ -394,7 +577,7 @@ export default function SuperAdminDashboard() {
                     </tr>
                   ))}
                   {(!data.schools || data.schools.length === 0) && (
-                    <tr><td colSpan="4" className="px-6 py-8 text-center text-slate-500">Aucune école n'est encore enregistrée.</td></tr>
+                    <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">Aucune école n'est encore enregistrée.</td></tr>
                   )}
                 </tbody>
               </table>

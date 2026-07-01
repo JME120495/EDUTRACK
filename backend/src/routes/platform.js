@@ -248,6 +248,25 @@ router.delete('/admin/influencers/:id', platformAuth, requirePlatformRole(['SUPE
   }
 });
 
+// POST /platform/admin/influencers/bulk-delete
+router.post('/admin/influencers/bulk-delete', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Aucun influenceur sélectionné' });
+  }
+  try {
+    await prisma.platformUser.deleteMany({
+      where: { 
+        id: { in: ids },
+        role: 'INFLUENCER'
+      }
+    });
+    res.json({ message: `${ids.length} influenceur(s) supprimé(s) avec succès` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // PUT /platform/admin/schools/:id/toggle-status
 router.put('/admin/schools/:id/toggle-status', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
   try {
@@ -280,6 +299,43 @@ router.delete('/admin/schools/:id', platformAuth, requirePlatformRole(['SUPER_AD
   }
 });
 
+// POST /platform/admin/schools/bulk-delete
+router.post('/admin/schools/bulk-delete', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Aucune école sélectionnée' });
+  }
+  try {
+    await prisma.school.deleteMany({
+      where: { id: { in: ids } }
+    });
+    res.json({ message: `${ids.length} école(s) supprimée(s) avec succès` });
+  } catch (err) {
+    console.error('Bulk Delete School Error:', err);
+    res.status(500).json({ error: 'Erreur lors de la suppression des écoles.' });
+  }
+});
+
+// PUT /platform/admin/schools/bulk-status
+router.put('/admin/schools/bulk-status', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  const { ids, isActive } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Aucune école sélectionnée' });
+  }
+  if (typeof isActive !== 'boolean') {
+    return res.status(400).json({ message: 'Statut isActive manquant ou invalide' });
+  }
+  try {
+    await prisma.school.updateMany({
+      where: { id: { in: ids } },
+      data: { isActive }
+    });
+    res.json({ message: `Statut de ${ids.length} école(s) mis à jour` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // PUT /platform/admin/schools/:id/plan
 router.put('/admin/schools/:id/plan', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
   try {
@@ -293,6 +349,26 @@ router.put('/admin/schools/:id/plan', platformAuth, requirePlatformRole(['SUPER_
       data: { subscriptionPlan }
     });
     res.json({ message: 'Plan mis à jour avec succès', school: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /platform/admin/schools/bulk-plan
+router.put('/admin/schools/bulk-plan', platformAuth, requirePlatformRole(['SUPER_ADMIN']), async (req, res) => {
+  const { ids, subscriptionPlan } = req.body;
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'Aucune école sélectionnée' });
+  }
+  if (!['ESSENTIAL', 'STANDARD', 'PREMIUM', 'CUSTOM'].includes(subscriptionPlan)) {
+    return res.status(400).json({ message: 'Plan invalide' });
+  }
+  try {
+    await prisma.school.updateMany({
+      where: { id: { in: ids } },
+      data: { subscriptionPlan }
+    });
+    res.json({ message: `Forfait de ${ids.length} école(s) mis à jour avec succès` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
