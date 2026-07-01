@@ -456,4 +456,61 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// ⚠️ TEMPORARY DEBUG ENDPOINT — Remove after fixing email issue
+router.post('/test-email', async (req, res) => {
+  const { to } = req.body;
+  if (!to) return res.status(400).json({ message: 'Provide "to" email address' });
+  
+  const nodemailer = require('nodemailer');
+  const diagnostics = {
+    timestamp: new Date().toISOString(),
+    env: {
+      SMTP_USER: process.env.SMTP_USER ? '✅ SET' : '❌ NOT SET',
+      SMTP_PASS: process.env.SMTP_PASS ? '✅ SET' : '❌ NOT SET',
+      FRONTEND_URL: process.env.FRONTEND_URL || '❌ NOT SET (will fallback to localhost)',
+      NODE_ENV: process.env.NODE_ENV || 'not set'
+    }
+  };
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.SMTP_USER || 'edutrack.cm@gmail.com',
+        pass: process.env.SMTP_PASS || 'gxmi xnfe qusc vhgb',
+      },
+      tls: { rejectUnauthorized: false },
+      connectionTimeout: 10000,
+      socketTimeout: 10000,
+    });
+
+    // Step 1: Verify SMTP connection
+    diagnostics.smtpVerify = 'testing...';
+    await transporter.verify();
+    diagnostics.smtpVerify = '✅ SMTP connection OK';
+
+    // Step 2: Send test email
+    const info = await transporter.sendMail({
+      from: `"EduTrack Test" <${process.env.SMTP_USER || 'edutrack.cm@gmail.com'}>`,
+      to,
+      subject: '[TEST] EduTrack Email Diagnostic',
+      html: `<h2>✅ Email fonctionne!</h2><p>Ce mail a été envoyé depuis le serveur de production à ${new Date().toISOString()}</p>`,
+    });
+    
+    diagnostics.emailSent = '✅ SUCCESS';
+    diagnostics.messageId = info.messageId;
+    diagnostics.response = info.response;
+    
+    res.json(diagnostics);
+  } catch (error) {
+    diagnostics.error = error.message;
+    diagnostics.errorCode = error.code;
+    diagnostics.errorCommand = error.command;
+    diagnostics.emailSent = '❌ FAILED';
+    res.status(500).json(diagnostics);
+  }
+});
+
 module.exports = router;
