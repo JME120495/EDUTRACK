@@ -24,7 +24,9 @@ function createWindow() {
     win.loadURL(VITE_DEV_SERVER_URL);
     // win.webContents.openDevTools(); // Open dev tools automatically in dev
   } else {
-    win.loadFile(path.join(process.env.DIST, 'index.html'));
+    // Instead of loading local files, we load the live production app.
+    // This ensures the desktop app automatically gets all updates deployed to Vercel.
+    win.loadURL('https://edutrack-tky6.vercel.app');
   }
 }
 
