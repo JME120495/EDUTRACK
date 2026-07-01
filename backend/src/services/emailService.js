@@ -23,7 +23,12 @@ const createTransporter = () => {
  * @param {string} userName - The name of the user for personalization.
  */
 const sendVerificationEmail = async (to, token, userName) => {
-  const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${token}`;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
+
+  console.log('[EmailService] Preparing verification email for:', to);
+  console.log('[EmailService] FRONTEND_URL resolved to:', frontendUrl);
+  console.log('[EmailService] Verification link:', verificationLink);
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
@@ -57,9 +62,10 @@ const sendVerificationEmail = async (to, token, userName) => {
       subject: 'EduTrack - Confirmez votre inscription',
       html: htmlContent,
     });
-    console.log('[EmailService] Verification email sent: %s', info.messageId);
+    console.log('[EmailService] ✅ Verification email sent successfully to %s (messageId: %s)', to, info.messageId);
   } catch (error) {
-    console.error('[EmailService] Error sending verification email:', error);
+    console.error('[EmailService] ❌ FAILED to send verification email to', to, ':', error.message);
+    throw error; // Re-throw so the caller knows the email failed
   }
 };
 
