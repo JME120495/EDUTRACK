@@ -70,7 +70,7 @@ export default function PlatformLogin() {
     try {
       const data = await apiFetch('/platform/login', {
         method: 'POST',
-        body: { email, password }
+        body: { email: email.trim(), password }
       });
 
       localStorage.setItem('platform_token', data.token);

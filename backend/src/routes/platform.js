@@ -32,8 +32,9 @@ const requirePlatformRole = (roles) => (req, res, next) => {
 // POST /platform/login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+  const cleanEmail = email ? email.trim() : '';
   try {
-    const user = await prisma.platformUser.findUnique({ where: { email } });
+    const user = await prisma.platformUser.findUnique({ where: { email: cleanEmail } });
     if (!user) return res.status(401).json({ message: 'Identifiants invalides' });
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
