@@ -321,10 +321,23 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         } else {
           const existing = eleveCache.get(matriculeStr);
           if (!existing.pending) {
-            eleveUpdates.push({
-              where: { id: existing.id },
-              data: eleveData
-            });
+            let hasChanged = false;
+            if (existing.name !== eleveData.name) hasChanged = true;
+            if (existing.classId !== eleveData.classId) hasChanged = true;
+            if (existing.gender !== eleveData.gender) hasChanged = true;
+            if (existing.placeOfBirth !== eleveData.placeOfBirth) hasChanged = true;
+            if (existing.address !== eleveData.address) hasChanged = true;
+            if (existing.status !== eleveData.status) hasChanged = true;
+            if (existing.isSick !== eleveData.isSick) hasChanged = true;
+            if (existing.hasDisability !== eleveData.hasDisability) hasChanged = true;
+            if (existing.medicalNotes !== eleveData.medicalNotes) hasChanged = true;
+
+            if (hasChanged) {
+              eleveUpdates.push({
+                where: { id: existing.id },
+                data: eleveData
+              });
+            }
             if (telParent) {
                parentOperations.push({ studentId: existing.id, nomParent, telParent, relation, name: nom });
             }
@@ -354,10 +367,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
          }
       });
       
-      // Execute Eleve Updates in chunks
-      const eleveChunkSize = 5;
-      for (let i = 0; i < eleveUpdates.length; i += eleveChunkSize) {
-        await Promise.all(eleveUpdates.slice(i, i + eleveChunkSize).map(op => prisma.eleve.update(op)));
+      // Execute Eleve Updates sequentially to avoid connection pool exhaustion
+      for (const op of eleveUpdates) {
+        await prisma.eleve.update(op);
       }
 
       // Parents logic
@@ -460,9 +472,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       
       const existingNotesList = await prisma.note.findMany({
          where: { eleve: { class: { schoolId } } },
-         select: { id: true, eleveId: true, matiereId: true, sequenceId: true }
+         select: { id: true, eleveId: true, matiereId: true, sequenceId: true, value: true }
       });
-      const noteMap = new Map(existingNotesList.map(n => [`${n.eleveId}_${n.matiereId}_${n.sequenceId}`, n.id]));
+      const noteMap = new Map(existingNotesList.map(n => [`${n.eleveId}_${n.matiereId}_${n.sequenceId}`, n]));
       
       const newNotes = [];
       const noteUpdates = [];
@@ -494,7 +506,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         if (!teacherId) continue;
 
         const noteKey = `${eleve.id}_${matiereId}_${sequenceId}`;
-        const existingNoteId = noteMap.get(noteKey);
+        const existingNote = noteMap.get(noteKey);
 
         const noteData = {
           value: parseFloat(noteValue),
@@ -502,9 +514,11 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
           isDraft: false
         };
 
-        if (existingNoteId) {
-          noteUpdates.push({ where: { id: existingNoteId }, data: noteData });
-        } else {
+        if (existingNote && existingNote !== 'pending') {
+          if (existingNote.value !== noteData.value) {
+            noteUpdates.push({ where: { id: existingNote.id }, data: noteData });
+          }
+        } else if (!existingNote) {
           newNotes.push({
             eleveId: eleve.id,
             matiereId,
@@ -524,9 +538,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
          stats.notes += newNotes.length;
       }
       
-      const noteChunkSize = 5;
-      for (let i = 0; i < noteUpdates.length; i += noteChunkSize) {
-        await Promise.all(noteUpdates.slice(i, i + noteChunkSize).map(op => prisma.note.update(op)));
+      // Execute Note Updates sequentially to avoid connection pool exhaustion
+      for (const op of noteUpdates) {
+        await prisma.note.update(op);
       }
 
       logs.push(`Notes traitées: ${stats.notes} nouvelles notes ajoutées.`);
