@@ -118,7 +118,19 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     }
 
     // Cache initialization
-    const classCache = new Map(); // name -> id
+    const classCache = new Map(); // normalizedName -> id
+    
+    const normalizeClassName = (name) => {
+      if (!name) return '';
+      return name.toString().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/eme/g, 'e') // handles 6ème -> 6eme -> 6e
+        .replace(/ere/g, 'e') // handles 1ère -> 1ere -> 1e
+        .replace(/nde/g, 'e') // handles 2nde -> 2e (optional, but 2nde is usually kept, let's just do spaces)
+        .replace(/\s+/g, '') // remove all spaces
+        .trim();
+    };
+
     const teacherCache = new Map(); // email -> id
     const subjectCache = new Map(); // code -> id
     const sequenceCache = new Map(); // name -> id
@@ -126,7 +138,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     
     // Pre-load existing data to avoid N+1
     const existingClasses = await prisma.classe.findMany({ where: { schoolId, anneeScolaireId: activeYear.id } });
-    existingClasses.forEach(c => classCache.set(c.name, c.id));
+    existingClasses.forEach(c => classCache.set(normalizeClassName(c.name), c.id));
 
     const existingTeachers = await prisma.user.findMany({ where: { schoolId, role: 'TEACHER' } });
     existingTeachers.forEach(t => teacherCache.set(t.email, t.id));
@@ -160,18 +172,19 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       const data = xlsx.utils.sheet_to_json(wb.Sheets[classesSheet]);
       const newClasses = [];
       for (const row of data) {
-        const nom = row['Nom de la Classe'] || row['Nom'] || row['Name'];
+        const nom = row['Nom de la Classe'] || row['Nom'] || row['Name'] || row['Classe'] || Object.values(row)[0];
         if (!nom) continue;
         const classNameStr = nom.toString().trim();
-        if (!classCache.has(classNameStr)) {
+        const normClass = normalizeClassName(classNameStr);
+        if (!classCache.has(normClass)) {
           newClasses.push({ schoolId, anneeScolaireId: activeYear.id, name: classNameStr });
-          classCache.set(classNameStr, 'pending'); // Mark as pending to avoid duplicates
+          classCache.set(normClass, 'pending'); // Mark as pending to avoid duplicates
         }
       }
       if (newClasses.length > 0) {
         await prisma.classe.createMany({ data: newClasses, skipDuplicates: true });
         const updatedClasses = await prisma.classe.findMany({ where: { schoolId, anneeScolaireId: activeYear.id } });
-        updatedClasses.forEach(c => classCache.set(c.name, c.id));
+        updatedClasses.forEach(c => classCache.set(normalizeClassName(c.name), c.id));
         stats.classes += newClasses.length;
       }
       logs.push(`Classes traitées: ${stats.classes} importées (les existantes ont été ignorées).`);
@@ -300,8 +313,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         if (!nom || !matricule || (!className && !req.body.classId)) continue;
         const matriculeStr = matricule.toString().trim().toUpperCase();
         const classNameStr = className ? className.toString().trim() : null;
+        const normClass = normalizeClassName(classNameStr);
 
-        let classId = req.body.classId || classCache.get(classNameStr);
+        let classId = req.body.classId || classCache.get(normClass);
         if (!classId || classId === 'pending') {
             logs.push(`Erreur Élève ${nom}: Classe "${classNameStr}" introuvable.`);
             continue;
