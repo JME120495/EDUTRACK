@@ -46,6 +46,10 @@ export default function SettingsPage() {
   const [aLabel, setALabel] = useState('');
   const [aActive, setAActive] = useState(false);
 
+  // Import State
+  const [importResult, setImportResult] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+
 
   useEffect(() => {
     loadSettings();
@@ -643,8 +647,8 @@ export default function SettingsPage() {
                       const formData = new FormData();
                       formData.append('file', file);
                       
+                      setIsImporting(true);
                       try {
-                        alert('Importation en cours... Veuillez patienter.');
                         const token = localStorage.getItem('token');
                         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
                         const res = await fetch(`${apiUrl}/import/excel`, {
@@ -653,17 +657,25 @@ export default function SettingsPage() {
                           body: formData
                         });
                         const data = await res.json();
+                        setIsImporting(false);
                         if (res.ok) {
-                          alert('Succès! ' + data.message + '\n\n' + data.logs.join('\n'));
-                          window.location.reload();
+                          setImportResult({ success: true, data });
                         } else {
-                          alert('Erreur: ' + (data.error || data.message));
+                          setImportResult({ success: false, error: data.error || data.message });
                         }
                       } catch (err) {
-                        alert('Erreur: ' + err.message);
+                        setIsImporting(false);
+                        setImportResult({ success: false, error: err.message });
                       }
+                      e.target.value = null; // reset file input
                     }}
                   />
+                  {isImporting && (
+                    <div className="absolute inset-0 bg-white/80 rounded-xl flex items-center justify-center gap-2 text-emerald-700 font-bold z-20">
+                      <div className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+                      Importation en cours...
+                    </div>
+                  )}
                 </label>
               </div>
             </div>
@@ -945,6 +957,85 @@ export default function SettingsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Import Result Modal */}
+      {importResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+            <div className={`px-6 py-4 border-b flex items-center justify-between ${importResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+              <div className="flex items-center gap-3">
+                {importResult.success ? (
+                  <CheckCircle className="h-6 w-6 text-emerald-600" />
+                ) : (
+                  <X className="h-6 w-6 text-red-600" />
+                )}
+                <h3 className={`font-bold font-outfit font-black ${importResult.success ? 'text-emerald-800' : 'text-red-800'}`}>
+                  {importResult.success ? 'Importation Réussie' : 'Erreur d\'Importation'}
+                </h3>
+              </div>
+              <button 
+                onClick={() => {
+                  setImportResult(null);
+                  if (importResult.success) window.location.reload();
+                }} 
+                className="p-1 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {importResult.success ? (
+                <>
+                  <p className="text-slate-700 font-semibold">{importResult.data.message}</p>
+                  
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {Object.entries(importResult.data.stats || {}).map(([key, val]) => (
+                      <div key={key} className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                        <div className="text-2xl font-black text-[#1E3A5F]">{val}</div>
+                        <div className="text-xs font-bold text-slate-500 uppercase tracking-wide capitalize">{key}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Logs */}
+                  {importResult.data.logs && importResult.data.logs.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-bold text-slate-700 mb-2">Détails d'exécution :</h4>
+                      <div className="bg-slate-900 text-slate-300 text-xs font-mono p-3 rounded-xl overflow-x-auto max-h-48 whitespace-pre-wrap">
+                        {importResult.data.logs.map((log, i) => (
+                          <div key={i} className={log.includes('Erreur') ? 'text-red-400' : 'text-emerald-400'}>
+                            &gt; {log}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-red-600 font-semibold p-4 bg-red-50 rounded-xl border border-red-100">
+                  {importResult.error}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => {
+                  setImportResult(null);
+                  if (importResult.success) window.location.reload();
+                }}
+                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-md ${
+                  importResult.success ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-800 hover:bg-slate-900 text-white'
+                }`}
+              >
+                {importResult.success ? 'Continuer' : 'Fermer'}
+              </button>
+            </div>
           </div>
         </div>
       )}
