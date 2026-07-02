@@ -244,23 +244,31 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         const telParent = row['Tel Parent'];
         const relation = row['Relation (FATHER/MOTHER/GUARDIAN)'] || 'GUARDIAN';
         
-        if (!nom || !matricule || !className) continue;
+        if (!nom || !matricule || (!className && !req.body.classId)) continue;
         const matriculeStr = matricule.toString().trim();
-        const classNameStr = className.toString().trim();
+        const classNameStr = className ? className.toString().trim() : null;
 
         // Verify Class
-        let classId = classCache[classNameStr];
-        if (!classId) {
-          const cl = await prisma.classe.findFirst({
-            where: { schoolId, name: classNameStr, anneeScolaireId: activeYear.id }
-          });
-          if (cl) {
-            classId = cl.id;
-            classCache[classNameStr] = classId;
-          } else {
-            logs.push(`Erreur Élève ${nom}: Classe "${classNameStr}" introuvable.`);
-            continue; 
+        let classId = req.body.classId;
+        if (!classId && classNameStr) {
+          classId = classCache[classNameStr];
+          if (!classId) {
+            const cl = await prisma.classe.findFirst({
+              where: { schoolId, name: classNameStr, anneeScolaireId: activeYear.id }
+            });
+            if (cl) {
+              classId = cl.id;
+              classCache[classNameStr] = classId;
+            } else {
+              logs.push(`Erreur Élève ${nom}: Classe "${classNameStr}" introuvable.`);
+              continue; 
+            }
           }
+        }
+        
+        if (!classId) {
+          logs.push(`Erreur Élève ${nom}: Classe non spécifiée.`);
+          continue;
         }
 
         // Student Creation or Update

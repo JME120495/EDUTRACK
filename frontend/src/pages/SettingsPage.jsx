@@ -46,6 +46,10 @@ export default function SettingsPage() {
   const [aLabel, setALabel] = useState('');
   const [aActive, setAActive] = useState(false);
 
+  // Classes State
+  const [classesList, setClassesList] = useState([]);
+  const [importClassId, setImportClassId] = useState('');
+
   // Import State
   const [importResult, setImportResult] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -58,11 +62,12 @@ export default function SettingsPage() {
   async function loadSettings() {
     try {
       setLoading(true);
-      const [schoolData, studentsData, creneauxData, anneesData] = await Promise.all([
+      const [schoolData, studentsData, creneauxData, anneesData, classesData] = await Promise.all([
         apiFetch('/schools'),
         apiFetch('/eleves'),
         apiFetch('/creneaux').catch(() => []),
-        apiFetch('/annees').catch(() => [])
+        apiFetch('/annees').catch(() => []),
+        apiFetch('/classes').catch(() => [])
       ]);
       if (schoolData) {
         setSchool(schoolData);
@@ -75,6 +80,9 @@ export default function SettingsPage() {
       }
       if (anneesData) {
         setAnnees(anneesData);
+      }
+      if (classesData) {
+        setClassesList(classesData);
       }
       if (arguments[0] && arguments[0][3]) {
         setAnnees(arguments[0][3]);
@@ -633,7 +641,20 @@ export default function SettingsPage() {
                   Télécharger le Modèle
                 </button>
                 
-                <label className="w-full py-2 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-center cursor-pointer shadow-sm flex items-center justify-center gap-2">
+                <div className="w-full relative">
+                  <select
+                    value={importClassId}
+                    onChange={(e) => setImportClassId(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/10 border border-white/20 text-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 appearance-none font-semibold mb-3"
+                  >
+                    <option value="" className="text-slate-800">Toutes les classes (Global)</option>
+                    {classesList.map(c => (
+                      <option key={c.id} value={c.id} className="text-slate-800">Importer pour : {c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <label className="w-full py-2 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-center cursor-pointer shadow-sm flex items-center justify-center gap-2 relative">
                   <Plus className="h-4 w-4" />
                   Importer le Fichier Rempli
                   <input 
@@ -646,6 +667,9 @@ export default function SettingsPage() {
                       
                       const formData = new FormData();
                       formData.append('file', file);
+                      if (importClassId) {
+                        formData.append('classId', importClassId);
+                      }
                       
                       setIsImporting(true);
                       try {
