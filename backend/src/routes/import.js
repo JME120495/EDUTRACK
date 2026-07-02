@@ -132,7 +132,11 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     const existingEleves = await prisma.eleve.findMany({ 
       where: { class: { schoolId } } 
     });
-    existingEleves.forEach(e => eleveCache.set(e.matricule, { id: e.id, classId: e.classId }));
+    existingEleves.forEach(e => {
+      if (e.matricule) {
+        eleveCache.set(e.matricule.toString().trim().toUpperCase(), { id: e.id, classId: e.classId });
+      }
+    });
 
     // Pre-compute common hashes
     const defaultTeacherPasswordHash = await bcrypt.hash('123456', 10);
@@ -280,7 +284,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         const relation = row['Relation (FATHER/MOTHER/GUARDIAN)'] || 'GUARDIAN';
         
         if (!nom || !matricule || (!className && !req.body.classId)) continue;
-        const matriculeStr = matricule.toString().trim();
+        const matriculeStr = matricule.toString().trim().toUpperCase();
         const classNameStr = className ? className.toString().trim() : null;
 
         let classId = req.body.classId || classCache.get(classNameStr);
@@ -329,11 +333,14 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       // We need to re-fetch eleves to get IDs for new ones to link parents
       const allEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
       allEleves.forEach(e => {
-         const cached = eleveCache.get(e.matricule);
-         if (cached && cached.pending) {
-            parentOperations.push({ studentId: e.id, ...cached.parentData, name: e.name });
+         if (e.matricule) {
+            const normMatricule = e.matricule.toString().trim().toUpperCase();
+            const cached = eleveCache.get(normMatricule);
+            if (cached && cached.pending) {
+               parentOperations.push({ studentId: e.id, ...cached.parentData, name: e.name });
+            }
+            eleveCache.set(normMatricule, { id: e.id, classId: e.classId });
          }
-         eleveCache.set(e.matricule, { id: e.id, classId: e.classId });
       });
       
       // Execute Eleve Updates in chunks
@@ -460,8 +467,8 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
 
         if (!matricule || !codeMatiere || !sequenceName || noteValue === undefined) continue;
 
-        const eleve = eleveCache.get(matricule.toString().trim());
-        if (!eleve) {
+        const eleve = eleveCache.get(matricule.toString().trim().toUpperCase());
+        if (!eleve || !eleve.id) {
           continue;
         }
 
@@ -527,8 +534,8 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
 
         if (!matricule || !dateVal || !sequenceName) continue;
 
-        const eleve = eleveCache.get(matricule.toString().trim());
-        if (!eleve) continue;
+        const eleve = eleveCache.get(matricule.toString().trim().toUpperCase());
+        if (!eleve || !eleve.id) continue;
 
         const parsedDate = parseDate(dateVal) || new Date();
         const sequenceId = await getSequence(sequenceName, 1);
@@ -567,8 +574,8 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         
         if (!matricule || !amount) continue;
 
-        const eleve = eleveCache.get(matricule.toString().trim());
-        if (eleve) {
+        const eleve = eleveCache.get(matricule.toString().trim().toUpperCase());
+        if (eleve && eleve.id) {
           const parsedDate = parseDate(dateVal) || new Date();
           newPaiements.push({
             eleveId: eleve.id,
