@@ -167,9 +167,8 @@ app.use((err, req, res, next) => {
   // Return generic message to client (no stack traces, no internal details)
   const statusCode = err.status || err.statusCode || 500;
   res.status(statusCode).json({
-    message: isProduction
-      ? 'An internal error occurred. Please try again later.'
-      : err.message || 'Internal server error'
+    message: err.message || 'Internal server error',
+    stack: isProduction ? undefined : err.stack
   });
 });
 
