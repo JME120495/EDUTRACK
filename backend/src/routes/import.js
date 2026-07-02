@@ -502,12 +502,12 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       const fallbackId = await getFallbackTeacher();
 
       for (const row of data) {
-        const matricule = row['Matricule Eleve'];
-        const codeMatiere = row['Code Matière'];
-        const sequenceName = row['Séquence (ex: Séquence 1)'] || row['Séquence'];
-        const term = row['Trimestre (1, 2 ou 3)'];
-        const noteValue = row['Note (/20)'];
-        const remarque = row['Remarque'];
+        const matricule = row['Matricule Eleve'] || row['Matricule'];
+        const codeMatiere = row['Code Matière'] || row['Code Matiere'] || row['Matière'] || row['Matiere'] || row['Code'];
+        const sequenceName = row['Séquence (ex: Séquence 1)'] || row['Séquence'] || row['Sequence'];
+        const term = row['Trimestre (1, 2 ou 3)'] || row['Trimestre'];
+        const noteValue = row['Note (/20)'] !== undefined ? row['Note (/20)'] : (row['Note'] !== undefined ? row['Note'] : row['Valeur']);
+        const remarque = row['Remarque'] || row['Appréciation'];
 
         if (!matricule || !codeMatiere || !sequenceName || noteValue === undefined) continue;
 
@@ -574,13 +574,13 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       const newAbsences = [];
       
       for (const row of data) {
-        const matricule = row['Matricule Eleve'];
+        const matricule = row['Matricule Eleve'] || row['Matricule'];
         const dateVal = row['Date (JJ/MM/AAAA)'] || row['Date'];
-        const hours = row['Heures'];
-        const isJustified = row['Justifiée (Oui/Non)']?.toString().toLowerCase() === 'oui';
-        const motif = row['Motif'];
-        const isLateness = row['Retard (Oui/Non)']?.toString().toLowerCase() === 'oui';
-        const sequenceName = row['Séquence (ex: Séquence 1)'] || row['Séquence'];
+        const hours = row['Heures'] || row['Heure'];
+        const isJustified = (row['Justifiée (Oui/Non)'] || row['Justifiée'] || row['Justifiee'])?.toString().toLowerCase() === 'oui';
+        const motif = row['Motif'] || row['Raison'];
+        const isLateness = (row['Retard (Oui/Non)'] || row['Retard'])?.toString().toLowerCase() === 'oui';
+        const sequenceName = row['Séquence (ex: Séquence 1)'] || row['Séquence'] || row['Sequence'];
 
         if (!matricule || !dateVal || !sequenceName) continue;
 
@@ -618,13 +618,13 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       const newPaiements = [];
       
       for (const row of data) {
-        const matricule = row['Matricule Eleve'];
-        const amount = row['Montant'];
-        const method = row['Méthode (CASH/MOBILE_MONEY/WAVE/BANK)'];
-        const dateVal = row['Date'];
-        const ref = row['Référence Transaction'];
-        const payerPhone = row['Téléphone Payeur'];
-        const remarque = row['Remarque'];
+        const matricule = row['Matricule Eleve'] || row['Matricule'];
+        const amount = row['Montant'] || row['Somme'];
+        const method = row['Méthode (CASH/MOBILE_MONEY/WAVE/BANK)'] || row['Méthode'] || row['Methode'];
+        const dateVal = row['Date'] || row['Date Paiement'];
+        const ref = row['Référence Transaction'] || row['Référence'] || row['Reference'];
+        const payerPhone = row['Téléphone Payeur'] || row['Téléphone'] || row['Telephone'];
+        const remarque = row['Remarque'] || row['Motif'];
         
         if (!matricule || !amount) continue;
 
