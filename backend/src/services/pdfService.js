@@ -129,48 +129,68 @@ async function generateBulletinPDF(bulletinId) {
          .stroke(primaryColor);
     }
 
-    // 2. School Header
-    let textX = 35;
+    // 2. Official Cameroonian Header
+    const centerX = doc.page.width / 2;
+    
+    // Left side (French)
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(darkGrey);
+    doc.text('RÉPUBLIQUE DU CAMEROUN', 35, 30, { align: 'left', width: 200 });
+    doc.fontSize(7).font('Helvetica');
+    doc.text('Paix - Travail - Patrie', 35, 40, { align: 'left', width: 200 });
+    doc.text('MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES', 35, 50, { align: 'left', width: 200 });
+    doc.text('DÉLÉGATION RÉGIONALE', 35, 60, { align: 'left', width: 200 });
+    
+    // Right side (English)
+    doc.fontSize(8).font('Helvetica-Bold');
+    doc.text('REPUBLIC OF CAMEROON', doc.page.width - 235, 30, { align: 'right', width: 200 });
+    doc.fontSize(7).font('Helvetica');
+    doc.text('Peace - Work - Fatherland', doc.page.width - 235, 40, { align: 'right', width: 200 });
+    doc.text('MINISTRY OF SECONDARY EDUCATION', doc.page.width - 235, 50, { align: 'right', width: 200 });
+    doc.text('REGIONAL DELEGATION', doc.page.width - 235, 60, { align: 'right', width: 200 });
+
+    // Logo in the center
+    let currentY = 70;
     if (logoBuffer) {
       try {
-        doc.image(logoBuffer, 35, 32, { fit: [45, 45] });
-        textX = 90;
+        doc.image(logoBuffer, centerX - 25, 25, { fit: [50, 50] });
+        currentY = 85;
       } catch (err) {
         console.error('Error drawing logo in PDF:', err);
       }
     }
 
+    // School Name (Centered)
     doc.fillColor(primaryColor)
        .fontSize(14)
        .font('Helvetica-Bold')
-       .text(school.name.toUpperCase(), textX, 35);
+       .text(school.name.toUpperCase(), 35, currentY, { align: 'center', width: doc.page.width - 70 });
 
     doc.fontSize(8)
        .font('Helvetica')
        .fillColor(darkGrey)
-       .text(`${school.address || ''} | Tél: ${school.phone || ''} | ${school.email || ''}`, textX, 52);
+       .text(`${school.address || ''} | Tél: ${school.phone || ''} | ${school.email || ''}`, 35, currentY + 16, { align: 'center', width: doc.page.width - 70 });
 
     // School Year / Term / Sequence Banner
-    doc.fillColor(primaryColor)
-       .rect(doc.page.width - 200, 32, 165, 30)
-       .fill();
-
     const titleText = bulletin.type === 'SEQUENCE' 
       ? bulletin.sequence.name.toUpperCase() 
       : bulletin.type === 'ANNUAL'
         ? 'BULLETIN ANNUEL'
         : `TRIMESTRE ${bulletin.term}`;
 
+    const bannerY = currentY + 30;
+    doc.fillColor(primaryColor)
+       .rect(35, bannerY, doc.page.width - 70, 20)
+       .fill();
+
     doc.fillColor('#FFFFFF')
-       .fontSize(9)
+       .fontSize(10)
        .font('Helvetica-Bold')
-       .text(`ANNÉE SCOLAIRE ${bulletin.eleve.class.anneeScolaire.label}`, doc.page.width - 195, 36)
-       .text(titleText, doc.page.width - 195, 48);
+       .text(`${titleText}  -  ANNÉE SCOLAIRE ${bulletin.eleve.class.anneeScolaire.label}`, 35, bannerY + 5, { align: 'center', width: doc.page.width - 70 });
 
     doc.moveDown(2);
 
     // 3. Student & Class Details block (with photo)
-    const studentInfoY = 90;
+    const studentInfoY = bannerY + 30;
     const infoBlockHeight = 70;
     const photoSize = 58;
     const photoX = doc.page.width - 35 - photoSize - 10;
@@ -235,7 +255,7 @@ async function generateBulletinPDF(bulletinId) {
        .text(`Statut / Status: ${bulletin.eleve.status}`, 280, studentInfoY + 51);
 
     // 4. Grades Table
-    const tableTop = 175;
+    const tableTop = studentInfoY + infoBlockHeight + 15;
     const colX = {
       subject: 35,
       coeff: 215,
@@ -264,7 +284,7 @@ async function generateBulletinPDF(bulletinId) {
        .text("Rang", colX.rank, tableTop + 7)
        .text("Appréciation", colX.appr, tableTop + 7);
 
-    let currentY = tableTop + 22;
+    currentY = tableTop + 22;
 
     bulletin.details.forEach((det, idx) => {
       // Alternating row colors
