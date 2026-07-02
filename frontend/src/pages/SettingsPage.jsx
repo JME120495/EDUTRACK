@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiFetch } from '../api';
+import { apiFetch, API_BASE } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette, Calendar } from 'lucide-react';
 
@@ -618,9 +618,8 @@ export default function SettingsPage() {
                   type="button"
                   onClick={async () => {
                     try {
-                      const token = localStorage.getItem('token');
-                      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-                      const res = await fetch(`${apiUrl}/import/template`, {
+                      const token = localStorage.getItem('edutrack_token');
+                      const res = await fetch(`${API_BASE}/import/template`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                       });
                       if (!res.ok) throw new Error('Erreur téléchargement');
@@ -673,9 +672,8 @@ export default function SettingsPage() {
                       
                       setIsImporting(true);
                       try {
-                        const token = localStorage.getItem('token');
-                        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-                        const res = await fetch(`${apiUrl}/import/excel`, {
+                        const token = localStorage.getItem('edutrack_token');
+                        const res = await fetch(`${API_BASE}/import/excel`, {
                           method: 'POST',
                           headers: { 'Authorization': `Bearer ${token}` },
                           body: formData
