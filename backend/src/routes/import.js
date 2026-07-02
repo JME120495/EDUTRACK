@@ -432,7 +432,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     };
 
     // --- Preload EnseignantMatiereClasse ---
-    const emcList = await prisma.enseignantMatiereClasse.findMany({ where: { classe: { schoolId } } });
+    const emcList = await prisma.enseignantMatiereClasse.findMany({ where: { class: { schoolId } } });
     const emcMap = new Map(); // `${classId}_${matiereId}` -> teacherId
     emcList.forEach(emc => emcMap.set(`${emc.classId}_${emc.matiereId}`, emc.teacherId));
 
