@@ -150,9 +150,14 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     const defaultTeacherPasswordHash = await bcrypt.hash('123456', 10);
     const parentHashCache = new Map();
 
+    // Helper for robust sheet name matching
+    const normalizeStr = (str) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const findSheet = (possibleNames) => wb.SheetNames.find(n => possibleNames.includes(normalizeStr(n)));
+
     // --- 1. IMPORT CLASSES ---
-    if (wb.SheetNames.includes('Classes')) {
-      const data = xlsx.utils.sheet_to_json(wb.Sheets['Classes']);
+    const classesSheet = findSheet(['classes', 'classe']);
+    if (classesSheet) {
+      const data = xlsx.utils.sheet_to_json(wb.Sheets[classesSheet]);
       const newClasses = [];
       for (const row of data) {
         const nom = row['Nom de la Classe'] || row['Nom'] || row['Name'];
@@ -173,8 +178,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     }
 
     // --- 2. IMPORT ENSEIGNANTS ---
-    if (wb.SheetNames.includes('Enseignants')) {
-      const data = xlsx.utils.sheet_to_json(wb.Sheets['Enseignants']);
+    const enseignantsSheet = findSheet(['enseignants', 'enseignant']);
+    if (enseignantsSheet) {
+      const data = xlsx.utils.sheet_to_json(wb.Sheets[enseignantsSheet]);
       const schoolSlug = school.name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 3) || 'sch';
       const countrySlug = getCountrySlug(school.country);
       const newTeachers = [];
@@ -220,9 +226,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     }
 
     // --- 3. IMPORT MATIERES ---
-    if (wb.SheetNames.includes('Matieres') || wb.SheetNames.includes('Matières')) {
-      const sheetName = wb.SheetNames.includes('Matieres') ? 'Matieres' : 'Matières';
-      const data = xlsx.utils.sheet_to_json(wb.Sheets[sheetName]);
+    const matieresSheet = findSheet(['matieres', 'matiere']);
+    if (matieresSheet) {
+      const data = xlsx.utils.sheet_to_json(wb.Sheets[matieresSheet]);
       const newSubjects = [];
       
       for (const row of data) {
@@ -268,9 +274,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     };
 
     // --- 4. IMPORT ELEVES & PARENTS ---
-    if (wb.SheetNames.includes('Eleves') || wb.SheetNames.includes('Elèves') || wb.SheetNames.includes('Élèves')) {
-      const sheetName = wb.SheetNames.find(n => n.includes('leves'));
-      const data = xlsx.utils.sheet_to_json(wb.Sheets[sheetName]);
+    const elevesSheet = findSheet(['eleves', 'eleve']);
+    if (elevesSheet) {
+      const data = xlsx.utils.sheet_to_json(wb.Sheets[elevesSheet]);
       
       const newEleves = [];
       const eleveUpdates = [];
@@ -467,8 +473,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     emcList.forEach(emc => emcMap.set(`${emc.classId}_${emc.matiereId}`, emc.teacherId));
 
     // --- 5. IMPORT NOTES ---
-    if (wb.SheetNames.includes('Notes')) {
-      const data = xlsx.utils.sheet_to_json(wb.Sheets['Notes']);
+    const notesSheet = findSheet(['notes', 'note']);
+    if (notesSheet) {
+      const data = xlsx.utils.sheet_to_json(wb.Sheets[notesSheet]);
       
       const existingNotesList = await prisma.note.findMany({
          where: { eleve: { class: { schoolId } } },
@@ -547,8 +554,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     }
 
     // --- 6. IMPORT ABSENCES ---
-    if (wb.SheetNames.includes('Absences')) {
-      const data = xlsx.utils.sheet_to_json(wb.Sheets['Absences']);
+    const absencesSheet = findSheet(['absences', 'absence']);
+    if (absencesSheet) {
+      const data = xlsx.utils.sheet_to_json(wb.Sheets[absencesSheet]);
       const newAbsences = [];
       
       for (const row of data) {
@@ -590,8 +598,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     }
 
     // --- 7. IMPORT PAIEMENTS ---
-    if (wb.SheetNames.includes('Paiements')) {
-      const data = xlsx.utils.sheet_to_json(wb.Sheets['Paiements']);
+    const paiementsSheet = findSheet(['paiements', 'paiement']);
+    if (paiementsSheet) {
+      const data = xlsx.utils.sheet_to_json(wb.Sheets[paiementsSheet]);
       const newPaiements = [];
       
       for (const row of data) {
