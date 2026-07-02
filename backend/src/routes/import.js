@@ -309,10 +309,10 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         } else {
           const existing = eleveCache.get(matriculeStr);
           if (!existing.pending) {
-            eleveUpdates.push(prisma.eleve.update({
+            eleveUpdates.push({
               where: { id: existing.id },
               data: eleveData
-            }));
+            });
             if (telParent) {
                parentOperations.push({ studentId: existing.id, nomParent, telParent, relation, name: nom });
             }
@@ -337,9 +337,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       });
       
       // Execute Eleve Updates in chunks
-      const chunkSize = 1000;
-      for (let i = 0; i < eleveUpdates.length; i += chunkSize) {
-        await Promise.all(eleveUpdates.slice(i, i + chunkSize));
+      const eleveChunkSize = 5;
+      for (let i = 0; i < eleveUpdates.length; i += eleveChunkSize) {
+        await Promise.all(eleveUpdates.slice(i, i + eleveChunkSize).map(op => prisma.eleve.update(op)));
       }
 
       // Parents logic
@@ -485,7 +485,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         };
 
         if (existingNoteId) {
-          noteUpdates.push(prisma.note.update({ where: { id: existingNoteId }, data: noteData }));
+          noteUpdates.push({ where: { id: existingNoteId }, data: noteData });
         } else {
           newNotes.push({
             eleveId: eleve.id,
@@ -503,9 +503,9 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         stats.notes += newNotes.length;
       }
       
-      const chunkSize = 2000;
-      for (let i = 0; i < noteUpdates.length; i += chunkSize) {
-        await Promise.all(noteUpdates.slice(i, i + chunkSize));
+      const noteChunkSize = 5;
+      for (let i = 0; i < noteUpdates.length; i += noteChunkSize) {
+        await Promise.all(noteUpdates.slice(i, i + noteChunkSize).map(op => prisma.note.update(op)));
       }
 
       logs.push(`Notes traitées: ${stats.notes} nouvelles notes ajoutées.`);
