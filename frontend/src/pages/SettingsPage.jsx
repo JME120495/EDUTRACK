@@ -583,6 +583,92 @@ export default function SettingsPage() {
 
         {/* Sidebar Info Panels */}
         <div className="space-y-6">
+          {/* Global Import Panel */}
+          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl p-5 shadow-lg space-y-4 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 opacity-10">
+              <BookOpen className="h-24 w-24" />
+            </div>
+            
+            <div className="border-b border-white/20 pb-3 relative z-10">
+              <h4 className="font-bold text-sm font-outfit text-emerald-50">Importation Globale (Excel)</h4>
+              <p className="text-[10px] text-emerald-100 font-semibold mt-0.5">Importez classes, élèves, professeurs en 1 clic</p>
+            </div>
+            
+            <div className="relative z-10 space-y-3">
+              <div className="text-[10px] text-emerald-50 leading-relaxed bg-black/10 p-2.5 rounded-lg border border-white/10">
+                <p>1. Téléchargez le modèle Excel.</p>
+                <p>2. Remplissez les différentes feuilles.</p>
+                <p>3. Importez le fichier complété.</p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <button 
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                      const res = await fetch(`${apiUrl}/import/template`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                      });
+                      if (!res.ok) throw new Error('Erreur téléchargement');
+                      const blob = await res.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = "EduTrack_Import_Template.xlsx";
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      alert(err.message);
+                    }
+                  }}
+                  className="w-full py-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Télécharger le Modèle
+                </button>
+                
+                <label className="w-full py-2 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-center cursor-pointer shadow-sm flex items-center justify-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Importer le Fichier Rempli
+                  <input 
+                    type="file" 
+                    accept=".xlsx, .xls"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      
+                      try {
+                        alert('Importation en cours... Veuillez patienter.');
+                        const token = localStorage.getItem('token');
+                        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                        const res = await fetch(`${apiUrl}/import/excel`, {
+                          method: 'POST',
+                          headers: { 'Authorization': `Bearer ${token}` },
+                          body: formData
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          alert('Succès! ' + data.message + '\n\n' + data.logs.join('\n'));
+                          window.location.reload();
+                        } else {
+                          alert('Erreur: ' + (data.error || data.message));
+                        }
+                      } catch (err) {
+                        alert('Erreur: ' + err.message);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
           {/* Time slot manager panel */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">

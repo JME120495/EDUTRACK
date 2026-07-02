@@ -67,11 +67,16 @@ router.get('/dashboard', auth, requireRole(['DIRECTOR']), async (req, res) => {
       });
 
       const allActiveStudents = await prisma.eleve.findMany({
-        where: { class: { schoolId }, status: 'ACTIVE' },
-        include: {
-          class: true,
-          paiements: { where: { status: 'COMPLETED' } },
-          parents: { include: { parent: true } }
+        where: { class: { schoolId, anneeScolaireId: activeYear.id }, status: 'ACTIVE' },
+        select: {
+          id: true,
+          name: true,
+          classId: true,
+          class: { select: { name: true } },
+          paiements: { 
+            where: { status: 'COMPLETED' },
+            select: { amount: true } 
+          }
         }
       });
 
@@ -89,22 +94,26 @@ router.get('/dashboard', auth, requireRole(['DIRECTOR']), async (req, res) => {
             class: student.class.name,
             amountDue: expected,
             amountPaid: paid,
-            parentPhone: student.parents.length > 0 ? student.parents[0].parent.phone : null
+            parentPhone: null // Fetched later for optimization
           });
         }
       }
 
       const tuitionPayments = await prisma.paiement.findMany({
-        where: { eleve: { class: { schoolId } }, status: 'COMPLETED' }
+        where: { eleve: { class: { schoolId, anneeScolaireId: activeYear.id } }, status: 'COMPLETED' },
+        select: { amount: true }
       });
       totalTuitionCollected = tuitionPayments.reduce((sum, p) => sum + p.amount, 0);
 
       // 4. Chart Data (Class Averages based on all individual notes)
       const classes = await prisma.classe.findMany({
         where: { schoolId, anneeScolaireId: activeYear.id },
-        include: {
+        select: {
+          name: true,
           eleves: {
-            include: { notes: true }
+            select: {
+              notes: { select: { value: true } }
+            }
           }
         }
       });
@@ -127,17 +136,31 @@ router.get('/dashboard', auth, requireRole(['DIRECTOR']), async (req, res) => {
     }
 
     const generalTransactions = await prisma.transaction.findMany({
-      where: { schoolId }
+      where: { schoolId, type: 'INCOME' },
+      select: { amount: true }
     });
-    const otherIncome = generalTransactions
-      .filter(t => t.type === 'INCOME')
-      .reduce((sum, t) => sum + t.amount, 0);
+    const otherIncome = generalTransactions.reduce((sum, t) => sum + t.amount, 0);
 
     const totalRevenue = totalTuitionCollected + otherIncome;
     const collectionRate = totalTuitionExpected > 0 ? Number(((totalTuitionCollected / totalTuitionExpected) * 100).toFixed(1)) : 0;
 
     // Sort unpaid alerts by highest remaining balance
     unpaidAlerts.sort((a, b) => (b.amountDue - b.amountPaid) - (a.amountDue - a.amountPaid));
+    const topAlerts = unpaidAlerts.slice(0, 15);
+
+    // Optimize: Only fetch parent phones for the top alerts
+    if (topAlerts.length > 0) {
+      const debtorIds = topAlerts.map(a => a.id);
+      const debtorParents = await prisma.parentEleve.findMany({
+        where: { eleveId: { in: debtorIds } },
+        include: { parent: true }
+      });
+      
+      topAlerts.forEach(alert => {
+        const parentLink = debtorParents.find(p => p.eleveId === alert.id);
+        alert.parentPhone = parentLink ? parentLink.parent.phone : null;
+      });
+    }
 
     const academicYears = await prisma.anneeScolaire.findMany({
       where: { schoolId },
@@ -155,7 +178,7 @@ router.get('/dashboard', auth, requireRole(['DIRECTOR']), async (req, res) => {
         collectionRate,
         totalRevenue
       },
-      alerts: unpaidAlerts.slice(0, 15), // top 15 debtors
+      alerts: topAlerts, // top 15 debtors
       chartData,
       academicYears,
       activeYear
