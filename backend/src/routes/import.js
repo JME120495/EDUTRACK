@@ -98,6 +98,14 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     const logs = [];
     const stats = { classes: 0, enseignants: 0, matieres: 0, eleves: 0, notes: 0, absences: 0, paiements: 0 };
 
+    const chunkArray = (arr, size) => {
+      const chunks = [];
+      for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+      }
+      return chunks;
+    };
+
     // Default Academic Year
     let activeYear = await prisma.anneeScolaire.findFirst({
       where: { schoolId, active: true }
@@ -307,7 +315,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         };
 
         if (!eleveCache.has(matriculeStr)) {
-          newEleves.push({ ...eleveData, matricule: matriculeStr });
+          newEleves.push({ ...eleveData, matricule: matriculeStr, schoolId });
           // Mark as pending to avoid treating it as new again if duplicated in excel
           eleveCache.set(matriculeStr, { classId, pending: true, parentData: { nomParent, telParent, relation } });
         } else {
@@ -326,7 +334,10 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       
       // Batch insert/update Eleves
       if (newEleves.length > 0) {
-         await prisma.eleve.createMany({ data: newEleves, skipDuplicates: true });
+         const chunks = chunkArray(newEleves, 1000);
+         for (const chunk of chunks) {
+            await prisma.eleve.createMany({ data: chunk, skipDuplicates: true });
+         }
          stats.eleves += newEleves.length;
       }
       
@@ -506,8 +517,11 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       }
 
       if (newNotes.length > 0) {
-        await prisma.note.createMany({ data: newNotes, skipDuplicates: true });
-        stats.notes += newNotes.length;
+         const chunks = chunkArray(newNotes, 1000);
+         for (const chunk of chunks) {
+            await prisma.note.createMany({ data: chunk, skipDuplicates: true });
+         }
+         stats.notes += newNotes.length;
       }
       
       const noteChunkSize = 5;
@@ -552,8 +566,11 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       }
       
       if (newAbsences.length > 0) {
-        await prisma.absence.createMany({ data: newAbsences, skipDuplicates: true });
-        stats.absences += newAbsences.length;
+         const chunks = chunkArray(newAbsences, 1000);
+         for (const chunk of chunks) {
+            await prisma.absence.createMany({ data: chunk, skipDuplicates: true });
+         }
+         stats.absences += newAbsences.length;
       }
       logs.push(`Absences traitées: ${stats.absences} enregistrées.`);
     }
@@ -591,7 +608,10 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       }
       
       if (newPaiements.length > 0) {
-         await prisma.paiement.createMany({ data: newPaiements, skipDuplicates: true });
+         const chunks = chunkArray(newPaiements, 1000);
+         for (const chunk of chunks) {
+            await prisma.paiement.createMany({ data: chunk, skipDuplicates: true });
+         }
          stats.paiements += newPaiements.length;
       }
       logs.push(`Paiements traités: ${stats.paiements} enregistrés.`);

@@ -47,6 +47,7 @@ model School {
   accountingJournals AccountingJournal[]
   accountingFiscalYears AccountingFiscalYear[]
   accountingEntries AccountingEntry[]
+  eleves          Eleve[]
 }
 
 model User {
@@ -133,7 +134,7 @@ model Classe {
 model Eleve {
   id          String        @id @default(uuid())
   name        String
-  matricule    String        @unique
+  matricule    String
   dateOfBirth  DateTime?
   placeOfBirth String?
   gender       String?
@@ -145,6 +146,8 @@ model Eleve {
   medicalNotes String?
   classId      String
   class       Classe        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  schoolId    String
+  school      School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   parents     ParentEleve[]
@@ -159,7 +162,9 @@ model Eleve {
   user        User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   isStudentCouncil Boolean  @default(false)
 
+  @@unique([schoolId, matricule])
   @@index([classId])
+  @@index([schoolId])
   @@index([userId])
 }
 

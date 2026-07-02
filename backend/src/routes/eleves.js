@@ -196,6 +196,7 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
 
     const newStudent = await prisma.eleve.create({
       data: {
+        schoolId: req.user.schoolId,
         name,
         matricule,
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
@@ -357,6 +358,7 @@ router.post('/import-csv', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (re
 
       const newStudent = await prisma.eleve.create({
         data: {
+          schoolId,
           name,
           matricule,
           gender: gender || null,
