@@ -622,7 +622,10 @@ export default function SettingsPage() {
                       const res = await fetch(`${API_BASE}/import/template`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                       });
-                      if (!res.ok) throw new Error('Erreur téléchargement');
+                      if (!res.ok) {
+                        const errText = await res.text().catch(() => '');
+                        throw new Error(`Erreur ${res.status}: ${errText || res.statusText}`);
+                      }
                       const blob = await res.blob();
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
