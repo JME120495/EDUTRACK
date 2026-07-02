@@ -109,33 +109,53 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       logs.push(`Année scolaire créée par défaut: ${activeYear.label}`);
     }
 
-    // Cache to avoid multiple DB lookups
-    const classCache = {}; // name -> id
-    const teacherCache = {}; // email -> id
-    const subjectCache = {}; // code -> id
-    const sequenceCache = {}; // name -> id
+    // Cache initialization
+    const classCache = new Map(); // name -> id
+    const teacherCache = new Map(); // email -> id
+    const subjectCache = new Map(); // code -> id
+    const sequenceCache = new Map(); // name -> id
+    const eleveCache = new Map(); // matricule -> { id, classId }
+    
+    // Pre-load existing data to avoid N+1
+    const existingClasses = await prisma.classe.findMany({ where: { schoolId, anneeScolaireId: activeYear.id } });
+    existingClasses.forEach(c => classCache.set(c.name, c.id));
+
+    const existingTeachers = await prisma.user.findMany({ where: { schoolId, role: 'TEACHER' } });
+    existingTeachers.forEach(t => teacherCache.set(t.email, t.id));
+
+    const existingSubjects = await prisma.matiere.findMany({ where: { schoolId } });
+    existingSubjects.forEach(s => subjectCache.set(s.code, s.id));
+
+    const existingSequences = await prisma.sequence.findMany({ where: { anneeScolaireId: activeYear.id } });
+    existingSequences.forEach(s => sequenceCache.set(s.name, s.id));
+
+    const existingEleves = await prisma.eleve.findMany({ 
+      where: { class: { schoolId } } 
+    });
+    existingEleves.forEach(e => eleveCache.set(e.matricule, { id: e.id, classId: e.classId }));
+
+    // Pre-compute common hashes
+    const defaultTeacherPasswordHash = await bcrypt.hash('123456', 10);
+    const parentHashCache = new Map();
 
     // --- 1. IMPORT CLASSES ---
     if (wb.SheetNames.includes('Classes')) {
       const data = xlsx.utils.sheet_to_json(wb.Sheets['Classes']);
+      const newClasses = [];
       for (const row of data) {
         const nom = row['Nom de la Classe'] || row['Nom'] || row['Name'];
         if (!nom) continue;
         const classNameStr = nom.toString().trim();
-        
-        const existing = await prisma.classe.findFirst({
-          where: { schoolId, name: classNameStr, anneeScolaireId: activeYear.id }
-        });
-
-        if (!existing) {
-          const newClass = await prisma.classe.create({
-            data: { schoolId, anneeScolaireId: activeYear.id, name: classNameStr }
-          });
-          classCache[classNameStr] = newClass.id;
-          stats.classes++;
-        } else {
-          classCache[classNameStr] = existing.id;
+        if (!classCache.has(classNameStr)) {
+          newClasses.push({ schoolId, anneeScolaireId: activeYear.id, name: classNameStr });
+          classCache.set(classNameStr, 'pending'); // Mark as pending to avoid duplicates
         }
+      }
+      if (newClasses.length > 0) {
+        await prisma.classe.createMany({ data: newClasses, skipDuplicates: true });
+        const updatedClasses = await prisma.classe.findMany({ where: { schoolId, anneeScolaireId: activeYear.id } });
+        updatedClasses.forEach(c => classCache.set(c.name, c.id));
+        stats.classes += newClasses.length;
       }
       logs.push(`Classes traitées: ${stats.classes} importées (les existantes ont été ignorées).`);
     }
@@ -145,6 +165,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       const data = xlsx.utils.sheet_to_json(wb.Sheets['Enseignants']);
       const schoolSlug = school.name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 3) || 'sch';
       const countrySlug = getCountrySlug(school.country);
+      const newTeachers = [];
 
       for (const row of data) {
         const nom = row['Nom complet'] || row['Nom'] || row['Name'];
@@ -161,26 +182,27 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
           email = `${baseName}.${uniqueStr}@${schoolSlug}.edutrack.${countrySlug}`;
         }
         
-        const existing = await prisma.user.findUnique({ where: { email: email.toString().trim() } });
-        if (!existing) {
-          const passwordHash = await bcrypt.hash('123456', 10);
-          const newUser = await prisma.user.create({
-            data: {
-              schoolId,
-              name: nom.toString().trim(),
-              email: email.toString().trim(),
-              phone: tel ? tel.toString() : null,
-              city: ville ? ville.toString().trim() : null,
-              neighborhood: quartier ? quartier.toString().trim() : null,
-              role: 'TEACHER',
-              passwordHash
-            }
+        const emailStr = email.toString().trim();
+        if (!teacherCache.has(emailStr)) {
+          newTeachers.push({
+            schoolId,
+            name: nom.toString().trim(),
+            email: emailStr,
+            phone: tel ? tel.toString() : null,
+            city: ville ? ville.toString().trim() : null,
+            neighborhood: quartier ? quartier.toString().trim() : null,
+            role: 'TEACHER',
+            passwordHash: defaultTeacherPasswordHash
           });
-          teacherCache[email.toString().trim()] = newUser.id;
-          stats.enseignants++;
-        } else {
-          teacherCache[existing.email] = existing.id;
+          teacherCache.set(emailStr, 'pending');
         }
+      }
+      
+      if (newTeachers.length > 0) {
+        await prisma.user.createMany({ data: newTeachers, skipDuplicates: true });
+        const updatedTeachers = await prisma.user.findMany({ where: { schoolId, role: 'TEACHER' } });
+        updatedTeachers.forEach(t => teacherCache.set(t.email, t.id));
+        stats.enseignants += newTeachers.length;
       }
       logs.push(`Enseignants traités: ${stats.enseignants} importés.`);
     }
@@ -189,6 +211,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     if (wb.SheetNames.includes('Matieres') || wb.SheetNames.includes('Matières')) {
       const sheetName = wb.SheetNames.includes('Matieres') ? 'Matieres' : 'Matières';
       const data = xlsx.utils.sheet_to_json(wb.Sheets[sheetName]);
+      const newSubjects = [];
       
       for (const row of data) {
         const nomFr = row['Nom (FR)'] || row['Nom'];
@@ -198,36 +221,48 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         const volume = row['Heures par semaine'] ? parseInt(row['Heures par semaine']) : 2;
 
         if (!nomFr || !code) continue;
-
         const codeStr = code.toString().trim();
-        const existing = await prisma.matiere.findFirst({
-          where: { schoolId, code: codeStr }
-        });
 
-        if (!existing) {
-          const newMat = await prisma.matiere.create({
-            data: {
-              schoolId,
-              nameFr: nomFr.toString().trim(),
-              nameEn: nomEn.toString().trim(),
-              code: codeStr,
-              coefficient: coef,
-              volumeHoraire: volume
-            }
+        if (!subjectCache.has(codeStr)) {
+          newSubjects.push({
+            schoolId,
+            nameFr: nomFr.toString().trim(),
+            nameEn: nomEn.toString().trim(),
+            code: codeStr,
+            coefficient: coef,
+            volumeHoraire: volume
           });
-          subjectCache[codeStr] = newMat.id;
-          stats.matieres++;
-        } else {
-          subjectCache[existing.code] = existing.id;
+          subjectCache.set(codeStr, 'pending');
         }
+      }
+      
+      if (newSubjects.length > 0) {
+        await prisma.matiere.createMany({ data: newSubjects, skipDuplicates: true });
+        const updatedSubjects = await prisma.matiere.findMany({ where: { schoolId } });
+        updatedSubjects.forEach(s => subjectCache.set(s.code, s.id));
+        stats.matieres += newSubjects.length;
       }
       logs.push(`Matières traitées: ${stats.matieres} importées.`);
     }
+
+    // Helper functions for parsing dates
+    const parseDate = (dateVal) => {
+      if (dateVal instanceof Date) return dateVal;
+      if (typeof dateVal === 'string') {
+        const parts = dateVal.split('/');
+        if (parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+      }
+      return null;
+    };
 
     // --- 4. IMPORT ELEVES & PARENTS ---
     if (wb.SheetNames.includes('Eleves') || wb.SheetNames.includes('Elèves') || wb.SheetNames.includes('Élèves')) {
       const sheetName = wb.SheetNames.find(n => n.includes('leves'));
       const data = xlsx.utils.sheet_to_json(wb.Sheets[sheetName]);
+      
+      const newEleves = [];
+      const eleveUpdates = [];
+      const parentOperations = []; // to collect parents data
       
       for (const row of data) {
         const nom = row['Nom complet'] || row['Nom'];
@@ -248,44 +283,17 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         const matriculeStr = matricule.toString().trim();
         const classNameStr = className ? className.toString().trim() : null;
 
-        // Verify Class
-        let classId = req.body.classId;
-        if (!classId && classNameStr) {
-          classId = classCache[classNameStr];
-          if (!classId) {
-            const cl = await prisma.classe.findFirst({
-              where: { schoolId, name: classNameStr, anneeScolaireId: activeYear.id }
-            });
-            if (cl) {
-              classId = cl.id;
-              classCache[classNameStr] = classId;
-            } else {
-              logs.push(`Erreur Élève ${nom}: Classe "${classNameStr}" introuvable.`);
-              continue; 
-            }
-          }
-        }
-        
-        if (!classId) {
-          logs.push(`Erreur Élève ${nom}: Classe non spécifiée.`);
-          continue;
+        let classId = req.body.classId || classCache.get(classNameStr);
+        if (!classId || classId === 'pending') {
+            logs.push(`Erreur Élève ${nom}: Classe "${classNameStr}" introuvable.`);
+            continue;
         }
 
-        // Student Creation or Update
-        let parsedDate = null;
-        if (row['Date Naissance'] instanceof Date) {
-          parsedDate = row['Date Naissance'];
-        } else if (typeof row['Date Naissance'] === 'string') {
-          // Attempt parsing basic formats, standard DD/MM/YYYY
-          const parts = row['Date Naissance'].split('/');
-          if (parts.length === 3) parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-        }
-        
         const eleveData = {
           name: nom.toString().trim(),
           classId,
           gender: sexe ? sexe.toString().trim() : null,
-          dateOfBirth: parsedDate,
+          dateOfBirth: parseDate(row['Date Naissance']),
           placeOfBirth: row['Lieu Naissance'] ? row['Lieu Naissance'].toString() : null,
           address: adresse ? adresse.toString().trim() : null,
           status: statut.toString().trim().toUpperCase(),
@@ -294,80 +302,121 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
           medicalNotes: medicalNotes ? medicalNotes.toString().trim() : null
         };
 
-        const existingStudent = await prisma.eleve.findUnique({ where: { matricule: matriculeStr } });
-        let studentId;
-
-        if (!existingStudent) {
-          const newStudent = await prisma.eleve.create({
-            data: {
-              ...eleveData,
-              matricule: matriculeStr
-            }
-          });
-          studentId = newStudent.id;
-          stats.eleves++;
+        if (!eleveCache.has(matriculeStr)) {
+          newEleves.push({ ...eleveData, matricule: matriculeStr });
+          // Mark as pending to avoid treating it as new again if duplicated in excel
+          eleveCache.set(matriculeStr, { classId, pending: true, parentData: { nomParent, telParent, relation } });
         } else {
-          await prisma.eleve.update({
-            where: { id: existingStudent.id },
-            data: eleveData
-          });
-          studentId = existingStudent.id;
-        }
-
-        // Parent linking
-        if (telParent && studentId) {
-          const phone = telParent.toString().replace(/\s+/g, '');
-          let parentUser = await prisma.user.findFirst({
-            where: { schoolId, role: 'PARENT', phone }
-          });
-          
-          if (!parentUser) {
-            const baseName = nomParent ? nomParent.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') : 'parent';
-            const uniqueStr = Math.random().toString(36).substring(2, 6);
-            const finalEmail = `${baseName}.${phone}.${uniqueStr}@edutrack.parent`;
-            const passwordHash = await bcrypt.hash(phone, 10);
-            
-            parentUser = await prisma.user.create({
-              data: {
-                schoolId,
-                name: nomParent ? nomParent.toString().trim() : 'Parent de ' + nom,
-                email: finalEmail,
-                phone: phone,
-                passwordHash,
-                role: 'PARENT'
-              }
-            });
-          }
-          
-          // Create link if not exists
-          const existingLink = await prisma.parentEleve.findUnique({
-            where: { parentId_eleveId: { parentId: parentUser.id, eleveId: studentId } }
-          });
-          
-          if (!existingLink) {
-            await prisma.parentEleve.create({
-              data: { parentId: parentUser.id, eleveId: studentId, relationship: relation.toString().trim().toUpperCase() }
-            });
+          const existing = eleveCache.get(matriculeStr);
+          if (!existing.pending) {
+            eleveUpdates.push(prisma.eleve.update({
+              where: { id: existing.id },
+              data: eleveData
+            }));
+            if (telParent) {
+               parentOperations.push({ studentId: existing.id, nomParent, telParent, relation, name: nom });
+            }
           }
         }
       }
-      logs.push(`Élèves traités: ${stats.eleves} nouveaux élèves importés (les autres ont été mis à jour).`);
+      
+      // Batch insert/update Eleves
+      if (newEleves.length > 0) {
+         await prisma.eleve.createMany({ data: newEleves, skipDuplicates: true });
+         stats.eleves += newEleves.length;
+      }
+      
+      // We need to re-fetch eleves to get IDs for new ones to link parents
+      const allEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
+      allEleves.forEach(e => {
+         const cached = eleveCache.get(e.matricule);
+         if (cached && cached.pending) {
+            parentOperations.push({ studentId: e.id, ...cached.parentData, name: e.name });
+         }
+         eleveCache.set(e.matricule, { id: e.id, classId: e.classId });
+      });
+      
+      // Execute Eleve Updates in chunks
+      const chunkSize = 1000;
+      for (let i = 0; i < eleveUpdates.length; i += chunkSize) {
+        await Promise.all(eleveUpdates.slice(i, i + chunkSize));
+      }
+
+      // Parents logic
+      const parentPhones = [...new Set(parentOperations.map(p => p.telParent?.toString().replace(/\s+/g, '')).filter(Boolean))];
+      const existingParents = await prisma.user.findMany({ where: { schoolId, role: 'PARENT', phone: { in: parentPhones } } });
+      const parentMap = new Map(existingParents.map(p => [p.phone, p.id]));
+      
+      const newParentsData = [];
+      const parentLinksToCreate = [];
+
+      for (const pop of parentOperations) {
+        if (!pop.telParent) continue;
+        const phone = pop.telParent.toString().replace(/\s+/g, '');
+        let parentId = parentMap.get(phone);
+
+        if (!parentId) {
+          if (!parentHashCache.has(phone)) {
+             parentHashCache.set(phone, await bcrypt.hash(phone, 10));
+          }
+          const baseName = pop.nomParent ? pop.nomParent.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') : 'parent';
+          const uniqueStr = Math.random().toString(36).substring(2, 6);
+          newParentsData.push({
+            schoolId,
+            name: pop.nomParent ? pop.nomParent.toString().trim() : 'Parent de ' + pop.name,
+            email: `${baseName}.${phone}.${uniqueStr}@edutrack.parent`,
+            phone: phone,
+            passwordHash: parentHashCache.get(phone),
+            role: 'PARENT'
+          });
+          parentMap.set(phone, 'pending'); // avoid duplicates
+        }
+      }
+
+      if (newParentsData.length > 0) {
+        await prisma.user.createMany({ data: newParentsData, skipDuplicates: true });
+        const newlyCreatedParents = await prisma.user.findMany({ where: { schoolId, role: 'PARENT', phone: { in: parentPhones } } });
+        newlyCreatedParents.forEach(p => parentMap.set(p.phone, p.id));
+      }
+
+      // Now create links
+      const existingLinks = await prisma.parentEleve.findMany({
+         where: { eleve: { class: { schoolId } } }
+      });
+      const linkSet = new Set(existingLinks.map(l => `${l.parentId}_${l.eleveId}`));
+
+      for (const pop of parentOperations) {
+         if (!pop.telParent) continue;
+         const phone = pop.telParent.toString().replace(/\s+/g, '');
+         const parentId = parentMap.get(phone);
+         if (parentId && parentId !== 'pending' && !linkSet.has(`${parentId}_${pop.studentId}`)) {
+            parentLinksToCreate.push({
+               parentId: parentId,
+               eleveId: pop.studentId,
+               relationship: pop.relation ? pop.relation.toString().trim().toUpperCase() : 'GUARDIAN'
+            });
+            linkSet.add(`${parentId}_${pop.studentId}`);
+         }
+      }
+
+      if (parentLinksToCreate.length > 0) {
+         await prisma.parentEleve.createMany({ data: parentLinksToCreate, skipDuplicates: true });
+      }
+
+      logs.push(`Élèves traités: ${stats.eleves} nouveaux élèves importés.`);
     }
 
     // --- Helper function for sequences ---
     const getSequence = async (seqName, term) => {
       const nameStr = seqName.toString().trim();
-      if (sequenceCache[nameStr]) return sequenceCache[nameStr];
-      let seq = await prisma.sequence.findFirst({
-        where: { anneeScolaireId: activeYear.id, name: nameStr }
+      let seqId = sequenceCache.get(nameStr);
+      if (seqId) return seqId;
+      
+      const newSeq = await prisma.sequence.create({
+        data: { anneeScolaireId: activeYear.id, name: nameStr, term: parseInt(term) || 1, active: true }
       });
-      if (!seq) {
-        seq = await prisma.sequence.create({
-          data: { anneeScolaireId: activeYear.id, name: nameStr, term: parseInt(term) || 1, active: true }
-        });
-      }
-      sequenceCache[nameStr] = seq.id;
-      return seq.id;
+      sequenceCache.set(nameStr, newSeq.id);
+      return newSeq.id;
     };
 
     // --- Fallback teacher ---
@@ -379,13 +428,28 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         fallbackTeacherId = teacher.id;
         return fallbackTeacherId;
       }
-      throw new Error("Aucun enseignant disponible dans l'école pour attribuer la note.");
+      return null;
     };
+
+    // --- Preload EnseignantMatiereClasse ---
+    const emcList = await prisma.enseignantMatiereClasse.findMany({ where: { classe: { schoolId } } });
+    const emcMap = new Map(); // `${classId}_${matiereId}` -> teacherId
+    emcList.forEach(emc => emcMap.set(`${emc.classId}_${emc.matiereId}`, emc.teacherId));
 
     // --- 5. IMPORT NOTES ---
     if (wb.SheetNames.includes('Notes')) {
       const data = xlsx.utils.sheet_to_json(wb.Sheets['Notes']);
       
+      const existingNotesList = await prisma.note.findMany({
+         where: { eleve: { class: { schoolId } } },
+         select: { id: true, eleveId: true, matiereId: true, sequenceId: true }
+      });
+      const noteMap = new Map(existingNotesList.map(n => [`${n.eleveId}_${n.matiereId}_${n.sequenceId}`, n.id]));
+      
+      const newNotes = [];
+      const noteUpdates = [];
+      const fallbackId = await getFallbackTeacher();
+
       for (const row of data) {
         const matricule = row['Matricule Eleve'];
         const codeMatiere = row['Code Matière'];
@@ -396,67 +460,61 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
 
         if (!matricule || !codeMatiere || !sequenceName || noteValue === undefined) continue;
 
-        const eleve = await prisma.eleve.findUnique({ where: { matricule: matricule.toString().trim() } });
+        const eleve = eleveCache.get(matricule.toString().trim());
         if (!eleve) {
-          logs.push(`Note ignorée: Élève avec matricule ${matricule} introuvable.`);
           continue;
         }
 
-        let matiereId = subjectCache[codeMatiere.toString().trim()];
+        const matiereId = subjectCache.get(codeMatiere.toString().trim());
         if (!matiereId) {
-          const mat = await prisma.matiere.findFirst({ where: { schoolId, code: codeMatiere.toString().trim() } });
-          if (mat) matiereId = mat.id;
-          else {
-            logs.push(`Note ignorée: Matière ${codeMatiere} introuvable.`);
-            continue;
-          }
+          continue;
         }
 
         const sequenceId = await getSequence(sequenceName, term);
 
-        // Find teacher
-        const emc = await prisma.enseignantMatiereClasse.findFirst({
-          where: { classId: eleve.classId, matiereId }
-        });
-        let teacherId;
-        try {
-          teacherId = emc ? emc.teacherId : await getFallbackTeacher();
-        } catch (e) {
-          logs.push(`Erreur Note: Impossible d'attribuer un enseignant pour la note de ${matricule}.`);
-          continue;
-        }
+        let teacherId = emcMap.get(`${eleve.classId}_${matiereId}`) || fallbackId;
+        if (!teacherId) continue;
 
-        // Upsert Note
-        const existingNote = await prisma.note.findFirst({
-          where: { eleveId: eleve.id, matiereId, sequenceId }
-        });
+        const noteKey = `${eleve.id}_${matiereId}_${sequenceId}`;
+        const existingNoteId = noteMap.get(noteKey);
 
-        if (existingNote) {
-          await prisma.note.update({
-            where: { id: existingNote.id },
-            data: { value: parseFloat(noteValue), remarks: remarque?.toString().trim(), isDraft: false }
-          });
+        const noteData = {
+          value: parseFloat(noteValue),
+          remarks: remarque?.toString().trim(),
+          isDraft: false
+        };
+
+        if (existingNoteId) {
+          noteUpdates.push(prisma.note.update({ where: { id: existingNoteId }, data: noteData }));
         } else {
-          await prisma.note.create({
-            data: {
-              eleveId: eleve.id,
-              matiereId,
-              sequenceId,
-              teacherId,
-              value: parseFloat(noteValue),
-              remarks: remarque?.toString().trim(),
-              isDraft: false
-            }
+          newNotes.push({
+            eleveId: eleve.id,
+            matiereId,
+            sequenceId,
+            teacherId,
+            ...noteData
           });
-          stats.notes++;
+          noteMap.set(noteKey, 'pending');
         }
       }
+
+      if (newNotes.length > 0) {
+        await prisma.note.createMany({ data: newNotes, skipDuplicates: true });
+        stats.notes += newNotes.length;
+      }
+      
+      const chunkSize = 2000;
+      for (let i = 0; i < noteUpdates.length; i += chunkSize) {
+        await Promise.all(noteUpdates.slice(i, i + chunkSize));
+      }
+
       logs.push(`Notes traitées: ${stats.notes} nouvelles notes ajoutées.`);
     }
 
     // --- 6. IMPORT ABSENCES ---
     if (wb.SheetNames.includes('Absences')) {
       const data = xlsx.utils.sheet_to_json(wb.Sheets['Absences']);
+      const newAbsences = [];
       
       for (const row of data) {
         const matricule = row['Matricule Eleve'];
@@ -469,30 +527,26 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
 
         if (!matricule || !dateVal || !sequenceName) continue;
 
-        const eleve = await prisma.eleve.findUnique({ where: { matricule: matricule.toString().trim() } });
+        const eleve = eleveCache.get(matricule.toString().trim());
         if (!eleve) continue;
 
-        let parsedDate = new Date();
-        if (dateVal instanceof Date) parsedDate = dateVal;
-        else if (typeof dateVal === 'string') {
-          const parts = dateVal.split('/');
-          if (parts.length === 3) parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-        }
-
+        const parsedDate = parseDate(dateVal) || new Date();
         const sequenceId = await getSequence(sequenceName, 1);
 
-        await prisma.absence.create({
-          data: {
-            eleveId: eleve.id,
-            sequenceId,
-            date: parsedDate,
-            hours: parseFloat(hours) || 1.0,
-            justified: isJustified,
-            reason: motif ? motif.toString().trim() : null,
-            isLateness
-          }
+        newAbsences.push({
+          eleveId: eleve.id,
+          sequenceId,
+          date: parsedDate,
+          hours: parseFloat(hours) || 1.0,
+          justified: isJustified,
+          reason: motif ? motif.toString().trim() : null,
+          isLateness
         });
-        stats.absences++;
+      }
+      
+      if (newAbsences.length > 0) {
+        await prisma.absence.createMany({ data: newAbsences, skipDuplicates: true });
+        stats.absences += newAbsences.length;
       }
       logs.push(`Absences traitées: ${stats.absences} enregistrées.`);
     }
@@ -500,6 +554,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     // --- 7. IMPORT PAIEMENTS ---
     if (wb.SheetNames.includes('Paiements')) {
       const data = xlsx.utils.sheet_to_json(wb.Sheets['Paiements']);
+      const newPaiements = [];
       
       for (const row of data) {
         const matricule = row['Matricule Eleve'];
@@ -512,33 +567,25 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
         
         if (!matricule || !amount) continue;
 
-        const eleve = await prisma.eleve.findUnique({
-          where: { matricule: matricule.toString().trim() },
-          include: { class: true }
-        });
-
-        if (eleve && eleve.class.schoolId === schoolId) {
-          let parsedDate = new Date();
-          if (dateVal instanceof Date) parsedDate = dateVal;
-          else if (typeof dateVal === 'string') {
-            const parts = dateVal.split('/');
-            if (parts.length === 3) parsedDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-          }
-
-          await prisma.paiement.create({
-            data: {
-              eleveId: eleve.id,
-              amount: parseFloat(amount),
-              paymentMethod: method ? method.toString().trim().toUpperCase() : 'CASH',
-              paymentDate: parsedDate,
-              transactionReference: ref ? ref.toString().trim() : null,
-              payerPhone: payerPhone ? payerPhone.toString().trim() : null,
-              remarks: remarque ? remarque.toString().trim() : 'Importation Excel',
-              status: 'COMPLETED'
-            }
+        const eleve = eleveCache.get(matricule.toString().trim());
+        if (eleve) {
+          const parsedDate = parseDate(dateVal) || new Date();
+          newPaiements.push({
+            eleveId: eleve.id,
+            amount: parseFloat(amount),
+            paymentMethod: method ? method.toString().trim().toUpperCase() : 'CASH',
+            paymentDate: parsedDate,
+            transactionReference: ref ? ref.toString().trim() : null,
+            payerPhone: payerPhone ? payerPhone.toString().trim() : null,
+            remarks: remarque ? remarque.toString().trim() : 'Importation Excel',
+            status: 'COMPLETED'
           });
-          stats.paiements++;
         }
+      }
+      
+      if (newPaiements.length > 0) {
+         await prisma.paiement.createMany({ data: newPaiements, skipDuplicates: true });
+         stats.paiements += newPaiements.length;
       }
       logs.push(`Paiements traités: ${stats.paiements} enregistrés.`);
     }
