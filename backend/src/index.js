@@ -186,10 +186,12 @@ process.on('uncaughtException', (error) => {
 
 // Start Server (only locally, Vercel handles it via module.exports)
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`[EduTrack Backend] Server is running on port ${PORT}`);
     console.log(`[EduTrack Backend] CORS allowed origins: ${allowedOrigins.join(', ')}`);
   });
+  // Increase timeout to 30 minutes (1800000 ms) for massive imports (like 60MB Excel files)
+  server.setTimeout(30 * 60 * 1000);
 }
 
 module.exports = app;
