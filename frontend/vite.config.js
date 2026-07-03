@@ -49,8 +49,16 @@ export default defineConfig(({ command }) => {
     server: {
       port: 3000,
       proxy: {
-        '/api': 'http://localhost:5000',
-        '/bulletins': 'http://localhost:5000'
+        '/api': {
+          target: 'http://localhost:5000',
+          timeout: 1800000,
+          proxyTimeout: 1800000
+        },
+        '/bulletins': {
+          target: 'http://localhost:5000',
+          timeout: 1800000,
+          proxyTimeout: 1800000
+        }
       }
     }
   }
