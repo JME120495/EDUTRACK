@@ -16,7 +16,7 @@ function randomGauss(mean, stdev) {
     return z * stdev + mean;
 }
 
-const num_students = 1000;
+const num_students = 10000;
 const num_teachers = 60;
 
 const classes_list = [
@@ -193,7 +193,7 @@ xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(wsNotesData), "Notes");
 
 // 6. ABSENCES
 const wsAbsencesData = [["Matricule Eleve", "Date (JJ/MM/AAAA)", "Heures", "Justifiée (Oui/Non)", "Motif", "Retard (Oui/Non)", "Séquence (ex: Séquence 1)"]];
-for (let i=0; i<5000; i++) {
+for (let i=0; i<50000; i++) {
     const student = randomChoice(students);
     const month = Math.random() < 0.5 ? randomInt(9,12) : randomInt(1,3);
     const day = randomInt(1,28);
@@ -226,5 +226,5 @@ for (let s of students) {
 }
 xlsx.utils.book_append_sheet(wb, xlsx.utils.aoa_to_sheet(wsPaiementsData), "Paiements");
 
-xlsx.writeFile(wb, "EduTrac_Demo_1000.xlsx");
-console.log("Fichier EduTrac_Demo_1000.xlsx généré avec succès dans backend/");
+xlsx.writeFile(wb, "EduTrac_Demo_10000.xlsx");
+console.log("Fichier EduTrac_Demo_10000.xlsx généré avec succès dans backend/");

@@ -375,7 +375,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
       }
       
       // We need to re-fetch eleves to get IDs for new ones to link parents
-      const allEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
+      const allEleves = await prisma.eleve.findMany({ where: { class: { schoolId }, matricule: { in: matriculesInChunk } } });
       allEleves.forEach(e => {
          if (e.matricule) {
             const normMatricule = e.matricule.toString().trim().toUpperCase();
@@ -491,9 +491,10 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
     if (notesSheet) {
       const data = xlsx.utils.sheet_to_json(wb.Sheets[notesSheet]);
       
+      const eleveIdsInChunk = existingEleves.map(e => e.id);
       const existingNotesList = await prisma.note.findMany({
-         where: { eleve: { class: { schoolId } } },
-         select: { id: true, eleveId: true, matiereId: true, sequenceId: true, value: true }
+        where: { eleveId: { in: eleveIdsInChunk } },
+        select: { id: true, eleveId: true, matiereId: true, sequenceId: true, value: true }
       });
       const noteMap = new Map(existingNotesList.map(n => [`${n.eleveId}_${n.matiereId}_${n.sequenceId}`, n]));
       
@@ -858,7 +859,8 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
       const classCache = new Map();
       existingClasses.forEach(c => classCache.set(normalizeClassName(c.name), c.id));
 
-      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
+      const matriculesInChunk = [...new Set(data.map(row => (row['Matricule Eleve'] || row['Matricule'])?.toString().trim().toUpperCase()).filter(Boolean))];
+      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId }, matricule: { in: matriculesInChunk } } });
       const eleveCache = new Map();
       existingEleves.forEach(e => {
         if (e.matricule) eleveCache.set(e.matricule.toString().trim().toUpperCase(), { id: e.id, classId: e.classId });
@@ -918,7 +920,7 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
       }
 
       // Re-fetch to get IDs for parent linking
-      const allEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
+      const allEleves = await prisma.eleve.findMany({ where: { class: { schoolId }, matricule: { in: matriculesInChunk } } });
       allEleves.forEach(e => {
         if (e.matricule) {
           const normMatricule = e.matricule.toString().trim().toUpperCase();
@@ -991,7 +993,8 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
     // NOTES
     // ========================
     else if (sheetKey === 'notes' || sheetKey === 'note') {
-      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
+      const matriculesInChunk = [...new Set(data.map(row => (row['Matricule Eleve'] || row['Matricule'])?.toString().trim().toUpperCase()).filter(Boolean))];
+      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId }, matricule: { in: matriculesInChunk } } });
       const eleveCache = new Map();
       existingEleves.forEach(e => {
         if (e.matricule) eleveCache.set(e.matricule.toString().trim().toUpperCase(), { id: e.id, classId: e.classId });
@@ -1009,11 +1012,15 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
       const emcMap = new Map();
       emcList.forEach(emc => emcMap.set(`${emc.classId}_${emc.matiereId}`, emc.teacherId));
 
-      const fallbackTeacher = await prisma.user.findFirst({ where: { schoolId, role: 'TEACHER' } });
+      let fallbackTeacher = await prisma.user.findFirst({ where: { schoolId, role: 'TEACHER' } });
+      if (!fallbackTeacher) {
+        fallbackTeacher = await prisma.user.findFirst({ where: { schoolId, role: 'DIRECTOR' } });
+      }
       const fallbackTeacherId = fallbackTeacher?.id || null;
 
+      const eleveIdsInChunk = existingEleves.map(e => e.id);
       const existingNotesList = await prisma.note.findMany({
-        where: { eleve: { class: { schoolId } } },
+        where: { eleveId: { in: eleveIdsInChunk } },
         select: { id: true, eleveId: true, matiereId: true, sequenceId: true, value: true }
       });
       const noteMap = new Map(existingNotesList.map(n => [`${n.eleveId}_${n.matiereId}_${n.sequenceId}`, n]));
@@ -1094,7 +1101,8 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
     // ABSENCES
     // ========================
     else if (sheetKey === 'absences' || sheetKey === 'absence') {
-      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
+      const matriculesInChunk = [...new Set(data.map(row => (row['Matricule Eleve'] || row['Matricule'])?.toString().trim().toUpperCase()).filter(Boolean))];
+      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId }, matricule: { in: matriculesInChunk } } });
       const eleveCache = new Map();
       existingEleves.forEach(e => {
         if (e.matricule) eleveCache.set(e.matricule.toString().trim().toUpperCase(), { id: e.id, classId: e.classId });
@@ -1154,7 +1162,8 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
     // PAIEMENTS
     // ========================
     else if (sheetKey === 'paiements' || sheetKey === 'paiement') {
-      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId } } });
+      const matriculesInChunk = [...new Set(data.map(row => (row['Matricule Eleve'] || row['Matricule'])?.toString().trim().toUpperCase()).filter(Boolean))];
+      const existingEleves = await prisma.eleve.findMany({ where: { class: { schoolId }, matricule: { in: matriculesInChunk } } });
       const eleveCache = new Map();
       existingEleves.forEach(e => {
         if (e.matricule) eleveCache.set(e.matricule.toString().trim().toUpperCase(), { id: e.id, classId: e.classId });

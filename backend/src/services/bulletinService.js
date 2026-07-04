@@ -148,8 +148,8 @@ async function generateSequenceBulletins(classId, sequenceId) {
     }
   });
 
-  // Write to DB concurrently to avoid N+1 bottlenecks
-  await Promise.all(students.map(async (student) => {
+  // Write to DB sequentially to avoid connection pool exhaustion
+  for (const student of students) {
     const studentAvg = overallAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
 
@@ -160,14 +160,14 @@ async function generateSequenceBulletins(classId, sequenceId) {
 
     // Create or update Bulletin
     let bulletin = await prisma.bulletin.findFirst({
-      where: {
-        eleveId: student.id,
-        sequenceId,
-        type: "SEQUENCE"
-      }
-    });
+        where: {
+          eleveId: student.id,
+          sequenceId,
+          type: "SEQUENCE"
+        }
+      });
 
-    if (bulletin) {
+      if (bulletin) {
       bulletin = await prisma.bulletin.update({
         where: { id: bulletin.id },
         data: {
@@ -179,51 +179,51 @@ async function generateSequenceBulletins(classId, sequenceId) {
       });
       // Delete old details
       await prisma.bulletinDetail.deleteMany({
-        where: { bulletinId: bulletin.id }
-      });
-    } else {
-      bulletin = await prisma.bulletin.create({
-        data: {
-          eleveId: student.id,
-          sequenceId,
-          type: "SEQUENCE",
-          average: studentAvg,
-          rank: studentRank,
-          absencesJustified: justified,
-          absencesUnjustified: unjustified,
+          where: { bulletinId: bulletin.id }
+        });
+      } else {
+        bulletin = await prisma.bulletin.create({
+          data: {
+            eleveId: student.id,
+            sequenceId,
+            type: "SEQUENCE",
+            average: studentAvg,
+            rank: studentRank,
+            absencesJustified: justified,
+            absencesUnjustified: unjustified,
+          }
+        });
+      }
+
+      // Save details
+      const detailsData = [];
+      for (const subject of subjects) {
+        const avgVal = studentAverages[student.id][subject.id];
+        if (avgVal !== null) {
+          const stats = subjectStats[subject.id];
+          const subRank = subjectRanks[subject.id][student.id] || null;
+          const app = getAppreciation(avgVal);
+
+          detailsData.push({
+            bulletinId: bulletin.id,
+            matiereId: subject.id,
+            noteValue: avgVal,
+            classAverage: stats.average,
+            minNote: stats.min,
+            maxNote: stats.max,
+            rank: subRank,
+            appreciation: `${app.fr} / ${app.en}`,
+            coefficient: subject.coefficient,
+          });
         }
-      });
-    }
+      }
 
-    // Save details
-    const detailsData = [];
-    for (const subject of subjects) {
-      const avgVal = studentAverages[student.id][subject.id];
-      if (avgVal !== null) {
-        const stats = subjectStats[subject.id];
-        const subRank = subjectRanks[subject.id][student.id] || null;
-        const app = getAppreciation(avgVal);
-
-        detailsData.push({
-          bulletinId: bulletin.id,
-          matiereId: subject.id,
-          noteValue: avgVal,
-          classAverage: stats.average,
-          minNote: stats.min,
-          maxNote: stats.max,
-          rank: subRank,
-          appreciation: `${app.fr} / ${app.en}`,
-          coefficient: subject.coefficient,
+      if (detailsData.length > 0) {
+        await prisma.bulletinDetail.createMany({
+          data: detailsData
         });
       }
     }
-
-    if (detailsData.length > 0) {
-      await prisma.bulletinDetail.createMany({
-        data: detailsData
-      });
-    }
-  }));
 
   return { success: true, count: students.length };
 }
@@ -370,8 +370,8 @@ async function generateTermBulletins(classId, term) {
     }
   });
 
-  // Save term bulletins concurrently
-  await Promise.all(students.map(async (student) => {
+  // Save term bulletins sequentially
+  for (const student of students) {
     const studentAvg = overallTermAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
 
@@ -383,12 +383,12 @@ async function generateTermBulletins(classId, term) {
     const unjustified = (bA ? bA.absencesUnjustified : 0) + (bB ? bB.absencesUnjustified : 0);
 
     let bulletin = await prisma.bulletin.findFirst({
-      where: {
-        eleveId: student.id,
-        term,
-        type: "TERM"
-      }
-    });
+        where: {
+          eleveId: student.id,
+          term,
+          type: "TERM"
+        }
+      });
 
     if (bulletin) {
       bulletin = await prisma.bulletin.update({
@@ -401,50 +401,50 @@ async function generateTermBulletins(classId, term) {
         }
       });
       await prisma.bulletinDetail.deleteMany({
-        where: { bulletinId: bulletin.id }
-      });
-    } else {
-      bulletin = await prisma.bulletin.create({
-        data: {
-          eleveId: student.id,
-          term,
-          type: "TERM",
-          average: studentAvg,
-          rank: studentRank,
-          absencesJustified: justified,
-          absencesUnjustified: unjustified,
+          where: { bulletinId: bulletin.id }
+        });
+      } else {
+        bulletin = await prisma.bulletin.create({
+          data: {
+            eleveId: student.id,
+            term,
+            type: "TERM",
+            average: studentAvg,
+            rank: studentRank,
+            absencesJustified: justified,
+            absencesUnjustified: unjustified,
+          }
+        });
+      }
+
+      const detailsData = [];
+      for (const subject of subjects) {
+        const val = studentTermGrades[student.id][subject.id];
+        if (val !== null) {
+          const stats = subjectStats[subject.id];
+          const subRank = subjectRanks[subject.id][student.id] || null;
+          const app = getAppreciation(val);
+
+          detailsData.push({
+            bulletinId: bulletin.id,
+            matiereId: subject.id,
+            noteValue: val,
+            classAverage: stats.average,
+            minNote: stats.min,
+            maxNote: stats.max,
+            rank: subRank,
+            appreciation: `${app.fr} / ${app.en}`,
+            coefficient: subject.coefficient,
+          });
         }
-      });
-    }
+      }
 
-    const detailsData = [];
-    for (const subject of subjects) {
-      const val = studentTermGrades[student.id][subject.id];
-      if (val !== null) {
-        const stats = subjectStats[subject.id];
-        const subRank = subjectRanks[subject.id][student.id] || null;
-        const app = getAppreciation(val);
-
-        detailsData.push({
-          bulletinId: bulletin.id,
-          matiereId: subject.id,
-          noteValue: val,
-          classAverage: stats.average,
-          minNote: stats.min,
-          maxNote: stats.max,
-          rank: subRank,
-          appreciation: `${app.fr} / ${app.en}`,
-          coefficient: subject.coefficient,
+      if (detailsData.length > 0) {
+        await prisma.bulletinDetail.createMany({
+          data: detailsData
         });
       }
     }
-
-    if (detailsData.length > 0) {
-      await prisma.bulletinDetail.createMany({
-        data: detailsData
-      });
-    }
-  }));
 
   return { success: true, count: students.length };
 }
@@ -565,8 +565,8 @@ async function generateAnnualBulletins(classId) {
     }
   });
 
-  // Save annual bulletins concurrently
-  await Promise.all(students.map(async (student) => {
+  // Save annual bulletins sequentially
+  for (const student of students) {
     const studentAvg = overallAnnualAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
 
@@ -579,11 +579,11 @@ async function generateAnnualBulletins(classId) {
     const decision = studentAvg >= 10 ? "Admis(e) en classe supérieure" : "Redouble";
 
     let bulletin = await prisma.bulletin.findFirst({
-      where: {
-        eleveId: student.id,
-        type: "ANNUAL"
-      }
-    });
+        where: {
+          eleveId: student.id,
+          type: "ANNUAL"
+        }
+      });
 
     if (bulletin) {
       bulletin = await prisma.bulletin.update({
@@ -597,50 +597,50 @@ async function generateAnnualBulletins(classId) {
         }
       });
       await prisma.bulletinDetail.deleteMany({
-        where: { bulletinId: bulletin.id }
-      });
-    } else {
-      bulletin = await prisma.bulletin.create({
-        data: {
-          eleveId: student.id,
-          type: "ANNUAL",
-          average: studentAvg,
-          rank: studentRank,
-          absencesJustified: justified,
-          absencesUnjustified: unjustified,
-          classCouncilDecision: decision,
+          where: { bulletinId: bulletin.id }
+        });
+      } else {
+        bulletin = await prisma.bulletin.create({
+          data: {
+            eleveId: student.id,
+            type: "ANNUAL",
+            average: studentAvg,
+            rank: studentRank,
+            absencesJustified: justified,
+            absencesUnjustified: unjustified,
+            classCouncilDecision: decision,
+          }
+        });
+      }
+
+      const detailsData = [];
+      for (const subject of subjects) {
+        const val = studentAnnualGrades[student.id][subject.id];
+        if (val !== null) {
+          const stats = subjectStats[subject.id];
+          const subRank = subjectRanks[subject.id][student.id] || null;
+          const app = getAppreciation(val);
+
+          detailsData.push({
+            bulletinId: bulletin.id,
+            matiereId: subject.id,
+            noteValue: val,
+            classAverage: stats.average,
+            minNote: stats.min,
+            maxNote: stats.max,
+            rank: subRank,
+            appreciation: `${app.fr} / ${app.en}`,
+            coefficient: subject.coefficient,
+          });
         }
-      });
-    }
+      }
 
-    const detailsData = [];
-    for (const subject of subjects) {
-      const val = studentAnnualGrades[student.id][subject.id];
-      if (val !== null) {
-        const stats = subjectStats[subject.id];
-        const subRank = subjectRanks[subject.id][student.id] || null;
-        const app = getAppreciation(val);
-
-        detailsData.push({
-          bulletinId: bulletin.id,
-          matiereId: subject.id,
-          noteValue: val,
-          classAverage: stats.average,
-          minNote: stats.min,
-          maxNote: stats.max,
-          rank: subRank,
-          appreciation: `${app.fr} / ${app.en}`,
-          coefficient: subject.coefficient,
+      if (detailsData.length > 0) {
+        await prisma.bulletinDetail.createMany({
+          data: detailsData
         });
       }
     }
-
-    if (detailsData.length > 0) {
-      await prisma.bulletinDetail.createMany({
-        data: detailsData
-      });
-    }
-  }));
 
   return { success: true, count: students.length };
 }
