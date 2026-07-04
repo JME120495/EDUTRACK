@@ -129,24 +129,62 @@ async function generateBulletinPDF(bulletinId) {
          .stroke(primaryColor);
     }
 
-    // 2. Official Cameroonian Header
+    // Determine Ministry based on School Levels
+    let isHigher = false;
+    let isSecondary = false;
+    let isPrimary = false;
+
+    if (school.levels) {
+      try {
+        const parsedLevels = JSON.parse(school.levels);
+        const lStr = parsedLevels.join(' ').toUpperCase();
+        if (lStr.includes('UNIVERSITY') || lStr.includes('SUPERIEUR') || lStr.includes('HIGHER')) isHigher = true;
+        if (lStr.includes('SECONDARY') || lStr.includes('SECONDAIRE')) isSecondary = true;
+        if (lStr.includes('PRIMARY') || lStr.includes('PRIMAIRE') || lStr.includes('MATERNAL') || lStr.includes('MATERNELLE')) isPrimary = true;
+      } catch(e) {}
+    }
+
+    let ministryFr = 'MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES';
+    let ministryEn = 'MINISTRY OF SECONDARY EDUCATION';
+
+    if (isHigher) {
+      ministryFr = 'MINISTÈRE DE L\'ENSEIGNEMENT SUPÉRIEUR';
+      ministryEn = 'MINISTRY OF HIGHER EDUCATION';
+    } else if (isPrimary && !isSecondary) {
+      ministryFr = 'MINISTÈRE DE L\'ÉDUCATION';
+      ministryEn = 'MINISTRY OF EDUCATION';
+    }
+
+    // Determine Country logic
+    let countryFr = 'RÉPUBLIQUE DU CAMEROUN';
+    let countryEn = 'REPUBLIC OF CAMEROON';
+    let mottoFr = 'Paix - Travail - Patrie';
+    let mottoEn = 'Peace - Work - Fatherland';
+
+    if (school.country && !school.country.toLowerCase().includes('cameroun') && !school.country.toLowerCase().includes('cameroon')) {
+      countryFr = `RÉPUBLIQUE - ${school.country.toUpperCase()}`;
+      countryEn = `REPUBLIC - ${school.country.toUpperCase()}`;
+      mottoFr = '';
+      mottoEn = '';
+    }
+
     const centerX = doc.page.width / 2;
     
     // Left side (French)
     doc.fontSize(8).font('Helvetica-Bold').fillColor(darkGrey);
-    doc.text('RÉPUBLIQUE DU CAMEROUN', 35, 30, { align: 'left', width: 200 });
+    doc.text(countryFr, 35, 30, { align: 'left', width: 220 });
     doc.fontSize(7).font('Helvetica');
-    doc.text('Paix - Travail - Patrie', 35, 40, { align: 'left', width: 200 });
-    doc.text('MINISTÈRE DES ENSEIGNEMENTS SECONDAIRES', 35, 50, { align: 'left', width: 200 });
-    doc.text('DÉLÉGATION RÉGIONALE', 35, 60, { align: 'left', width: 200 });
+    if (mottoFr) doc.text(mottoFr, 35, 40, { align: 'left', width: 220 });
+    doc.text(ministryFr, 35, 50, { align: 'left', width: 220 });
+    doc.text('DÉLÉGATION RÉGIONALE', 35, 60, { align: 'left', width: 220 });
     
     // Right side (English)
     doc.fontSize(8).font('Helvetica-Bold');
-    doc.text('REPUBLIC OF CAMEROON', doc.page.width - 235, 30, { align: 'right', width: 200 });
+    doc.text(countryEn, doc.page.width - 255, 30, { align: 'right', width: 220 });
     doc.fontSize(7).font('Helvetica');
-    doc.text('Peace - Work - Fatherland', doc.page.width - 235, 40, { align: 'right', width: 200 });
-    doc.text('MINISTRY OF SECONDARY EDUCATION', doc.page.width - 235, 50, { align: 'right', width: 200 });
-    doc.text('REGIONAL DELEGATION', doc.page.width - 235, 60, { align: 'right', width: 200 });
+    if (mottoEn) doc.text(mottoEn, doc.page.width - 255, 40, { align: 'right', width: 220 });
+    doc.text(ministryEn, doc.page.width - 255, 50, { align: 'right', width: 220 });
+    doc.text('REGIONAL DELEGATION', doc.page.width - 255, 60, { align: 'right', width: 220 });
 
     // Logo in the center
     let currentY = 70;
