@@ -27,6 +27,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [otpDevCode, setOtpDevCode] = useState('');
   const [availableSchools, setAvailableSchools] = useState([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -114,7 +115,8 @@ export default function LoginPage() {
       }
       
       if (response.devCode) {
-        setSuccess(`${t('auth.otpSent')} (Dev Code: ${response.devCode})`);
+        setOtpDevCode(response.devCode);
+        setSuccess(t('auth.otpSent'));
       } else {
         setSuccess(t('auth.otpSent'));
       }
@@ -358,6 +360,15 @@ export default function LoginPage() {
                 </form>
               ) : (
                 <form onSubmit={handleVerifyOtp} className="space-y-5">
+                  {otpDevCode && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-center animate-in fade-in zoom-in duration-300">
+                      <p className="text-sm text-slate-300 mb-1">
+                        {i18n.language.toUpperCase() === 'EN' ? "Your OTP Code is:" : "Votre code OTP est :"}
+                      </p>
+                      <p className="text-3xl font-bold text-amber-400 tracking-widest">{otpDevCode}</p>
+                    </div>
+                  )}
+
                   {availableSchools && availableSchools.length > 1 && (
                     <div className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">

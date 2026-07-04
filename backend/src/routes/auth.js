@@ -236,15 +236,12 @@ router.post('/parent/request-otp', async (req, res) => {
       ? `EduTrack: Votre code de connexion est ${otpCode}. Expire dans 10 min.`
       : `EduTrack: Your login code is ${otpCode}. Expires in 10 mins.`;
 
-    await sendSMS(phone, msg);
+    // await sendSMS(phone, msg); // Disabled as per user request to display on UI instead
 
     const schools = users.map(u => ({ id: u.schoolId, name: u.school.name }));
 
-    // Only include OTP code in response during development OR for experimental phone numbers
-    const response = { message: 'OTP sent successfully', schools };
-    if (process.env.NODE_ENV === 'development' || phone.startsWith('60000')) {
-      response.devCode = otpCode;
-    }
+    // Unconditionally include OTP code in response for UI display
+    const response = { message: 'OTP sent successfully', schools, devCode: otpCode };
     res.json(response);
   } catch (err) {
     console.error('[Auth] OTP request error:', err);
