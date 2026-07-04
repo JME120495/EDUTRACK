@@ -523,7 +523,14 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
 
         const sequenceId = await getSequence(sequenceName, term);
 
-        let teacherId = emcMap.get(`${eleve.classId}_${matiereId}`) || fallbackId;
+        let teacherId = emcMap.get(`${eleve.classId}_${matiereId}`);
+        if (!teacherId && fallbackId) {
+          const emcKey = `${eleve.classId}_${matiereId}`;
+          newEmcsToCreate.set(emcKey, { classId: eleve.classId, matiereId, teacherId: fallbackId });
+          emcMap.set(emcKey, fallbackId);
+          teacherId = fallbackId;
+        }
+
         if (!teacherId) continue;
 
         const noteKey = `${eleve.id}_${matiereId}_${sequenceId}`;
@@ -549,6 +556,13 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
           });
           noteMap.set(noteKey, 'pending');
         }
+      }
+
+      if (newEmcsToCreate.size > 0) {
+        await prisma.enseignantMatiereClasse.createMany({
+          data: Array.from(newEmcsToCreate.values()),
+          skipDuplicates: true
+        });
       }
 
       if (newNotes.length > 0) {
@@ -1016,6 +1030,8 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
       };
 
       const newNotes = [];
+      const newEmcsToCreate = new Map(); // Track missing EMCs to bulk create
+
       for (const row of data) {
         const matricule = row['Matricule Eleve'] || row['Matricule'];
         const codeMatiere = row['Code Matière'] || row['Code Matiere'] || row['Matière'] || row['Matiere'] || row['Code'];
@@ -1033,7 +1049,16 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
         if (!matiereId) continue;
 
         const sequenceId = await getSequence(sequenceName, term);
-        let teacherId = emcMap.get(`${eleve.classId}_${matiereId}`) || fallbackTeacherId;
+        
+        let teacherId = emcMap.get(`${eleve.classId}_${matiereId}`);
+        if (!teacherId && fallbackTeacherId) {
+          // Track missing EMC to create
+          const emcKey = `${eleve.classId}_${matiereId}`;
+          newEmcsToCreate.set(emcKey, { classId: eleve.classId, matiereId, teacherId: fallbackTeacherId });
+          emcMap.set(emcKey, fallbackTeacherId);
+          teacherId = fallbackTeacherId;
+        }
+
         if (!teacherId) continue;
 
         const noteKey = `${eleve.id}_${matiereId}_${sequenceId}`;
@@ -1046,6 +1071,13 @@ router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
           });
           noteMap.set(noteKey, 'pending');
         }
+      }
+
+      if (newEmcsToCreate.size > 0) {
+        await prisma.enseignantMatiereClasse.createMany({
+          data: Array.from(newEmcsToCreate.values()),
+          skipDuplicates: true
+        });
       }
 
       if (newNotes.length > 0) {
