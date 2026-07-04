@@ -2,7 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch, API_BASE } from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette, Calendar } from 'lucide-react';
+import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette, Calendar, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function SettingsPage() {
   const { user } = useContext(AuthContext);
@@ -53,6 +54,139 @@ export default function SettingsPage() {
   // Import State
   const [importResult, setImportResult] = useState(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importPhase, setImportPhase] = useState('');
+  const [importLogs, setImportLogs] = useState([]);
+
+  // Chunked import logic — parse Excel client-side, send JSON chunks
+  const CHUNK_SIZE = 500;
+  const SHEET_ORDER = ['classes', 'enseignants', 'matieres', 'eleves', 'notes', 'absences', 'paiements'];
+  const SHEET_LABELS = {
+    classes: 'Classes', enseignants: 'Enseignants', matieres: 'Matières',
+    eleves: 'Élèves & Parents', notes: 'Notes', absences: 'Absences', paiements: 'Paiements'
+  };
+
+  async function handleChunkedImport(file) {
+    setIsImporting(true);
+    setImportProgress(0);
+    setImportPhase('Lecture du fichier...');
+    setImportLogs([]);
+    setImportResult(null);
+
+    try {
+      // 1. Parse Excel client-side
+      const arrayBuffer = await file.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+
+      const normalizeStr = (str) => str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      const findSheet = (possibleNames) => wb.SheetNames.find(n => possibleNames.includes(normalizeStr(n)));
+
+      // 2. Build ordered list of sheets with their data
+      const sheetWork = [];
+      for (const sheetKey of SHEET_ORDER) {
+        const possibleNames = sheetKey === 'classes' ? ['classes', 'classe']
+          : sheetKey === 'enseignants' ? ['enseignants', 'enseignant']
+          : sheetKey === 'matieres' ? ['matieres', 'matiere']
+          : sheetKey === 'eleves' ? ['eleves', 'eleve']
+          : sheetKey === 'notes' ? ['notes', 'note']
+          : sheetKey === 'absences' ? ['absences', 'absence']
+          : ['paiements', 'paiement'];
+
+        const sheetName = findSheet(possibleNames);
+        if (!sheetName) continue;
+
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName]);
+        if (rows.length === 0) continue;
+
+        // Split rows into chunks
+        for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+          sheetWork.push({
+            sheet: sheetKey,
+            data: rows.slice(i, i + CHUNK_SIZE),
+            label: SHEET_LABELS[sheetKey],
+            rowStart: i,
+            rowEnd: Math.min(i + CHUNK_SIZE, rows.length),
+            totalRows: rows.length
+          });
+        }
+      }
+
+      if (sheetWork.length === 0) {
+        setIsImporting(false);
+        setImportResult({ success: false, error: 'Aucune feuille valide trouvée dans le fichier Excel.' });
+        return;
+      }
+
+      // 3. Send chunks sequentially
+      const token = localStorage.getItem('edutrack_token');
+      const totalChunks = sheetWork.length;
+      const allLogs = [];
+      const totalStats = { classes: 0, enseignants: 0, matieres: 0, eleves: 0, notes: 0, absences: 0, paiements: 0 };
+      let errors = [];
+
+      for (let i = 0; i < totalChunks; i++) {
+        const work = sheetWork[i];
+        const pct = Math.round(((i) / totalChunks) * 100);
+        setImportProgress(pct);
+        setImportPhase(`${work.label} (lignes ${work.rowStart + 1}-${work.rowEnd} / ${work.totalRows})`);
+
+        try {
+          const res = await fetch(`${API_BASE}/import/chunk`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              sheet: work.sheet,
+              data: work.data,
+              chunkIndex: i,
+              totalChunks,
+              ...(importClassId ? { classId: importClassId } : {})
+            })
+          });
+
+          const result = await res.json();
+          if (res.ok) {
+            if (result.logs) allLogs.push(...result.logs);
+            if (result.stats) {
+              Object.entries(result.stats).forEach(([k, v]) => { totalStats[k] = (totalStats[k] || 0) + v; });
+            }
+          } else {
+            errors.push(`${work.label} chunk ${i+1}: ${result.error || 'Erreur inconnue'}`);
+            allLogs.push(`❌ Erreur ${work.label} (lignes ${work.rowStart+1}-${work.rowEnd}): ${result.error}`);
+          }
+        } catch (fetchErr) {
+          errors.push(`${work.label} chunk ${i+1}: ${fetchErr.message}`);
+          allLogs.push(`❌ Erreur réseau ${work.label}: ${fetchErr.message}`);
+        }
+
+        setImportLogs([...allLogs]);
+      }
+
+      setImportProgress(100);
+      setImportPhase('Terminé !');
+      setIsImporting(false);
+
+      if (errors.length > 0 && Object.values(totalStats).every(v => v === 0)) {
+        setImportResult({ success: false, error: errors.join('\n') });
+      } else {
+        setImportResult({
+          success: true,
+          data: {
+            message: errors.length > 0
+              ? `Importation terminée avec ${errors.length} erreur(s) sur ${totalChunks} chunks.`
+              : 'Importation globale terminée avec succès.',
+            stats: totalStats,
+            logs: allLogs
+          }
+        });
+      }
+    } catch (err) {
+      setIsImporting(false);
+      setImportResult({ success: false, error: `Erreur de lecture du fichier: ${err.message}` });
+    }
+  }
 
 
   useEffect(() => {
@@ -657,51 +791,40 @@ export default function SettingsPage() {
                 </div>
                 
                 <label className="w-full py-2 bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl text-xs font-black uppercase tracking-wider transition-all text-center cursor-pointer shadow-sm flex items-center justify-center gap-2 relative">
-                  <Plus className="h-4 w-4" />
+                  <Upload className="h-4 w-4" />
                   Importer le Fichier Rempli
                   <input 
                     type="file" 
                     accept=".xlsx, .xls"
                     className="hidden"
-                    onChange={async (e) => {
+                    disabled={isImporting}
+                    onChange={(e) => {
                       const file = e.target.files[0];
                       if (!file) return;
-                      
-                      const formData = new FormData();
-                      formData.append('file', file);
-                      if (importClassId) {
-                        formData.append('classId', importClassId);
-                      }
-                      
-                      setIsImporting(true);
-                      try {
-                        const token = localStorage.getItem('edutrack_token');
-                        const res = await fetch(`${API_BASE}/import/excel`, {
-                          method: 'POST',
-                          headers: { 'Authorization': `Bearer ${token}` },
-                          body: formData
-                        });
-                        const data = await res.json();
-                        setIsImporting(false);
-                        if (res.ok) {
-                          setImportResult({ success: true, data });
-                        } else {
-                          setImportResult({ success: false, error: data.error || data.message });
-                        }
-                      } catch (err) {
-                        setIsImporting(false);
-                        setImportResult({ success: false, error: err.message });
-                      }
-                      e.target.value = null; // reset file input
+                      handleChunkedImport(file);
+                      e.target.value = null;
                     }}
                   />
-                  {isImporting && (
-                    <div className="absolute inset-0 bg-white/80 rounded-xl flex items-center justify-center gap-2 text-emerald-700 font-bold z-20">
-                      <div className="h-4 w-4 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
-                      Importation en cours...
-                    </div>
-                  )}
                 </label>
+
+                {/* Progressive Import Progress Bar */}
+                {isImporting && (
+                  <div className="mt-2 space-y-2 bg-black/10 p-3 rounded-xl border border-white/10">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin flex-shrink-0" />
+                      <span className="text-[11px] text-white font-bold truncate">{importPhase}</span>
+                    </div>
+                    <div className="w-full bg-black/20 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-white/80 to-emerald-200 rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${importProgress}%` }}
+                      />
+                    </div>
+                    <div className="text-[10px] text-emerald-100 font-semibold text-center">
+                      {importProgress}% — {importLogs.length > 0 ? importLogs[importLogs.length - 1] : 'Préparation...'}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
