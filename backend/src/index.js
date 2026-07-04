@@ -57,19 +57,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Academic-Year', 'Accept']
 }));
 
-// V-028 FIX: Limit JSON body size to 1MB (prevent memory exhaustion attacks)
+// Import routes need larger JSON body (chunked import sends pre-parsed data)
+app.use('/api/import', express.json({ limit: '10mb' }));
+
+// V-028 FIX: Limit JSON body size to 1MB for all other routes
 app.use(express.json({ limit: '1mb' }));
 
 // V-025 FIX: Morgan — use 'combined' format in production for better logging
 app.use(morgan(isProduction ? 'combined' : 'dev'));
 
-// V-016 FIX: Global rate limiter — 100 requests per 15 minutes per IP
+// V-016 FIX: Global rate limiter — 200 requests per 15 minutes per IP
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200,
   message: { message: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/api/import'), // Exempt import chunks from rate limiting
 });
 app.use(globalLimiter);
 

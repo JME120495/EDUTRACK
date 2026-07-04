@@ -59,7 +59,7 @@ export default function SettingsPage() {
   const [importLogs, setImportLogs] = useState([]);
 
   // Chunked import logic — parse Excel client-side, send JSON chunks
-  const CHUNK_SIZE = 500;
+  const CHUNK_SIZE = 200;
   const SHEET_ORDER = ['classes', 'enseignants', 'matieres', 'eleves', 'notes', 'absences', 'paiements'];
   const SHEET_LABELS = {
     classes: 'Classes', enseignants: 'Enseignants', matieres: 'Matières',

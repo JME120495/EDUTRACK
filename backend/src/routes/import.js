@@ -670,7 +670,7 @@ router.post('/excel', auth, requireRole(['DIRECTOR']), upload.single('file'), as
 // CHUNKED IMPORT — Progressive import endpoint
 // Receives pre-parsed JSON data from frontend
 // =============================================
-router.post('/chunk', auth, requireRole(['DIRECTOR']), express.json({ limit: '10mb' }), async (req, res) => {
+router.post('/chunk', auth, requireRole(['DIRECTOR']), async (req, res) => {
   try {
     const { sheet, data, chunkIndex, totalChunks, classId } = req.body;
 
