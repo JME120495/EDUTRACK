@@ -50,8 +50,12 @@ async function generateAutomaticTimetable(schoolId) {
   // 3. Build tasks list
   const tasks = [];
   assignments.forEach(a => {
-    const hours = a.hoursTaught || 0;
-    if (hours <= 0) return;
+    let hours = a.hoursTaught || 0;
+    
+    // Default to 2 hours per week if not explicitly set
+    if (hours <= 0) {
+      hours = 2;
+    }
 
     // Calculate slots needed
     const slotsNeeded = Math.ceil(hours / averageDuration);
