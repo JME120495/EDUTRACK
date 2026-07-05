@@ -85,16 +85,16 @@ async function generateAutomaticTimetable(schoolId) {
     return t1.classId.localeCompare(t2.classId);
   });
 
-  // Pre-check: Mathematically impossible if a teacher needs more slots than available in 4 days
-  const MAX_DAYS_PER_TEACHER = 4;
+  // Pre-check: Mathematically impossible if a teacher needs more slots than available in 5 days
+  const MAX_DAYS_PER_TEACHER = 5;
   const maxSlotsPossiblePerTeacher = MAX_DAYS_PER_TEACHER * activeSlots.length;
   
   for (const teacherId in teacherTotalSlots) {
     if (teacherTotalSlots[teacherId] > maxSlotsPossiblePerTeacher) {
       return {
         success: false,
-        messageFr: `Impossible : un enseignant a ${teacherTotalSlots[teacherId]} heures de cours, mais ne peut travailler que 4 jours par semaine (max ${maxSlotsPossiblePerTeacher} heures). Réduisez ses heures ou ajoutez des créneaux.`,
-        messageEn: `Impossible: a teacher has ${teacherTotalSlots[teacherId]} hours, but can only work 4 days per week (max ${maxSlotsPossiblePerTeacher} hours).`
+        messageFr: `Impossible : un enseignant a ${teacherTotalSlots[teacherId]} heures de cours, mais ne peut travailler que 5 jours par semaine (max ${maxSlotsPossiblePerTeacher} heures). Réduisez ses heures ou ajoutez des créneaux.`,
+        messageEn: `Impossible: a teacher has ${teacherTotalSlots[teacherId]} hours, but can only work 5 days per week (max ${maxSlotsPossiblePerTeacher} hours).`
       };
     }
   }
@@ -141,10 +141,10 @@ async function generateAutomaticTimetable(schoolId) {
           continue;
         }
 
-        // Constraint 3: Max days per teacher (<= 4)
+        // Constraint 3: Max days per teacher (<= 5)
         const currentDays = teacherDays[task.teacherId] || new Set();
         const isNewDay = !currentDays.has(day);
-        if (isNewDay && currentDays.size >= 4) {
+        if (isNewDay && currentDays.size >= 5) {
           continue;
         }
 
@@ -185,8 +185,8 @@ async function generateAutomaticTimetable(schoolId) {
   if (!solved) {
     return {
       success: false,
-      messageFr: "Impossible de générer l'emploi du temps avec les contraintes actuelles. Vérifiez qu'un enseignant n'a pas trop d'heures (max 4 jours par semaine).",
-      messageEn: "Unable to generate the timetable with current constraints. Verify that no teacher has too many hours (max 4 days per week)."
+      messageFr: "Impossible de générer l'emploi du temps avec les contraintes actuelles. Vérifiez qu'un enseignant n'a pas trop d'heures (max 5 jours par semaine).",
+      messageEn: "Unable to generate the timetable with current constraints. Verify that no teacher has too many hours (max 5 days per week)."
     };
   }
 
