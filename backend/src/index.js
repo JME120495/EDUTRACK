@@ -24,7 +24,7 @@ const creneauRoutes = require('./routes/creneaux');
 const financeRoutes = require('./routes/finance');
 const hrRoutes = require('./routes/hr');
 const documentRoutes = require('./routes/documents');
-const documentTemplateRoutes = require('./routes/documentTemplates');
+// const documentTemplateRoutes = require('./routes/documentTemplates'); // Missing file
 const evaluationTypesRoutes = require('./routes/evaluationTypes');
 const messageRoutes = require('./routes/messages');
 const statsRoutes = require('./routes/stats');
@@ -32,8 +32,8 @@ const disciplineRoutes = require('./routes/discipline');
 const libraryRoutes = require('./routes/library');
 const accountingRoutes = require('./routes/accounting');
 const platformRoutes = require('./routes/platform');
-const subscriptionRoutes = require('./routes/subscriptions');
-const reportRoutes = require('./routes/reports');
+// const subscriptionRoutes = require('./routes/subscriptions'); // Missing file
+// const reportRoutes = require('./routes/reports'); // Missing file
 
 const app = express();
 app.set('trust proxy', 1); // Trust Vercel's proxy for rate limiting
@@ -144,9 +144,9 @@ app.use('/api/absences', absenceRoutes);
 app.use('/api/paiements', paymentRoutes);
 app.use('/api/annees', require('./routes/annees'));
 app.use('/api/creneaux', creneauRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/document-templates', documentTemplateRoutes);
+// app.use('/api/subscriptions', subscriptionRoutes);
+// app.use('/api/reports', reportRoutes);
+// app.use('/api/document-templates', documentTemplateRoutes);
 app.use('/api/evaluation-types', evaluationTypesRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/hr', hrRoutes);
