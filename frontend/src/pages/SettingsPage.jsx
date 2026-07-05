@@ -301,6 +301,20 @@ export default function SettingsPage() {
     }
   };
 
+  const handleGenerateDefaultCreneaux = async () => {
+    if (!window.confirm('Voulez-vous générer les créneaux standards par défaut (M1 à M8) ?\nAttention : cela ne fonctionne que si vous n\'avez aucun créneau.')) return;
+    try {
+      setSaving(true);
+      const data = await apiFetch('/creneaux/generate-default', { method: 'POST' });
+      setCreneaux(data.creneaux);
+      alert(data.message);
+    } catch (err) {
+      alert(err.message || 'Erreur lors de la génération des créneaux.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleOpenAddAnnee = () => {
     setSelectedAnnee(null);
     setALabel('');
@@ -837,14 +851,27 @@ export default function SettingsPage() {
                 <Clock className="h-4.5 w-4.5 text-[#1E3A5F]" />
                 <h4 className="font-bold text-[#1E3A5F] text-sm font-outfit font-black">Configuration des Heures</h4>
               </div>
-              <button
-                type="button"
-                onClick={handleOpenAddCreneau}
-                className="p-1 text-[#1E3A5F] hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors flex items-center justify-center"
-                title="Ajouter un créneau"
-              >
-                <Plus className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-              </button>
+              <div className="flex items-center gap-2">
+                {creneaux.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={handleGenerateDefaultCreneaux}
+                    disabled={saving}
+                    className="p-1 px-2 text-emerald-600 hover:bg-emerald-50 border border-emerald-200 rounded-lg transition-colors flex items-center justify-center text-xs font-bold whitespace-nowrap"
+                    title="Générer les créneaux par défaut"
+                  >
+                    Générer par défaut
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleOpenAddCreneau}
+                  className="p-1 text-[#1E3A5F] hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors flex items-center justify-center"
+                  title="Ajouter un créneau"
+                >
+                  <Plus className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+                </button>
+              </div>
             </div>
             {creneaux.length === 0 ? (
               <p className="text-xs text-slate-400 italic text-center py-2">Aucun créneau configuré</p>
