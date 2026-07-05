@@ -85,6 +85,20 @@ async function generateAutomaticTimetable(schoolId) {
     return t1.classId.localeCompare(t2.classId);
   });
 
+  // Pre-check: Mathematically impossible if a teacher needs more slots than available in 4 days
+  const MAX_DAYS_PER_TEACHER = 4;
+  const maxSlotsPossiblePerTeacher = MAX_DAYS_PER_TEACHER * activeSlots.length;
+  
+  for (const teacherId in teacherTotalSlots) {
+    if (teacherTotalSlots[teacherId] > maxSlotsPossiblePerTeacher) {
+      return {
+        success: false,
+        messageFr: `Impossible : un enseignant a ${teacherTotalSlots[teacherId]} heures de cours, mais ne peut travailler que 4 jours par semaine (max ${maxSlotsPossiblePerTeacher} heures). Réduisez ses heures ou ajoutez des créneaux.`,
+        messageEn: `Impossible: a teacher has ${teacherTotalSlots[teacherId]} hours, but can only work 4 days per week (max ${maxSlotsPossiblePerTeacher} hours).`
+      };
+    }
+  }
+
   // 5. Initialize data structures for backtracking
   const DAYS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
   const schedule = {};
@@ -99,7 +113,7 @@ async function generateAutomaticTimetable(schoolId) {
   const teacherSlots = {};
 
   let steps = 0;
-  const MAX_STEPS = 150000;
+  const MAX_STEPS = 5000000; // Increased to 5 million for higher chance of finding a solution
 
   function backtrack(taskIndex) {
     steps++;

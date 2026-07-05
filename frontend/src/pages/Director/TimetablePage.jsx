@@ -129,7 +129,8 @@ export default function TimetablePage() {
         loadTimetable(selectedClassId);
       }
     } catch (e) {
-      alert(e.message || "Failed to generate timetable");
+      const errorMsg = e.data?.messageFr || e.data?.messageEn || e.message || "Failed to generate timetable";
+      alert(errorMsg);
     } finally {
       setGenerating(false);
     }
