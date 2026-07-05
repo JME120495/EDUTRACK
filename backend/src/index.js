@@ -32,6 +32,7 @@ const disciplineRoutes = require('./routes/discipline');
 const libraryRoutes = require('./routes/library');
 const accountingRoutes = require('./routes/accounting');
 const platformRoutes = require('./routes/platform');
+const consentsRoutes = require('./routes/consents');
 // const subscriptionRoutes = require('./routes/subscriptions'); // Missing file
 // const reportRoutes = require('./routes/reports'); // Missing file
 
@@ -153,6 +154,7 @@ app.use('/api/hr', hrRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/consents', consentsRoutes);
 app.use('/api/discipline', disciplineRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/api/accounting', accountingRoutes);

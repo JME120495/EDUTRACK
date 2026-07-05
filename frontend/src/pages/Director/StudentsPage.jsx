@@ -340,6 +340,14 @@ export default function StudentsPage() {
     setEditHasDisability(student.hasDisability || false);
     setEditMedicalNotes(student.medicalNotes || '');
     setEditModalOpen(true);
+
+    // Log access to sensitive data (medical)
+    if (student.isSick || student.hasDisability || student.medicalNotes) {
+      apiFetch('/consents/log-access', {
+        method: 'POST',
+        body: JSON.stringify({ eleveId: student.id, accessReason: 'Consultation dossier médical (Modification élève)' })
+      }).catch(console.error);
+    }
   };
 
   const handleUpdateStudent = async (e) => {

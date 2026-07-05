@@ -80,11 +80,15 @@ async function generateAutomaticTimetable(schoolId) {
   // 4. Sort tasks using MRV heuristic (teachers with most hours first)
   const teacherTotalSlots = {};
   tasks.forEach(t => {
-    teacherTotalSlots[t.teacherId] = (teacherTotalSlots[t.teacherId] || 0) + 1;
+    if (t.teacherId && t.teacherId !== 'null' && t.teacherId !== 'undefined') {
+      teacherTotalSlots[t.teacherId] = (teacherTotalSlots[t.teacherId] || 0) + 1;
+    }
   });
 
   tasks.sort((t1, t2) => {
-    const diff = teacherTotalSlots[t2.teacherId] - teacherTotalSlots[t1.teacherId];
+    const total1 = t1.teacherId ? (teacherTotalSlots[t1.teacherId] || 0) : 0;
+    const total2 = t2.teacherId ? (teacherTotalSlots[t2.teacherId] || 0) : 0;
+    const diff = total2 - total1;
     if (diff !== 0) return diff;
     return t1.classId.localeCompare(t2.classId);
   });
@@ -141,30 +145,36 @@ async function generateAutomaticTimetable(schoolId) {
         }
 
         // Constraint 2: Teacher already busy in this slot
-        if (teacherSlots[task.teacherId]?.[day]?.[creneauId]) {
+        if (task.teacherId && teacherSlots[task.teacherId]?.[day]?.[creneauId]) {
           continue;
         }
 
         // Constraint 3: Max days per teacher (<= 5)
-        const currentDays = teacherDays[task.teacherId] || new Set();
-        const isNewDay = !currentDays.has(day);
-        if (isNewDay && currentDays.size >= 5) {
-          continue;
+        let isNewDay = false;
+        let currentDays = null;
+        if (task.teacherId) {
+          currentDays = teacherDays[task.teacherId] || new Set();
+          isNewDay = !currentDays.has(day);
+          if (isNewDay && currentDays.size >= MAX_DAYS_PER_TEACHER) {
+            continue;
+          }
         }
 
         // Choose
         schedule[task.classId][day][creneauId] = {
+          assignmentId: task.assignmentId,
           teacherId: task.teacherId,
           matiereId: task.matiereId
         };
-        if (!teacherSlots[task.teacherId]) teacherSlots[task.teacherId] = {};
-        if (!teacherSlots[task.teacherId][day]) teacherSlots[task.teacherId][day] = {};
-        teacherSlots[task.teacherId][day][creneauId] = task.classId;
-
-        if (isNewDay) {
-          currentDays.add(day);
+        
+        if (task.teacherId) {
+          if (!teacherSlots[task.teacherId]) teacherSlots[task.teacherId] = {};
+          if (!teacherSlots[task.teacherId][day]) teacherSlots[task.teacherId][day] = {};
+          teacherSlots[task.teacherId][day][creneauId] = true;
+          
+          if (!teacherDays[task.teacherId]) teacherDays[task.teacherId] = new Set();
+          teacherDays[task.teacherId].add(day);
         }
-        teacherDays[task.teacherId] = currentDays;
 
         // Recurse
         if (backtrack(taskIndex + 1)) {
@@ -173,9 +183,11 @@ async function generateAutomaticTimetable(schoolId) {
 
         // Backtrack
         delete schedule[task.classId][day][creneauId];
-        delete teacherSlots[task.teacherId][day][creneauId];
-        if (isNewDay) {
-          currentDays.delete(day);
+        if (task.teacherId) {
+          delete teacherSlots[task.teacherId][day][creneauId];
+          if (isNewDay) {
+            currentDays.delete(day);
+          }
         }
       }
     }

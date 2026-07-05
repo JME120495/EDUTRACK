@@ -64,7 +64,7 @@ router.get('/', auth, async (req, res) => {
 
 // Create class (Director only)
 router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) => {
-  const { name, principalTeacherId, censeurId, surveillantId, anneeScolaireId } = req.body;
+  const { name, principalTeacherId, censeurId, surveillantId, anneeScolaireId, subjects } = req.body;
   try {
     if (!name || !anneeScolaireId) {
       return res.status(400).json({ message: 'Name and academic year are required' });
@@ -86,6 +86,19 @@ router.post('/', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (req, res) =>
         anneeScolaire: true
       }
     });
+
+    // Create subjects assignments if any
+    if (subjects && Array.isArray(subjects) && subjects.length > 0) {
+      await prisma.enseignantMatiereClasse.createMany({
+        data: subjects.map(s => ({
+          matiereId: s.matiereId,
+          classId: newClass.id,
+          hoursTaught: parseFloat(s.hoursTaught) || 2,
+          teacherId: s.teacherId || null
+        }))
+      });
+    }
+
     res.status(201).json(newClass);
   } catch (err) {
     res.status(500).json({ error: err.message });

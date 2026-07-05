@@ -228,7 +228,7 @@ export default function TimetablePage() {
                             <p className="font-black text-[#1E3A5F]">
                               {session.matiere?.nameFr} ({session.matiere?.code})
                             </p>
-                            <p className="text-slate-600 font-semibold">{session.teacher?.name}</p>
+                            <p className="text-slate-600 font-semibold">{session.teacher?.name || 'Prof. non assigné'}</p>
                             {session.room && (
                               <p className="text-[10px] text-slate-500 font-bold">Room: {session.room}</p>
                             )}

@@ -11,6 +11,7 @@ export default function ClassesPage() {
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [years, setYears] = useState([]);
+  const [matieres, setMatieres] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -22,6 +23,7 @@ export default function ClassesPage() {
   const [className, setClassName] = useState('');
   const [selectedTeacherId, setSelectedTeacherId] = useState('');
   const [selectedYearId, setSelectedYearId] = useState('');
+  const [classSubjects, setClassSubjects] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -30,15 +32,17 @@ export default function ClassesPage() {
   async function loadData() {
     try {
       setLoading(true);
-      const [classesData, teachersData, yearsData] = await Promise.all([
+      const [classesData, teachersData, yearsData, matieresData] = await Promise.all([
         apiFetch('/classes'),
         apiFetch('/users?role=TEACHER'),
-        apiFetch('/sequences/years')
+        apiFetch('/sequences/years'),
+        apiFetch('/matieres')
       ]);
 
       setClasses(classesData);
       setTeachers(teachersData);
       setYears(yearsData);
+      setMatieres(matieresData);
 
       // Pre-select active year and first teacher if available
       const activeYear = yearsData.find(y => y.active) || yearsData[0];
@@ -66,7 +70,8 @@ export default function ClassesPage() {
           name: className,
           principalTeacherId: selectedTeacherId || null,
           anneeScolaireId: selectedYearId,
-          censeurId: user.role === 'CENSEUR' ? user.id : null // Automatically assign if censeur creates
+          censeurId: user.role === 'CENSEUR' ? user.id : null,
+          subjects: classSubjects
         }
       });
 
@@ -75,6 +80,7 @@ export default function ClassesPage() {
       setModalOpen(false);
       // Reset form
       setClassName('');
+      setClassSubjects([]);
       if (teachers.length > 0) setSelectedTeacherId(teachers[0].id);
     } catch (err) {
       alert(err.message || 'Failed to create class');
@@ -298,23 +304,103 @@ export default function ClassesPage() {
                 >
                   <option value="">-- No form teacher --</option>
                   {teachers.map(t => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.email})</option>
+                    <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="flex gap-3 pt-2">
+              {/* Curriculum Assignment Section */}
+              <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Matières de la classe (Optionnel)</label>
+                  <button
+                    type="button"
+                    onClick={() => setClassSubjects([...classSubjects, { matiereId: '', teacherId: '', hoursTaught: 2 }])}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                  >
+                    + Ajouter matière
+                  </button>
+                </div>
+                
+                {classSubjects.length > 0 ? (
+                  <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
+                    {classSubjects.map((cs, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <select
+                          required
+                          value={cs.matiereId}
+                          onChange={(e) => {
+                            const newSubjects = [...classSubjects];
+                            newSubjects[idx].matiereId = e.target.value;
+                            setClassSubjects(newSubjects);
+                          }}
+                          className="flex-1 px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                        >
+                          <option value="">Sélectionner une matière...</option>
+                          {matieres.map(m => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={cs.teacherId || ''}
+                          onChange={(e) => {
+                            const newSubjects = [...classSubjects];
+                            newSubjects[idx].teacherId = e.target.value;
+                            setClassSubjects(newSubjects);
+                          }}
+                          className="flex-1 px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                        >
+                          <option value="">Professeur (Optionnel)</option>
+                          {teachers.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          step="0.5"
+                          value={cs.hoursTaught}
+                          onChange={(e) => {
+                            const newSubjects = [...classSubjects];
+                            newSubjects[idx].hoursTaught = e.target.value;
+                            setClassSubjects(newSubjects);
+                          }}
+                          className="w-20 px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#1E3A5F] focus:border-transparent focus:outline-none"
+                          placeholder="Heures"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newSubjects = classSubjects.filter((_, i) => i !== idx);
+                            setClassSubjects(newSubjects);
+                          }}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 bg-slate-50 border border-slate-100 rounded-xl">
+                    <p className="text-xs text-slate-500 font-medium">Aucune matière assignée. Vous pourrez le faire plus tard.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="flex-1 py-2 border border-slate-200 text-slate-700 bg-white hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all"
+                  className="px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 py-2 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md disabled:opacity-50"
+                  className="px-5 py-2 text-sm font-bold bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl transition-all shadow-md disabled:opacity-50"
                 >
                   {saving ? 'Creating...' : 'Create Class'}
                 </button>

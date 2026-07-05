@@ -4,6 +4,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { apiFetch, API_BASE, openPdfInNewTab } from '../../api';
 import MessageInbox from '../../components/MessageInbox';
 import SendMessageModal from '../../components/Shared/SendMessageModal';
+import ParentalConsentModal from '../../components/Shared/ParentalConsentModal';
 import { 
   GraduationCap, 
   BookOpen, 
@@ -51,6 +52,9 @@ export default function ParentPortal() {
   // Message Modal State
   const [messageModalOpen, setMessageModalOpen] = useState(false);
 
+  // Consent Modal State
+  const [consentModalOpen, setConsentModalOpen] = useState(false);
+
   useEffect(() => {
     loadParentChildren();
   }, []);
@@ -74,6 +78,19 @@ export default function ParentPortal() {
       setChildren(data);
       if (data.length > 0) {
         setSelectedChildId(data[0].id);
+        
+        // Check consents
+        const consents = await apiFetch('/consents/parent');
+        let missing = false;
+        data.forEach(child => {
+          const childConsents = consents.filter(c => c.eleveId === child.id);
+          const hasPedagogical = childConsents.find(c => c.consentType === 'PEDAGOGICAL' && c.status === 'GRANTED');
+          const hasHealth = childConsents.find(c => c.consentType === 'HEALTH' && c.status === 'GRANTED');
+          if (!hasPedagogical || !hasHealth) missing = true;
+        });
+        if (missing) {
+          setConsentModalOpen(true);
+        }
       }
     } catch (e) {
       console.error('Failed to load children:', e);
@@ -277,9 +294,16 @@ export default function ParentPortal() {
             <div className="px-4 py-2.5 text-sm font-bold text-slate-400">{t('portal.parent.noChildrenLinked')}</div>
           )}
         </div>
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => setActiveView('messages')}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setConsentModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-colors border border-slate-200"
+            >
+              <Shield className="h-4 w-4 text-indigo-600" />
+              <span>Consentements</span>
+            </button>
+            <button
+              onClick={() => setActiveView('messages')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
               activeView === 'messages'
                 ? 'border-amber-400 text-[#1E3A5F] bg-white shadow-sm'
@@ -578,7 +602,7 @@ export default function ParentPortal() {
                         ) : session ? (
                           <div className="p-1.5 rounded-lg bg-blue-50/80 border border-blue-150 text-[10px] text-blue-900 leading-normal">
                             <p className="font-black text-[#1E3A5F]">{session.matiere?.nameFr}</p>
-                            <p className="text-slate-500 font-bold">{session.teacher?.name}</p>
+                            <p className="text-slate-500 font-bold">{session.teacher?.name || 'Prof. non assigné'}</p>
                             {session.room && <p className="text-[9px] text-slate-400 mt-0.5">Room: {session.room}</p>}
                           </div>
                         ) : (
@@ -595,6 +619,14 @@ export default function ParentPortal() {
       )}
 
       {/* Mobile Money Payment Modal */}
+      {/* Consent Modal */}
+      <ParentalConsentModal
+        isOpen={consentModalOpen}
+        onClose={() => setConsentModalOpen(false)}
+        childrenList={children}
+      />
+
+      {/* Pay Modal */}
       {payModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">

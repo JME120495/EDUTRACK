@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch, API_BASE } from '../api';
 import { AuthContext } from '../context/AuthContext';
-import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette, Calendar, Upload } from 'lucide-react';
+import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette, Calendar, Upload, Shield, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import SettingsEvaluations from '../components/Shared/SettingsEvaluations';
 
@@ -744,6 +744,53 @@ export default function SettingsPage() {
 
         {/* Sidebar Info Panels */}
         <div className="space-y-6">
+          {/* Data & Compliance Panel */}
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-5 shadow-lg space-y-4 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 opacity-10">
+              <Shield className="h-24 w-24" />
+            </div>
+            
+            <div className="relative z-10 space-y-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-indigo-100" />
+                <h3 className="font-black tracking-wide text-lg text-white">Conformité RGPD / Loi 2024</h3>
+              </div>
+              <p className="text-xs text-indigo-100 font-medium leading-relaxed">
+                Téléchargez le registre des traitements et des consentements parentaux pour prouver la conformité légale de votre établissement.
+              </p>
+            </div>
+
+            <div className="relative z-10 pt-2 border-t border-indigo-400/30">
+              <button
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('edutrack_token');
+                    const res = await fetch(`${API_BASE}/consents/export`, {
+                      headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('Export failed');
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'registre_traitements_consentement.csv';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                  } catch (err) {
+                    console.error(err);
+                    alert('Failed to export register');
+                  }
+                }}
+                className="w-full bg-white text-indigo-600 hover:bg-indigo-50 hover:scale-[1.02] active:scale-95 transition-all py-2 rounded-xl text-xs font-black shadow-md flex items-center justify-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Exporter le Registre (CSV)
+              </button>
+            </div>
+          </div>
+
           {/* Global Import Panel */}
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl p-5 shadow-lg space-y-4 relative overflow-hidden">
             <div className="absolute -right-4 -top-4 opacity-10">

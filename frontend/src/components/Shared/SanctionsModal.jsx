@@ -22,6 +22,12 @@ export default function SanctionsModal({ isOpen, onClose, student }) {
       setDuration('');
       setDurationType('DAYS');
       setIsLateness(false);
+
+      // Log access to sensitive data
+      apiFetch('/consents/log-access', {
+        method: 'POST',
+        body: JSON.stringify({ eleveId: student.id, accessReason: 'Consultation dossier disciplinaire' })
+      }).catch(console.error);
     }
   }, [isOpen, student]);
 
