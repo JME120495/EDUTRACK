@@ -53,7 +53,11 @@ async function auth(req, res, next) {
     req.selectedYearId = req.headers['x-academic-year'] || null;
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    if (error.name === 'TokenExpiredError' || error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    console.error('AuthMiddleware Error:', error);
+    return res.status(500).json({ message: 'Internal server error during authentication' });
   }
 }
 

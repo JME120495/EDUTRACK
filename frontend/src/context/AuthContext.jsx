@@ -62,6 +62,14 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, [token]);
 
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logout();
+    };
+    window.addEventListener('edutrack_unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('edutrack_unauthorized', handleUnauthorized);
+  }, []);
+
   const login = async (email, password, schoolId = null) => {
     const data = await apiFetch('/auth/login', {
       method: 'POST',

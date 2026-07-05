@@ -23,6 +23,10 @@ export async function apiFetch(endpoint, options = {}) {
   const res = await fetch(`${API_BASE}${endpoint}`, config);
 
   if (!res.ok) {
+    if (res.status === 401) {
+      // Dispatch event to AuthContext to handle logout automatically
+      window.dispatchEvent(new Event('edutrack_unauthorized'));
+    }
     const err = await res.json().catch(() => ({}));
     const error = new Error(err.message || `API Error ${res.status}`);
     error.status = res.status;
