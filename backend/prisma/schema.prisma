@@ -48,6 +48,20 @@ model School {
   accountingFiscalYears AccountingFiscalYear[]
   accountingEntries AccountingEntry[]
   eleves          Eleve[]
+  evaluationTypes EvaluationType[]
+}
+
+model EvaluationType {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name        String   // e.g. "Devoir 1", "Examen"
+  coefficient Float    @default(1.0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  notes       Note[]
+
+  @@index([schoolId])
 }
 
 model User {
@@ -259,23 +273,26 @@ model Sequence {
 }
 
 model Note {
-  id         String   @id @default(uuid())
-  eleveId    String
-  eleve      Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
-  sequenceId String
-  sequence   Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
-  matiereId  String
-  matiere    Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
-  teacherId  String
-  teacher    User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  value      Float    // Grade out of 20
-  isDraft    Boolean  @default(true)
-  remarks    String?  // Behaviour / evaluation remarks
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id               String   @id @default(uuid())
+  eleveId          String
+  eleve            Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  sequenceId       String
+  sequence         Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  matiereId        String
+  matiere          Matiere  @relation(fields: [matiereId], references: [id], onDelete: Cascade)
+  teacherId        String
+  teacher          User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  evaluationTypeId String?  // Made optional for backward compatibility
+  evaluationType   EvaluationType? @relation(fields: [evaluationTypeId], references: [id], onDelete: SetNull)
+  value            Float    // Grade out of 20
+  isDraft          Boolean  @default(true)
+  remarks          String?  // Behaviour / evaluation remarks
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([eleveId])
   @@index([sequenceId])
+  @@index([evaluationTypeId])
 }
 
 model Absence {

@@ -4,6 +4,7 @@ import { apiFetch, API_BASE } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, Palette, Calendar, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import SettingsEvaluations from '../components/Shared/SettingsEvaluations';
 
 export default function SettingsPage() {
   const { user } = useContext(AuthContext);
@@ -880,6 +881,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Subjects coefficients metadata panel */}
+          <SettingsEvaluations />
           
           {/* Annees Scolaires metadata panel */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">

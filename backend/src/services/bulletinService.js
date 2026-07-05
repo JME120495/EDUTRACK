@@ -48,6 +48,9 @@ async function generateSequenceBulletins(classId, sequenceId) {
     where: {
       sequenceId,
       eleve: { classId }
+    },
+    include: {
+      evaluationType: true
     }
   });
 
@@ -66,8 +69,16 @@ async function generateSequenceBulletins(classId, sequenceId) {
     subjects.forEach(subject => {
       const studentSubjectNotes = allNotes.filter(n => n.eleveId === student.id && n.matiereId === subject.id);
       if (studentSubjectNotes.length > 0) {
-        const sum = studentSubjectNotes.reduce((acc, curr) => acc + curr.value, 0);
-        studentAverages[student.id][subject.id] = sum / studentSubjectNotes.length;
+        let weightedSum = 0;
+        let totalCoeff = 0;
+
+        studentSubjectNotes.forEach(note => {
+          const evalCoeff = note.evaluationType?.coefficient || 1.0;
+          weightedSum += note.value * evalCoeff;
+          totalCoeff += evalCoeff;
+        });
+
+        studentAverages[student.id][subject.id] = totalCoeff > 0 ? weightedSum / totalCoeff : 0;
       } else {
         studentAverages[student.id][subject.id] = null; // No grade
       }

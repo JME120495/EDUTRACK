@@ -22,11 +22,13 @@ export default function GradeEntryPage() {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [sequences, setSequences] = useState([]);
+  const [evaluationTypes, setEvaluationTypes] = useState([]);
 
   // Selections
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [selectedSequenceId, setSelectedSequenceId] = useState('');
+  const [selectedEvalTypeId, setSelectedEvalTypeId] = useState('null'); // 'null' string represents overall/default evaluation
 
   // Grades table data
   const [students, setStudents] = useState([]);
@@ -68,10 +70,10 @@ export default function GradeEntryPage() {
   }, []);
 
   useEffect(() => {
-    if (selectedClassId && selectedSubjectId && selectedSequenceId) {
-      loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId);
+    if (selectedClassId && selectedSubjectId && selectedSequenceId && selectedEvalTypeId !== undefined) {
+      loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId, selectedEvalTypeId);
     }
-  }, [selectedClassId, selectedSubjectId, selectedSequenceId]);
+  }, [selectedClassId, selectedSubjectId, selectedSequenceId, selectedEvalTypeId]);
 
   const handleAddSubject = async (e) => {
     e.preventDefault();
@@ -164,15 +166,16 @@ export default function GradeEntryPage() {
 
   async function loadSelectors() {
     try {
-      const [classesData, subjectsData, sequencesData] = await Promise.all([
+      const [classesData, subjectsData, sequencesData, evalsData] = await Promise.all([
         apiFetch('/classes'),
         apiFetch('/matieres'),
-        apiFetch('/sequences')
+        apiFetch('/sequences'),
+        apiFetch('/evaluation-types')
       ]);
       setClasses(classesData);
       setSubjects(subjectsData);
-      // Only keep the active sequence or all sequences
       setSequences(sequencesData);
+      setEvaluationTypes(evalsData || []);
 
       if (classesData.length > 0) setSelectedClassId(classesData[0].id);
       if (subjectsData.length > 0) setSelectedSubjectId(subjectsData[0].id);
@@ -182,15 +185,21 @@ export default function GradeEntryPage() {
     }
   }
 
-  async function loadGradesTable(classId, subjectId, sequenceId) {
+  async function loadGradesTable(classId, subjectId, sequenceId, evalTypeId) {
     try {
       setLoading(true);
       // Fetch students in this class
       const studentsData = await apiFetch(`/eleves?classId=${classId}`);
       setStudents(studentsData);
 
-      // Fetch grades for this class, subject, and sequence
-      const gradesData = await apiFetch(`/notes?classId=${classId}&matiereId=${subjectId}&sequenceId=${sequenceId}`);
+      // Fetch grades for this class, subject, sequence and evaluation type
+      let url = `/notes?classId=${classId}&matiereId=${subjectId}&sequenceId=${sequenceId}`;
+      if (evalTypeId && evalTypeId !== 'null') {
+        url += `&evaluationTypeId=${evalTypeId}`;
+      } else {
+        url += `&evaluationTypeId=null`;
+      }
+      const gradesData = await apiFetch(url);
       
       const newGrades = {};
       const newOriginalGrades = {};
@@ -198,7 +207,7 @@ export default function GradeEntryPage() {
       const newRemarks = {};
       const newOriginalRemarks = {};
       
-      const offlineKey = `offline_grades_${classId}_${subjectId}_${sequenceId}`;
+      const offlineKey = `offline_grades_${classId}_${subjectId}_${sequenceId}_${evalTypeId}`;
       const offlineDataStr = localStorage.getItem(offlineKey);
       let offlineGrades = null;
       let offlineRemarks = null;
@@ -300,7 +309,7 @@ export default function GradeEntryPage() {
     try {
       // Offline mode simulation
       if (!isOnline) {
-        localStorage.setItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}`, JSON.stringify({ grades, remarks }));
+        localStorage.setItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}_${selectedEvalTypeId}`, JSON.stringify({ grades, remarks }));
         alert('Offline mode: Saved drafts locally in the browser storage!');
         setSaving(false);
         return;
@@ -327,13 +336,14 @@ export default function GradeEntryPage() {
           classId: selectedClassId,
           matiereId: selectedSubjectId,
           sequenceId: selectedSequenceId,
+          evaluationTypeId: selectedEvalTypeId === 'null' ? null : selectedEvalTypeId,
           grades: gradesPayload
         }
       });
 
-      localStorage.removeItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}`);
+      localStorage.removeItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}_${selectedEvalTypeId}`);
       alert(t('grades.draftSaved'));
-      loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId);
+      loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId, selectedEvalTypeId);
     } catch (e) {
       alert(e.message || 'Failed to save drafts');
     } finally {
@@ -366,13 +376,14 @@ export default function GradeEntryPage() {
           classId: selectedClassId,
           matiereId: selectedSubjectId,
           sequenceId: selectedSequenceId,
+          evaluationTypeId: selectedEvalTypeId === 'null' ? null : selectedEvalTypeId,
           grades: gradesPayload
         }
       });
 
-      localStorage.removeItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}`);
+      localStorage.removeItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}_${selectedEvalTypeId}`);
       alert(t('grades.validated'));
-      loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId);
+      loadGradesTable(selectedClassId, selectedSubjectId, selectedSequenceId, selectedEvalTypeId);
     } catch (e) {
       alert(e.message || 'Failed to validate grades');
     } finally {

@@ -5,12 +5,15 @@ const { auth, requireRole } = require('../middlewares/authMiddleware');
 
 // Get notes by query parameters
 router.get('/', auth, async (req, res) => {
-  const { classId, matiereId, sequenceId, eleveId } = req.query;
+  const { classId, matiereId, sequenceId, eleveId, evaluationTypeId } = req.query;
   try {
     const where = {};
     if (sequenceId) where.sequenceId = sequenceId;
     if (matiereId) where.matiereId = matiereId;
     if (eleveId) where.eleveId = eleveId;
+    if (evaluationTypeId !== undefined) {
+      where.evaluationTypeId = evaluationTypeId === 'null' ? null : evaluationTypeId;
+    }
     if (classId) {
       where.eleve = { classId };
     }
@@ -38,12 +41,22 @@ router.get('/classe/:classId/matiere/:matiereId/sequence/:sequenceId', auth, asy
       orderBy: { name: 'asc' }
     });
 
+    const { evaluationTypeId } = req.query;
+    
+    const whereNotes = {
+      sequenceId,
+      matiereId,
+      eleve: { classId }
+    };
+
+    if (evaluationTypeId !== undefined) {
+      whereNotes.evaluationTypeId = evaluationTypeId === 'null' ? null : evaluationTypeId;
+    } else {
+      whereNotes.evaluationTypeId = null; // Default backward compat
+    }
+
     const notes = await prisma.note.findMany({
-      where: {
-        sequenceId,
-        matiereId,
-        eleve: { classId }
-      }
+      where: whereNotes
     });
 
     // Map notes to students
@@ -68,11 +81,13 @@ router.get('/classe/:classId/matiere/:matiereId/sequence/:sequenceId', auth, asy
 
 // Bulk process grades (save drafts and validate locks)
 router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res) => {
-  const { classId, matiereId, sequenceId, grades } = req.body; // grades: Array of { eleveId, value, isDraft, remarks }
+  const { classId, matiereId, sequenceId, evaluationTypeId, grades } = req.body; // grades: Array of { eleveId, value, isDraft, remarks }
   try {
     if (!sequenceId || !matiereId || !Array.isArray(grades)) {
       return res.status(400).json({ message: 'Sequence ID, Subject ID, and grades list are required' });
     }
+
+    const evalId = evaluationTypeId || null;
 
     // Optimize: fetch all existing notes at once
     const eleveIds = grades.map(g => g.eleveId).filter(Boolean);
@@ -80,7 +95,8 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
       where: {
         eleveId: { in: eleveIds },
         sequenceId,
-        matiereId
+        matiereId,
+        evaluationTypeId: evalId
       }
     });
 
@@ -109,11 +125,12 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
           }
         }));
       } else {
-        ops.push(prisma.note.create({
+          ops.push(prisma.note.create({
           data: {
             eleveId: item.eleveId,
             sequenceId,
             matiereId,
+            evaluationTypeId: evalId,
             teacherId: req.user.id,
             value: val,
             isDraft: item.isDraft !== false,
@@ -133,11 +150,13 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res
 
 // Save grades as draft (compatibility fallback)
 router.post('/save-draft', auth, requireRole(['TEACHER', 'DIRECTOR']), async (req, res) => {
-  const { sequenceId, matiereId, grades } = req.body; // grades: Array of { studentId, value }
+  const { sequenceId, matiereId, evaluationTypeId, grades } = req.body; // grades: Array of { studentId, value }
   try {
     if (!sequenceId || !matiereId || !Array.isArray(grades)) {
       return res.status(400).json({ message: 'Sequence ID, Subject ID, and grades list are required' });
     }
+
+    const evalId = evaluationTypeId || null;
 
     // Optimize: fetch all existing notes at once
     const eleveIds = grades.map(g => g.studentId).filter(Boolean);
@@ -145,7 +164,8 @@ router.post('/save-draft', auth, requireRole(['TEACHER', 'DIRECTOR']), async (re
       where: {
         eleveId: { in: eleveIds },
         sequenceId,
-        matiereId
+        matiereId,
+        evaluationTypeId: evalId
       }
     });
 
