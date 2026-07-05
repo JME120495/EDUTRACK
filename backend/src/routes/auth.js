@@ -181,7 +181,7 @@ router.post('/login', async (req, res) => {
         currency: user.school.currency
       },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     await auditLog(req, 'LOGIN', 'User', user.id, { role: user.role, schoolId: user.schoolId });
@@ -292,7 +292,7 @@ router.post('/parent/verify-otp', async (req, res) => {
         schoolName: user.school.name
       },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     await auditLog(req, 'LOGIN_OTP', 'User', user.id, { role: user.role, schoolId: user.schoolId });

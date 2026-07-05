@@ -76,7 +76,7 @@ router.put('/plan', auth, requireRole(['DIRECTOR']), async (req, res) => {
         currency: req.user.school.currency
       },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: '7d' }
     );
 
     res.json({ message: 'Plan updated successfully', plan: updated.subscriptionPlan, token });
