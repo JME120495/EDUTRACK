@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './i18n';
 import './index.css';
+import { startCacheBuster } from './utils/cacheBuster';
+
+// Démarrer le nettoyage automatique des caches en arrière-plan
+startCacheBuster();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

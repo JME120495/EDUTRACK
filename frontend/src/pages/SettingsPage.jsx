@@ -791,6 +791,42 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Cache & Performance Panel */}
+          <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-5 shadow-lg space-y-4 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 opacity-10">
+              <Settings className="h-24 w-24" />
+            </div>
+            
+            <div className="relative z-10 space-y-2">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-amber-100" />
+                <h3 className="font-black tracking-wide text-lg text-white">Maintenance & Cache</h3>
+              </div>
+              <p className="text-xs text-amber-100 font-medium leading-relaxed">
+                Si l'application devient lente, videz le cache manuellement. Le nettoyage automatique est actif en arrière-plan.
+              </p>
+            </div>
+
+            <div className="relative z-10 pt-2 border-t border-amber-400/30">
+              <button
+                onClick={async () => {
+                  try {
+                    const { forceFullCleanup } = await import('../utils/cacheBuster');
+                    await forceFullCleanup();
+                    alert('✅ Cache nettoyé avec succès ! L\'application va se recharger.');
+                    window.location.reload();
+                  } catch (err) {
+                    console.error(err);
+                    alert('Erreur lors du nettoyage du cache');
+                  }
+                }}
+                className="w-full bg-white text-amber-600 hover:bg-amber-50 hover:scale-[1.02] active:scale-95 transition-all py-2 rounded-xl text-xs font-black shadow-md flex items-center justify-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Vider tout le cache maintenant
+              </button>
+            </div>
+          </div>
           {/* Global Import Panel */}
           <div className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl p-5 shadow-lg space-y-4 relative overflow-hidden">
             <div className="absolute -right-4 -top-4 opacity-10">

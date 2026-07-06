@@ -46,8 +46,16 @@ export default defineConfig(({ command }) => {
 
   return {
     plugins,
+    // Force re-optimization des dépendances à chaque démarrage pour éviter les caches périmés
+    optimizeDeps: {
+      force: true,
+    },
     server: {
       port: 3000,
+      // Améliorer les performances HMR lors des longues sessions
+      hmr: {
+        overlay: true,
+      },
       proxy: {
         '/api': {
           target: 'http://localhost:5000',
