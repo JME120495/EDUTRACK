@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch, API_BASE } from '../../../api';
-import { BookOpen, Plus, Trash2, Calendar, FileText, CheckCircle } from 'lucide-react';
+import { apiFetch, API_BASE } from '../../api';
+import { BookOpen, Plus, Trash2, Calendar, FileText, CheckCircle, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import Modal from '../../../components/Shared/Modal';
 
 export default function CahierDeTextesPage() {
   const { t } = useTranslation();
@@ -163,61 +162,73 @@ export default function CahierDeTextesPage() {
         )}
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Enregistrer une Leçon">
-        <form onSubmit={handleSubmit} className="space-y-4 p-1">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">Classe *</label>
-              <select required className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.classId} onChange={e => setFormData({...formData, classId: e.target.value})}>
-                <option value="">Sélectionner</option>
-                {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-100 overflow-hidden animate-in zoom-in duration-200">
+            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-bold text-[#1E3A5F] font-outfit">Enregistrer une Leçon</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg transition-colors">
+                <X className="h-5 w-5 text-slate-400" />
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">Matière *</label>
-              <select required className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.matiereId} onChange={e => setFormData({...formData, matiereId: e.target.value})}>
-                <option value="">Sélectionner</option>
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.nameFr}</option>)}
-              </select>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">Date du cours *</label>
-              <input type="date" required className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">Titre de la leçon *</label>
-              <input type="text" required placeholder="Ex: Chapitre 1..." className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-            </div>
-          </div>
+            <div className="p-6 overflow-y-auto max-h-[80vh]">
+              <form onSubmit={handleSubmit} className="space-y-4 p-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Classe *</label>
+                    <select required className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.classId} onChange={e => setFormData({...formData, classId: e.target.value})}>
+                      <option value="">Sélectionner</option>
+                      {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Matière *</label>
+                    <select required className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.matiereId} onChange={e => setFormData({...formData, matiereId: e.target.value})}>
+                      <option value="">Sélectionner</option>
+                      {subjects.map(s => <option key={s.id} value={s.id}>{s.nameFr}</option>)}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Date du cours *</label>
+                    <input type="date" required className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Titre de la leçon *</label>
+                    <input type="text" required placeholder="Ex: Chapitre 1..." className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+                  </div>
+                </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Résumé du cours *</label>
-            <textarea required rows={4} className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" placeholder="Qu'avez-vous enseigné aujourd'hui ?" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
-          </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Résumé du cours *</label>
+                  <textarea required rows={4} className="w-full border-slate-200 rounded-xl focus:ring-indigo-500" placeholder="Qu'avez-vous enseigné aujourd'hui ?" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
+                </div>
 
-          <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-sm font-bold text-slate-800 mb-3">Ajouter un Devoir (Optionnel)</h4>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Travail demandé</label>
-                <textarea rows={2} className="w-full border-slate-200 rounded-xl focus:ring-amber-500 focus:border-amber-500" placeholder="Ex: Exercices 1 et 2 page 45" value={formData.homeworkDesc} onChange={e => setFormData({...formData, homeworkDesc: e.target.value})} />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">À rendre pour le</label>
-                <input type="date" className="w-full border-slate-200 rounded-xl focus:ring-amber-500 focus:border-amber-500" value={formData.homeworkDueDate} onChange={e => setFormData({...formData, homeworkDueDate: e.target.value})} />
-              </div>
+                <div className="pt-4 border-t border-slate-100">
+                  <h4 className="text-sm font-bold text-slate-800 mb-3">Ajouter un Devoir (Optionnel)</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">Travail demandé</label>
+                      <textarea rows={2} className="w-full border-slate-200 rounded-xl focus:ring-amber-500 focus:border-amber-500" placeholder="Ex: Exercices 1 et 2 page 45" value={formData.homeworkDesc} onChange={e => setFormData({...formData, homeworkDesc: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">À rendre pour le</label>
+                      <input type="date" className="w-full border-slate-200 rounded-xl focus:ring-amber-500 focus:border-amber-500" value={formData.homeworkDueDate} onChange={e => setFormData({...formData, homeworkDueDate: e.target.value})} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-bold transition-colors">Annuler</button>
+                  <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors">Enregistrer</button>
+                </div>
+              </form>
             </div>
           </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-slate-600 hover:bg-slate-100 rounded-xl font-bold transition-colors">Annuler</button>
-            <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors">Enregistrer</button>
-          </div>
-        </form>
-      </Modal>
+        </div>
+      )}
     </div>
   );
 }
