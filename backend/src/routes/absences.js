@@ -37,8 +37,25 @@ router.post('/', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVEILLA
         justified: justified || false,
         reason: reason || '',
         isLateness: isLateness || false
-      }
+      },
+      include: { eleve: true }
     });
+
+    // Notify parents via internal message
+    const parentLinks = await prisma.parentEleve.findMany({ where: { eleveId } });
+    if (parentLinks.length > 0) {
+      const typeStr = isLateness ? 'un retard' : 'une absence';
+      const hoursStr = isLateness ? '' : ` (${absence.hours}h)`;
+      const msgContent = `Votre enfant ${absence.eleve.name} a enregistré ${typeStr}${hoursStr} le ${absence.date.toLocaleDateString('fr-FR')}. Veuillez vérifier le portail ou contacter la scolarité.`;
+      
+      const messageData = parentLinks.map(p => ({
+        senderId: req.user.id,
+        receiverId: p.parentId,
+        content: msgContent,
+        title: isLateness ? 'Notification de Retard' : 'Notification d\'Absence'
+      }));
+      await prisma.message.createMany({ data: messageData });
+    }
 
     res.status(201).json(absence);
   } catch (err) {
@@ -130,6 +147,33 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVE
       await prisma.absence.createMany({
         data: toCreate
       });
+
+      // Send internal messages for these absences
+      const eleveIds = toCreate.map(a => a.eleveId);
+      const parentLinks = await prisma.parentEleve.findMany({
+        where: { eleveId: { in: eleveIds } },
+        include: { eleve: true }
+      });
+      
+      const messageData = [];
+      for (const p of parentLinks) {
+        const absence = toCreate.find(a => a.eleveId === p.eleveId);
+        if (absence) {
+          const typeStr = absence.isLateness ? 'un retard' : 'une absence';
+          const msgContent = `Votre enfant ${p.eleve.name} a enregistré ${typeStr} le ${parsedDate.toLocaleDateString('fr-FR')}. Veuillez vérifier le portail.`;
+          messageData.push({
+            senderId: req.user.id,
+            receiverId: p.parentId,
+            content: msgContent,
+            title: absence.isLateness ? 'Notification de Retard' : 'Notification d\'Absence'
+          });
+        }
+      }
+      
+      if (messageData.length > 0) {
+        await prisma.message.createMany({ data: messageData });
+      }
+    }
     }
 
     res.status(201).json({ message: 'Attendance recorded successfully', count: toCreate.length });

@@ -14,6 +14,7 @@ import TeachersPage from './pages/Director/TeachersPage';
 import TimetablePage from './pages/Director/TimetablePage';
 import GradeEntryPage from './pages/Teacher/GradeEntryPage';
 import AbsencesPage from './pages/Teacher/AbsencesPage';
+import CahierDeTextesPage from './pages/Teacher/CahierDeTextesPage';
 import BulletinsPage from './pages/Director/BulletinsPage';
 import PaymentsPage from './pages/Director/PaymentsPage';
 import PayrollPage from './pages/Director/PayrollPage';
@@ -137,6 +138,7 @@ export default function App() {
           <Route path="/documents" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><DocumentsPage /></RoleRoute>} />
           <Route path="/teacher/dashboard" element={<RoleRoute roles={['TEACHER']}><TeacherDashboard /></RoleRoute>} />
           <Route path="/teacher/payroll" element={<RoleRoute roles={['TEACHER']}><TeacherPayrollPage /></RoleRoute>} />
+          <Route path="/teacher/cahier-textes" element={<RoleRoute roles={['TEACHER', 'DIRECTOR', 'CENSEUR']}><CahierDeTextesPage /></RoleRoute>} />
           <Route path="/settings" element={<RoleRoute roles={['DIRECTOR']}><SettingsPage /></RoleRoute>} />
           <Route path="/parent" element={<RoleRoute roles={['PARENT']}><ParentPortal /></RoleRoute>} />
           <Route path="/student" element={<RoleRoute roles={['STUDENT']}><StudentPortal /></RoleRoute>} />

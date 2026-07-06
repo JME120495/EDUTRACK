@@ -33,6 +33,7 @@ export default function StudentPortal() {
   const [payments, setPayments] = useState([]);
   const [timetable, setTimetable] = useState([]);
   const [creneaux, setCreneaux] = useState([]);
+  const [cahiers, setCahiers] = useState([]);
 
   useEffect(() => {
     loadStudentProfile();
@@ -96,6 +97,17 @@ export default function StudentPortal() {
     } catch (e) {
       console.error('Failed to load creneaux:', e);
       setCreneaux([]);
+    }
+    
+    // Load cahiers
+    try {
+      if (classId) {
+        const cahiersData = await apiFetch(`/cahier-textes/classe/${classId}`);
+        setCahiers(cahiersData);
+      }
+    } catch (e) {
+      console.error('Failed to load cahiers:', e);
+      setCahiers([]);
     }
   }
 
@@ -277,6 +289,51 @@ export default function StudentPortal() {
               </div>
             </div>
             
+            {/* Cahier de Textes & Devoirs */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
+              <div className="flex items-center gap-2 text-[#1E3A5F] mb-4 border-b border-slate-100 pb-3">
+                <BookOpen className="h-5 w-5" />
+                <h3 className="font-bold text-lg">Cahier de Textes & Devoirs</h3>
+              </div>
+              
+              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                {cahiers.length === 0 ? (
+                  <p className="text-center text-slate-400 py-6 text-sm">Aucune leçon enregistrée.</p>
+                ) : (
+                  cahiers.map(c => (
+                    <div key={c.id} className="p-4 bg-slate-50 border border-slate-200 rounded-xl shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-sm">{c.title}</h4>
+                          <div className="flex gap-2 text-xs text-slate-500 font-medium mt-1">
+                            <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">{c.matiere?.nameFr}</span>
+                            <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded border border-slate-300">{new Date(c.date).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-700 whitespace-pre-wrap mt-2">{c.content}</p>
+
+                      {c.homeworks && c.homeworks.length > 0 && (
+                        <div className="mt-3 bg-amber-50 border border-amber-100 rounded-lg p-3 shadow-inner">
+                          <h5 className="text-xs font-bold text-amber-800 mb-1 flex items-center gap-1">
+                            <CheckCircle className="h-3.5 w-3.5" /> Devoirs à faire
+                          </h5>
+                          {c.homeworks.map(hw => (
+                            <div key={hw.id} className="text-sm text-amber-900 mt-1">
+                              <p>{hw.description}</p>
+                              <p className="text-xs text-amber-700 font-medium mt-0.5 flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> Pour le : {new Date(hw.dueDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             {/* Sanctions & Absences */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 lg:col-span-2">
               <div className="flex items-center gap-2 text-[#1E3A5F] mb-4">

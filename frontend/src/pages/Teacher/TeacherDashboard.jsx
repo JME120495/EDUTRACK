@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { apiFetch } from '../../api';
 import { AuthContext } from '../../context/AuthContext';
 import SendMessageModal from '../../components/Shared/SendMessageModal';
-import { Calendar, Users, CheckCircle, Clock, BookOpen, AlertTriangle, MessageSquare } from 'lucide-react';
+import { Calendar, Users, CheckCircle, Clock, BookOpen, AlertTriangle, MessageSquare, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function TeacherDashboard() {
@@ -120,6 +120,21 @@ export default function TeacherDashboard() {
                   <div className="text-left">
                     <p className="font-bold text-emerald-900 text-sm">Saisir les Notes</p>
                     <p className="text-xs text-emerald-600 font-medium">Évaluations et devoirs</p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigate('/teacher/cahier-textes')}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-white text-indigo-500 flex items-center justify-center shadow-sm">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-indigo-900 text-sm">Cahier de Textes</p>
+                    <p className="text-xs text-indigo-600 font-medium">Gérer les leçons</p>
                   </div>
                 </div>
               </button>

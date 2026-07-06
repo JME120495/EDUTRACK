@@ -138,6 +138,7 @@ app.use('/api/eleves', studentRoutes);
 app.use('/api/matieres', subjectRoutes);
 app.use('/api/sequences', sequenceRoutes);
 app.use('/api/notes', gradeRoutes);
+app.use('/api/cahier-textes', require('./routes/cahier-textes'));
 app.use('/api/timetable', timetableRoutes);
 app.use('/api/emplois-du-temps', timetableRoutes);
 app.use('/api/bulletins', bulletinRoutes);

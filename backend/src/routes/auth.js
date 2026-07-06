@@ -130,6 +130,17 @@ router.post('/login', async (req, res) => {
         where: { phone: cleanEmail },
         include: { school: true }
       });
+
+      if (users.length === 0) {
+        // Try matricule for STUDENT role
+        const eleves = await prisma.eleve.findMany({
+          where: { matricule: cleanEmail, userId: { not: null } },
+          include: { user: { include: { school: true } } }
+        });
+        if (eleves.length > 0) {
+          users = eleves.map(e => e.user).filter(Boolean);
+        }
+      }
     }
 
     if (users.length === 0) {
