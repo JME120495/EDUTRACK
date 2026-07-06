@@ -1,260 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../api';
 import { 
-  Users, DollarSign, Activity, LogOut, Plus, ShieldCheck, Key
+  Building2, Users, DollarSign, Activity, Settings, LogOut, 
+  CheckCircle, XCircle, Search, Edit2, Trash2, Plus, ArrowUpRight
 } from 'lucide-react';
-import PlatformChangePasswordModal from '../../components/Platform/PlatformChangePasswordModal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
+  const [data, setData] = useState({ schools: [], influencers: [], totalRevenue: 0, totalCommissionsPaid: 0 });
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
   
-  // Create Influencer form
-  const [activeTab, setActiveTab] = useState('influencers');
-  const [showCreate, setShowCreate] = useState(false);
-  const [newInf, setNewInf] = useState({ name: '', email: '', password: '', referralCode: '', commissionRate: 30 });
-  const [creating, setCreating] = useState(false);
-  const [editingCommission, setEditingCommission] = useState(null);
-  const [newCommissionValue, setNewCommissionValue] = useState('');
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-
-  // Bulk Selection States
-  const [selectedInfluencers, setSelectedInfluencers] = useState([]);
-  const [selectedSchools, setSelectedSchools] = useState([]);
-
-  const user = JSON.parse(localStorage.getItem('platform_user') || '{}');
-
-  const fetchData = async () => {
-    const token = localStorage.getItem('platform_token');
-    if (!token || user.role !== 'SUPER_ADMIN') {
-      navigate('/platform/login');
-      return;
-    }
-
-    try {
-      const d = await apiFetch('/platform/admin/dashboard', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setData(d);
-      setLoading(false);
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-    }
-  };
+  // Modals state
+  const [showInfModal, setShowInfModal] = useState(false);
+  const [newInf, setNewInf] = useState({ name: '', email: '', password: '', commissionRate: 30 });
 
   useEffect(() => {
-    fetchData();
-  }, [navigate, user.role]);
+    fetchDashboard();
+  }, []);
 
-  const handleCreateInfluencer = async (e) => {
-    e.preventDefault();
-    setCreating(true);
-    const token = localStorage.getItem('platform_token');
+  const fetchDashboard = async () => {
     try {
-      const res = await apiFetch('/platform/admin/influencers', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: newInf
-      });
-      if (res) {
-        setShowCreate(false);
-        setNewInf({ name: '', email: '', password: '', referralCode: '', commissionRate: 30 });
-        fetchData();
+      setLoading(true);
+      const res = await apiFetch('/platform/admin/dashboard', { usePlatformToken: true });
+      setData(res);
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        handleLogout();
+      } else {
+        alert(err.message);
       }
-    } catch (err) {
-      alert(err.message || "Erreur réseau");
     } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleUpdateCommission = async (id, currentRate) => {
-    const newRate = prompt("Nouveau pourcentage de commission (%) :", currentRate);
-    if (!newRate || isNaN(newRate) || newRate < 0 || newRate > 100) return;
-    
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch(`/platform/admin/influencers/${id}`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { commissionRate: parseFloat(newRate) }
-      });
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleDeleteInfluencer = async (id) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet influenceur ? Cette action est irréversible.")) return;
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch(`/platform/admin/influencers/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleToggleSchoolStatus = async (id) => {
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch(`/platform/admin/schools/${id}/toggle-status`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleDeleteSchool = async (id, name) => {
-    const confirmation = window.prompt(`ATTENTION: La suppression est IRRÉVERSIBLE. Toutes les données de l'école (utilisateurs, classes, notes) seront effacées.\n\nPour confirmer, tapez "SUPPRIMER" :`);
-    if (confirmation !== "SUPPRIMER") {
-      if (confirmation !== null) alert("Suppression annulée. Le mot 'SUPPRIMER' n'a pas été saisi correctement.");
-      return;
-    }
-    
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch(`/platform/admin/schools/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleChangePlan = async (id, currentPlan) => {
-    const newPlan = window.prompt(`Changer le forfait (ESSENTIAL, STANDARD, PREMIUM, CUSTOM) :\nActuel: ${currentPlan}`, currentPlan);
-    if (!newPlan) return;
-    
-    const validPlans = ['ESSENTIAL', 'STANDARD', 'PREMIUM', 'CUSTOM'];
-    const uppercasePlan = newPlan.toUpperCase().trim();
-    
-    if (!validPlans.includes(uppercasePlan)) {
-      alert(`Forfait invalide. Choisissez parmi: ${validPlans.join(', ')}`);
-      return;
-    }
-
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch(`/platform/admin/schools/${id}/plan`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { subscriptionPlan: uppercasePlan }
-      });
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  // --- BULK ACTIONS ---
-  const handleBulkDeleteInfluencers = async () => {
-    if (selectedInfluencers.length === 0) return;
-    if (!window.confirm(`Voulez-vous vraiment supprimer ${selectedInfluencers.length} influenceur(s) ?`)) return;
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch('/platform/admin/influencers/bulk-delete', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { ids: selectedInfluencers }
-      });
-      setSelectedInfluencers([]);
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleBulkDeleteSchools = async () => {
-    if (selectedSchools.length === 0) return;
-    const confirmation = window.prompt(`ATTENTION: La suppression de ${selectedSchools.length} école(s) est IRRÉVERSIBLE.\nTapez "SUPPRIMER" pour confirmer :`);
-    if (confirmation !== "SUPPRIMER") return;
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch('/platform/admin/schools/bulk-delete', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { ids: selectedSchools }
-      });
-      setSelectedSchools([]);
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleBulkChangePlan = async () => {
-    if (selectedSchools.length === 0) return;
-    const newPlan = window.prompt(`Changer le forfait pour ${selectedSchools.length} école(s) (ESSENTIAL, STANDARD, PREMIUM, CUSTOM) :`);
-    if (!newPlan) return;
-    const uppercasePlan = newPlan.toUpperCase().trim();
-    if (!['ESSENTIAL', 'STANDARD', 'PREMIUM', 'CUSTOM'].includes(uppercasePlan)) {
-      alert(`Forfait invalide.`);
-      return;
-    }
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch('/platform/admin/schools/bulk-plan', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { ids: selectedSchools, subscriptionPlan: uppercasePlan }
-      });
-      setSelectedSchools([]);
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleBulkToggleStatus = async (isActive) => {
-    if (selectedSchools.length === 0) return;
-    const token = localStorage.getItem('platform_token');
-    try {
-      await apiFetch('/platform/admin/schools/bulk-status', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: { ids: selectedSchools, isActive }
-      });
-      setSelectedSchools([]);
-      fetchData();
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const toggleInfluencerSelection = (id) => {
-    setSelectedInfluencers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
-  };
-
-  const toggleAllInfluencers = () => {
-    if (selectedInfluencers.length === data.influencers.length && data.influencers.length > 0) {
-      setSelectedInfluencers([]);
-    } else {
-      setSelectedInfluencers(data.influencers.map(i => i.id));
-    }
-  };
-
-  const toggleSchoolSelection = (id) => {
-    setSelectedSchools(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
-  };
-
-  const toggleAllSchools = () => {
-    if (selectedSchools.length === data.schools.length && data.schools.length > 0) {
-      setSelectedSchools([]);
-    } else {
-      setSelectedSchools(data.schools.map(s => s.id));
+      setLoading(false);
     }
   };
 
@@ -264,320 +43,385 @@ export default function SuperAdminDashboard() {
     navigate('/platform/login');
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div></div>;
+  const toggleSchoolStatus = async (id) => {
+    if (!window.confirm("Voulez-vous vraiment changer le statut de cette école ?")) return;
+    try {
+      await apiFetch(`/platform/admin/schools/${id}/toggle-status`, { 
+        method: 'PUT',
+        usePlatformToken: true 
+      });
+      fetchDashboard();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const changeSchoolPlan = async (id, plan) => {
+    try {
+      await apiFetch(`/platform/admin/schools/${id}/plan`, {
+        method: 'PUT',
+        body: { subscriptionPlan: plan },
+        usePlatformToken: true
+      });
+      fetchDashboard();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const deleteSchool = async (id) => {
+    if (!window.confirm("ATTENTION: Cela supprimera l'école et toutes ses données ! Continuer ?")) return;
+    try {
+      await apiFetch(`/platform/admin/schools/${id}`, {
+        method: 'DELETE',
+        usePlatformToken: true
+      });
+      fetchDashboard();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const createInfluencer = async (e) => {
+    e.preventDefault();
+    try {
+      await apiFetch('/platform/admin/influencers', {
+        method: 'POST',
+        body: newInf,
+        usePlatformToken: true
+      });
+      setShowInfModal(false);
+      setNewInf({ name: '', email: '', password: '', commissionRate: 30 });
+      fetchDashboard();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const deleteInfluencer = async (id) => {
+    if (!window.confirm("Supprimer cet influenceur ?")) return;
+    try {
+      await apiFetch(`/platform/admin/influencers/${id}`, {
+        method: 'DELETE',
+        usePlatformToken: true
+      });
+      fetchDashboard();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Chargement...</div>;
+  }
+
+  // Stats for charts
+  const schoolPlansData = [
+    { name: 'Essential', count: data.schools.filter(s => s.subscriptionPlan === 'ESSENTIAL').length },
+    { name: 'Standard', count: data.schools.filter(s => s.subscriptionPlan === 'STANDARD').length },
+    { name: 'Premium', count: data.schools.filter(s => s.subscriptionPlan === 'PREMIUM').length },
+    { name: 'Custom', count: data.schools.filter(s => s.subscriptionPlan === 'CUSTOM').length }
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50 font-inter">
-      <PlatformChangePasswordModal isOpen={isPasswordModalOpen} onClose={() => setIsPasswordModalOpen(false)} />
-      {/* Topbar */}
-      <div className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <div className="bg-slate-800 p-2 rounded-xl text-white">
-            <ShieldCheck className="h-5 w-5" />
+    <div className="min-h-screen bg-slate-900 text-slate-200 font-inter">
+      {/* Sidebar */}
+      <div className="fixed inset-y-0 left-0 w-64 bg-slate-800 border-r border-slate-700 shadow-xl z-20">
+        <div className="flex items-center gap-3 p-6 border-b border-slate-700">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+            ET
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-800 font-outfit">Super-Admin Portal</h1>
-            <p className="text-sm text-slate-500">Contrôle global EduTrack</p>
-          </div>
+          <span className="font-bold text-xl text-white tracking-tight">EduTrack SaaS</span>
         </div>
-        <div className="flex items-center gap-6">
-          <button onClick={() => setIsPasswordModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-medium">
-            <Key className="h-4 w-4" /> Mot de passe
+        
+        <nav className="p-4 space-y-2">
+          <button 
+            onClick={() => setActiveTab('overview')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'overview' ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'}`}
+          >
+            <Activity size={20} /> Vue d'ensemble
           </button>
-          <button onClick={handleLogout} className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors font-medium">
-            <LogOut className="h-5 w-5" /> Déconnexion
+          <button 
+            onClick={() => setActiveTab('schools')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'schools' ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'}`}
+          >
+            <Building2 size={20} /> Écoles ({data.schools.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab('influencers')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'influencers' ? 'bg-indigo-500/10 text-indigo-400 font-medium border border-indigo-500/20' : 'text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'}`}
+          >
+            <Users size={20} /> Influenceurs ({data.influencers?.length || 0})
+          </button>
+        </nav>
+        
+        <div className="absolute bottom-0 left-0 w-full p-4">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-3 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-colors"
+          >
+            <LogOut size={18} /> Déconnexion
           </button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
-        
-        {/* Global Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex items-center gap-6">
-            <div className="bg-blue-100 text-blue-600 p-4 rounded-2xl">
-              <Users className="h-8 w-8" />
-            </div>
-            <div>
-              <p className="text-slate-500 font-medium">Total Influenceurs</p>
-              <h3 className="text-3xl font-extrabold text-slate-800">{data.totalInfluencers}</h3>
-            </div>
+      {/* Main Content */}
+      <div className="ml-64 p-8">
+        <header className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Espace SuperAdmin</h1>
+            <p className="text-slate-400 mt-1">Gérez la plateforme EduTrack, les écoles et les abonnements.</p>
           </div>
           
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex items-center gap-6">
-            <div className="bg-emerald-100 text-emerald-600 p-4 rounded-2xl">
-              <Activity className="h-8 w-8" />
-            </div>
-            <div>
-              <p className="text-slate-500 font-medium">Revenus Générés (Écoles affiliées)</p>
-              <h3 className="text-2xl font-extrabold text-slate-800">{data.totalRevenue.toLocaleString()} FCFA</h3>
-            </div>
+          <div className="flex items-center gap-4 bg-slate-800 px-5 py-2.5 rounded-full border border-slate-700">
+            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-indigo-400 font-bold">A</div>
+            <span className="font-medium">Admin Principal</span>
           </div>
+        </header>
 
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex items-center gap-6">
-            <div className="bg-purple-100 text-purple-600 p-4 rounded-2xl">
-              <DollarSign className="h-8 w-8" />
-            </div>
-            <div>
-              <p className="text-slate-500 font-medium">Commissions Dues / Payées</p>
-              <h3 className="text-2xl font-extrabold text-slate-800">{data.totalCommissionsPaid.toLocaleString()} FCFA</h3>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-4 border-b border-slate-200">
-          <button 
-            onClick={() => setActiveTab('influencers')}
-            className={`pb-4 px-2 font-bold ${activeTab === 'influencers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Influenceurs
-          </button>
-          <button 
-            onClick={() => setActiveTab('schools')}
-            className={`pb-4 px-2 font-bold ${activeTab === 'schools' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            Écoles Inscrites
-          </button>
-        </div>
-
-        {activeTab === 'influencers' && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <h3 className="text-lg font-bold text-slate-800">Réseau d'Influenceurs</h3>
-                {selectedInfluencers.length > 0 && (
-                  <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
-                    <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-                      {selectedInfluencers.length} sélectionné(s)
-                    </span>
-                    <button 
-                      onClick={handleBulkDeleteInfluencers}
-                      className="text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
-                    >
-                      Supprimer la sélection
-                    </button>
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-slate-400 text-sm font-medium">Revenu Total</p>
+                    <h3 className="text-3xl font-bold text-white mt-1">{data.totalRevenue.toLocaleString()} FCFA</h3>
                   </div>
-                )}
+                  <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                    <DollarSign size={24} />
+                  </div>
+                </div>
               </div>
-              <button 
-                onClick={() => setShowCreate(!showCreate)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-700 transition-colors"
-              >
-                <Plus className="h-4 w-4" /> Nouvel Influenceur
-              </button>
+              <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-slate-400 text-sm font-medium">Commissions Payées</p>
+                    <h3 className="text-3xl font-bold text-white mt-1">{data.totalCommissionsPaid.toLocaleString()} FCFA</h3>
+                  </div>
+                  <div className="p-3 bg-rose-500/10 text-rose-400 rounded-lg">
+                    <ArrowUpRight size={24} />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-slate-400 text-sm font-medium">Écoles Actives</p>
+                    <h3 className="text-3xl font-bold text-white mt-1">{data.schools.filter(s => s.isActive).length}</h3>
+                  </div>
+                  <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-lg">
+                    <Building2 size={24} />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-slate-400 text-sm font-medium">Influenceurs</p>
+                    <h3 className="text-3xl font-bold text-white mt-1">{data.totalInfluencers}</h3>
+                  </div>
+                  <div className="p-3 bg-purple-500/10 text-purple-400 rounded-lg">
+                    <Users size={24} />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {showCreate && (
-              <div className="p-6 bg-slate-50 border-b border-slate-200">
-                <form onSubmit={handleCreateInfluencer} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-                  <div className="col-span-1">
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nom complet</label>
-                    <input type="text" required value={newInf.name} onChange={e => setNewInf({...newInf, name: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Jean Dupont"/>
-                  </div>
-                  <div className="col-span-1 md:col-span-2">
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
-                    <input type="email" required value={newInf.email} onChange={e => setNewInf({...newInf, email: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="jean@email.com"/>
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Mot de passe</label>
-                    <input type="password" required value={newInf.password} onChange={e => setNewInf({...newInf, password: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="••••••••"/>
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Taux (%)</label>
-                    <input type="number" required min="0" max="100" value={newInf.commissionRate} onChange={e => setNewInf({...newInf, commissionRate: e.target.value})} className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="30"/>
-                  </div>
-                  <div className="col-span-1">
-                    <button type="submit" disabled={creating} className="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-xl hover:bg-indigo-700 disabled:opacity-50">
-                      {creating ? '...' : 'Créer'}
-                    </button>
-                  </div>
-                </form>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 h-96">
+                <h3 className="text-lg font-medium text-white mb-6">Répartition des Forfaits</h3>
+                <ResponsiveContainer width="100%" height="80%">
+                  <BarChart data={schoolPlansData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                    <XAxis dataKey="name" stroke="#94a3b8" />
+                    <YAxis stroke="#94a3b8" allowDecimals={false} />
+                    <Tooltip cursor={{fill: '#334155'}} contentStyle={{backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff'}} />
+                    <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            )}
 
-            <div className="p-0 overflow-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
-                  <tr>
-                    <th className="px-6 py-4 w-12">
-                      <input 
-                        type="checkbox" 
-                        className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        checked={data.influencers.length > 0 && selectedInfluencers.length === data.influencers.length}
-                        onChange={toggleAllInfluencers}
-                      />
-                    </th>
-                    <th className="px-6 py-4">Influenceur</th>
-                    <th className="px-6 py-4 text-center">Taux</th>
-                    <th className="px-6 py-4">Code Parrainage</th>
-                    <th className="px-6 py-4 text-center">Écoles Apportées</th>
-                    <th className="px-6 py-4 text-right">Gains Générés</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data.influencers.map(inf => (
-                    <tr key={inf.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4">
-                        <input 
-                          type="checkbox" 
-                          className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          checked={selectedInfluencers.includes(inf.id)}
-                          onChange={() => toggleInfluencerSelection(inf.id)}
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-slate-800">{inf.name}</div>
-                        <div className="text-sm text-slate-500">{inf.email}</div>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {editingCommission === inf.id ? (
-                          <div className="flex items-center gap-2 justify-center">
-                            <input 
-                              type="number" 
-                              className="w-16 p-1 border rounded text-center text-sm" 
-                              value={newCommissionValue} 
-                              onChange={e => setNewCommissionValue(e.target.value)} 
-                            />
-                            <button onClick={() => handleUpdateCommission(inf.id)} className="text-xs bg-emerald-500 text-white px-2 py-1 rounded">OK</button>
-                            <button onClick={() => setEditingCommission(null)} className="text-xs bg-slate-300 text-slate-700 px-2 py-1 rounded">X</button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="font-bold text-indigo-600">{inf.commissionRate}%</span>
-                            <button onClick={() => { setEditingCommission(inf.id); setNewCommissionValue(inf.commissionRate); }} className="text-xs text-indigo-500 hover:underline">Modifier</button>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="bg-slate-100 text-slate-700 font-mono px-2 py-1 rounded-md text-sm border border-slate-200">{inf.referralCode}</span>
-                      </td>
-                      <td className="px-6 py-4 text-center font-bold text-slate-700">{inf.schoolsCount}</td>
-                      <td className="px-6 py-4 text-right font-bold text-emerald-600">{inf.totalEarned.toLocaleString()} FCFA</td>
-                      <td className="px-6 py-4 text-right">
-                        <button onClick={() => handleDeleteInfluencer(inf.id)} className="text-red-500 hover:text-red-700 font-medium text-sm">Supprimer</button>
-                      </td>
-                    </tr>
-                  ))}
-                  {data.influencers.length === 0 && (
-                    <tr><td colSpan="7" className="px-6 py-8 text-center text-slate-500">Aucun influenceur n'est encore enregistré.</td></tr>
-                  )}
-                </tbody>
-              </table>
+              <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 h-96 overflow-hidden flex flex-col">
+                <h3 className="text-lg font-medium text-white mb-4">Dernières Écoles Inscrites</h3>
+                <div className="flex-1 overflow-y-auto pr-2">
+                  <div className="space-y-3">
+                    {data.schools.slice(0, 5).map(school => (
+                      <div key={school.id} className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-white">{school.name}</span>
+                          <span className="text-sm text-slate-400">{school.city || 'Ville non précisée'}</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-md">
+                            {school.subscriptionPlan}
+                          </span>
+                          <span className="text-sm text-slate-400">
+                            {new Date(school.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === 'schools' && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-6 py-5 border-b border-slate-200">
-              <div className="flex items-center gap-4">
-                <h3 className="text-lg font-bold text-slate-800">Écoles Inscrites sur EduTrack</h3>
-                {selectedSchools.length > 0 && (
-                  <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
-                    <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full flex-shrink-0">
-                      {selectedSchools.length} sélectionné(s)
-                    </span>
-                    <button 
-                      onClick={handleBulkChangePlan}
-                      className="text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
-                    >
-                      Changer Forfait
-                    </button>
-                    <button 
-                      onClick={() => handleBulkToggleStatus(true)}
-                      className="text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
-                    >
-                      Activer
-                    </button>
-                    <button 
-                      onClick={() => handleBulkToggleStatus(false)}
-                      className="text-sm font-bold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
-                    >
-                      Bloquer
-                    </button>
-                    <button 
-                      onClick={handleBulkDeleteSchools}
-                      className="text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors flex-shrink-0"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                )}
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+            <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">Gestion des Écoles</h2>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Rechercher une école..." 
+                  className="pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl focus:outline-none focus:border-indigo-500 text-sm"
+                />
               </div>
             </div>
-            <div className="p-0 overflow-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-900/50 text-slate-400 text-sm">
                   <tr>
-                    <th className="px-6 py-4 w-12">
-                      <input 
-                        type="checkbox" 
-                        className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        checked={data.schools && data.schools.length > 0 && selectedSchools.length === data.schools.length}
-                        onChange={toggleAllSchools}
-                      />
-                    </th>
-                    <th className="px-6 py-4">École</th>
-                    <th className="px-6 py-4">Plan & Date</th>
-                    <th className="px-6 py-4">Parrainé Par</th>
-                    <th className="px-6 py-4 text-right">Statut / Action</th>
+                    <th className="px-6 py-4 font-medium">Nom de l'école</th>
+                    <th className="px-6 py-4 font-medium">Contact</th>
+                    <th className="px-6 py-4 font-medium">Forfait</th>
+                    <th className="px-6 py-4 font-medium">Statut</th>
+                    <th className="px-6 py-4 font-medium">Affilié par</th>
+                    <th className="px-6 py-4 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data.schools && data.schools.map(school => (
-                    <tr key={school.id} className="hover:bg-slate-50">
+                <tbody className="divide-y divide-slate-700">
+                  {data.schools.map((school) => (
+                    <tr key={school.id} className="hover:bg-slate-700/20 transition-colors">
                       <td className="px-6 py-4">
-                        <input 
-                          type="checkbox" 
-                          className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          checked={selectedSchools.includes(school.id)}
-                          onChange={() => toggleSchoolSelection(school.id)}
-                        />
+                        <div className="font-medium text-white">{school.name}</div>
+                        <div className="text-sm text-slate-400">{school.city || '-'}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-bold text-slate-800">{school.name}</div>
-                        <div className="text-sm text-slate-500">{school.email || 'Aucun email'} • {school.phone || 'Aucun tel'}</div>
-                        <div className="text-xs text-slate-400">{school.city || 'Ville inconnue'}</div>
+                        <div className="text-sm">{school.email || '-'}</div>
+                        <div className="text-sm text-slate-400">{school.phone || '-'}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className="bg-indigo-50 text-indigo-700 font-bold px-2 py-1 rounded-md text-xs">{school.subscriptionPlan}</span>
-                          <button onClick={() => handleChangePlan(school.id, school.subscriptionPlan)} className="text-xs text-indigo-500 hover:underline">Modifier</button>
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">
-                          Inscrite le: {new Date(school.createdAt).toLocaleDateString()}
-                        </div>
+                        <select 
+                          value={school.subscriptionPlan}
+                          onChange={(e) => changeSchoolPlan(school.id, e.target.value)}
+                          className="bg-slate-900 border border-slate-700 text-sm rounded-lg px-2 py-1 outline-none focus:border-indigo-500"
+                        >
+                          <option value="ESSENTIAL">Essential</option>
+                          <option value="STANDARD">Standard</option>
+                          <option value="PREMIUM">Premium</option>
+                          <option value="CUSTOM">Custom</option>
+                        </select>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {school.referredBy ? school.referredBy.name : <span className="text-slate-400 italic">Aucun parrain</span>}
+                      <td className="px-6 py-4">
+                        <button 
+                          onClick={() => toggleSchoolStatus(school.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
+                            school.isActive 
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20' 
+                              : 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+                          }`}
+                        >
+                          {school.isActive ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                          {school.isActive ? 'Actif' : 'Bloqué'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-400">
+                        {school.referredBy?.name || '-'}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex flex-col items-end gap-2">
-                          <span className={`px-2 py-1 rounded-md text-xs font-bold ${school.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                            {school.isActive ? 'ACTIF' : 'BLOQUÉ'}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => handleToggleSchoolStatus(school.id)}
-                              className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${school.isActive ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
-                            >
-                              {school.isActive ? 'Bloquer' : 'Activer'}
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteSchool(school.id, school.name)}
-                              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                            >
-                              Supprimer
-                            </button>
-                          </div>
-                        </div>
+                        <button 
+                          onClick={() => deleteSchool(school.id)}
+                          className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-colors"
+                          title="Supprimer l'école"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </td>
                     </tr>
                   ))}
-                  {(!data.schools || data.schools.length === 0) && (
-                    <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-500">Aucune école n'est encore enregistrée.</td></tr>
+                  {data.schools.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-8 text-center text-slate-400">
+                        Aucune école inscrite pour le moment.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'influencers' && (
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+            <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">Influenceurs / Apporteurs d'affaires</h2>
+              <button 
+                onClick={() => setShowInfModal(true)}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-lg shadow-indigo-500/20"
+              >
+                <Plus size={18} /> Nouvel Influenceur
+              </button>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-900/50 text-slate-400 text-sm">
+                  <tr>
+                    <th className="px-6 py-4 font-medium">Influenceur</th>
+                    <th className="px-6 py-4 font-medium">Code Parrainage</th>
+                    <th className="px-6 py-4 font-medium">Commission (%)</th>
+                    <th className="px-6 py-4 font-medium">Écoles Référées</th>
+                    <th className="px-6 py-4 font-medium">Gains Totaux</th>
+                    <th className="px-6 py-4 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700">
+                  {data.influencers?.map((inf) => (
+                    <tr key={inf.id} className="hover:bg-slate-700/20 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-white">{inf.name}</div>
+                        <div className="text-sm text-slate-400">{inf.email}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-sm bg-slate-900 px-2 py-1 rounded text-indigo-300 border border-slate-700">
+                          {inf.referralCode}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        {inf.commissionRate}%
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Building2 size={16} className="text-slate-400" />
+                          <span className="font-medium">{inf.schoolsCount || 0}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-emerald-400 font-medium">{(inf.totalEarned || 0).toLocaleString()} FCFA</span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => deleteInfluencer(inf.id)}
+                          className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data.influencers || data.influencers.length === 0) && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-8 text-center text-slate-400">
+                        Aucun influenceur trouvé.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -585,6 +429,78 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Modal Nouvel Influenceur */}
+      {showInfModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-slate-700 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-white">Ajouter un Influenceur</h2>
+              <button onClick={() => setShowInfModal(false)} className="text-slate-400 hover:text-white">
+                <XCircle size={24} />
+              </button>
+            </div>
+            <form onSubmit={createInfluencer} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Nom complet</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newInf.name}
+                  onChange={e => setNewInf({...newInf, name: e.target.value})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+                <input 
+                  type="email" 
+                  required
+                  value={newInf.email}
+                  onChange={e => setNewInf({...newInf, email: e.target.value})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Mot de passe temporaire</label>
+                <input 
+                  type="password" 
+                  required
+                  value={newInf.password}
+                  onChange={e => setNewInf({...newInf, password: e.target.value})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">Taux de Commission (%)</label>
+                <input 
+                  type="number" 
+                  required
+                  min="0" max="100"
+                  value={newInf.commissionRate}
+                  onChange={e => setNewInf({...newInf, commissionRate: e.target.value})}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500" 
+                />
+              </div>
+              <div className="pt-4 flex justify-end gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowInfModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-slate-300 hover:bg-slate-700 font-medium"
+                >
+                  Annuler
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-lg shadow-indigo-600/30"
+                >
+                  Créer l'influenceur
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

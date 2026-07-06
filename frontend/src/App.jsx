@@ -17,6 +17,9 @@ import AbsencesPage from './pages/Teacher/AbsencesPage';
 import CahierDeTextesPage from './pages/Teacher/CahierDeTextesPage';
 import BulletinsPage from './pages/Director/BulletinsPage';
 import PaymentsPage from './pages/Director/PaymentsPage';
+import PlatformLogin from './pages/Platform/PlatformLogin';
+import SuperAdminDashboard from './pages/Platform/SuperAdminDashboard';
+import InfluencerDashboard from './pages/Platform/InfluencerDashboard';
 import PayrollPage from './pages/Director/PayrollPage';
 import SettingsPage from './pages/Director/SettingsPage';
 import ParentPortal from './pages/Parent/ParentPortal';
@@ -34,9 +37,6 @@ import StudentPortal from './pages/Student/StudentPortal';
 import MessagesPage from './pages/Shared/MessagesPage';
 import PricingPage from './pages/Public/PricingPage';
 import BillingPage from './pages/Director/BillingPage';
-import PlatformLogin from './pages/Platform/PlatformLogin';
-import InfluencerDashboard from './pages/Platform/InfluencerDashboard';
-import SuperAdminDashboard from './pages/Platform/SuperAdminDashboard';
 
 function HomeRedirect() {
   const { user } = useContext(AuthContext);
@@ -64,6 +64,23 @@ function RoleRoute({ roles, children }) {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
+}
+
+// Route guard for Platform/SaaS users
+function PlatformRoute({ roles, children }) {
+  const token = localStorage.getItem('platform_token');
+  const userStr = localStorage.getItem('platform_user');
+  if (!token || !userStr) return <Navigate to="/platform/login" replace />;
+  try {
+    const user = JSON.parse(userStr);
+    if (!roles.includes(user.role)) {
+      if (user.role === 'INFLUENCER') return <Navigate to="/platform/influencer" replace />;
+      return <Navigate to="/platform/admin" replace />;
+    }
+    return children;
+  } catch (e) {
+    return <Navigate to="/platform/login" replace />;
+  }
 }
 
 // Route guard to enforce plan restrictions (for Director)
@@ -147,6 +164,11 @@ export default function App() {
           <Route path="/director/timetable" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><TimetablePage /></RoleRoute>} />
           <Route path="/messages" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT']}><MessagesPage /></RoleRoute>} />
         </Route>
+
+        {/* SaaS Platform Protected Routes (No Layout) */}
+        <Route path="/platform/admin" element={<PlatformRoute roles={['SUPER_ADMIN']}><SuperAdminDashboard /></PlatformRoute>} />
+        <Route path="/platform/influencer" element={<PlatformRoute roles={['INFLUENCER']}><InfluencerDashboard /></PlatformRoute>} />
+
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

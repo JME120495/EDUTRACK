@@ -1,13 +1,15 @@
 export const API_BASE = 'https://edutrack-api-1du4.onrender.com/api';
 
 export async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem('edutrack_token');
+  const token = options.usePlatformToken 
+    ? localStorage.getItem('platform_token') 
+    : localStorage.getItem('edutrack_token');
   const selectedYearId = localStorage.getItem('edutrack_selected_year_id');
 
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(selectedYearId ? { 'X-Academic-Year': selectedYearId } : {}),
+    ...(selectedYearId && !options.usePlatformToken ? { 'X-Academic-Year': selectedYearId } : {}),
     ...options.headers,
   };
 
