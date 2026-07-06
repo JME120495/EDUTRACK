@@ -29,9 +29,8 @@ export default function CahierDeTextesPage() {
     try {
       setLoading(true);
       // Fetch teacher's assigned subjects/classes to populate dropdowns
-      const [entriesRes, profileRes] = await Promise.all([
-        apiFetch('/cahier-textes/teacher'),
-        apiFetch('/users/me')
+      const [entriesRes] = await Promise.all([
+        apiFetch('/cahier-textes/teacher')
       ]);
       setEntries(entriesRes);
       
