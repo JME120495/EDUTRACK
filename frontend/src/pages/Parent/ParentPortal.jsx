@@ -19,7 +19,8 @@ import {
   Lock,
   Bell,
   Send,
-  Download
+  Download,
+  Shield
 } from 'lucide-react';
 
 export default function ParentPortal() {
