@@ -30,10 +30,10 @@ export default function LogisticsPage() {
     setLoading(true);
     try {
       const [rRes, tsRes, csRes, eRes] = await Promise.all([
-        apiFetch('/api/logistics/transport/routes'),
-        apiFetch('/api/logistics/transport/subscriptions'),
-        apiFetch('/api/logistics/canteen/subscriptions'),
-        apiFetch('/api/eleves')
+        apiFetch('/logistics/transport/routes'),
+        apiFetch('/logistics/transport/subscriptions'),
+        apiFetch('/logistics/canteen/subscriptions'),
+        apiFetch('/eleves')
       ]);
       setRoutes(rRes || []);
       setTransportSubs(tsRes || []);
@@ -55,12 +55,12 @@ export default function LogisticsPage() {
     
     try {
       if (editingRoute) {
-        await apiFetch(`/api/logistics/transport/routes/${editingRoute.id}`, {
+        await apiFetch(`/logistics/transport/routes/${editingRoute.id}`, {
           method: 'PUT',
           body: JSON.stringify(payload)
         });
       } else {
-        await apiFetch('/api/logistics/transport/routes', {
+        await apiFetch('/logistics/transport/routes', {
           method: 'POST',
           body: JSON.stringify(payload)
         });
@@ -77,7 +77,7 @@ export default function LogisticsPage() {
   const handleDeleteRoute = async (id) => {
     if (!window.confirm("Supprimer cette ligne de transport ? Tous les abonnements liés seront supprimés.")) return;
     try {
-      await apiFetch(`/api/logistics/transport/routes/${id}`, { method: 'DELETE' });
+      await apiFetch(`/logistics/transport/routes/${id}`, { method: 'DELETE' });
       fetchData();
     } catch (err) {
       console.error(err);
@@ -93,12 +93,12 @@ export default function LogisticsPage() {
     
     try {
       if (editingSub) {
-        await apiFetch(`/api/logistics/transport/subscriptions/${editingSub.id}`, {
+        await apiFetch(`/logistics/transport/subscriptions/${editingSub.id}`, {
           method: 'PUT',
           body: JSON.stringify(payload)
         });
       } else {
-        await apiFetch('/api/logistics/transport/subscriptions', {
+        await apiFetch('/logistics/transport/subscriptions', {
           method: 'POST',
           body: JSON.stringify(payload)
         });
@@ -115,7 +115,7 @@ export default function LogisticsPage() {
   const handleDeleteTransportSub = async (id) => {
     if (!window.confirm("Supprimer cet abonnement ?")) return;
     try {
-      await apiFetch(`/api/logistics/transport/subscriptions/${id}`, { method: 'DELETE' });
+      await apiFetch(`/logistics/transport/subscriptions/${id}`, { method: 'DELETE' });
       fetchData();
     } catch (err) {
       console.error(err);
@@ -131,12 +131,12 @@ export default function LogisticsPage() {
     
     try {
       if (editingSub) {
-        await apiFetch(`/api/logistics/canteen/subscriptions/${editingSub.id}`, {
+        await apiFetch(`/logistics/canteen/subscriptions/${editingSub.id}`, {
           method: 'PUT',
           body: JSON.stringify(payload)
         });
       } else {
-        await apiFetch('/api/logistics/canteen/subscriptions', {
+        await apiFetch('/logistics/canteen/subscriptions', {
           method: 'POST',
           body: JSON.stringify(payload)
         });
@@ -153,7 +153,7 @@ export default function LogisticsPage() {
   const handleDeleteCanteenSub = async (id) => {
     if (!window.confirm("Supprimer cet abonnement ?")) return;
     try {
-      await apiFetch(`/api/logistics/canteen/subscriptions/${id}`, { method: 'DELETE' });
+      await apiFetch(`/logistics/canteen/subscriptions/${id}`, { method: 'DELETE' });
       fetchData();
     } catch (err) {
       console.error(err);
