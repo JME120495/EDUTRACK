@@ -22,6 +22,32 @@ export default function LogisticsPage() {
   const [editingRoute, setEditingRoute] = useState(null);
   const [editingSub, setEditingSub] = useState(null);
 
+  // Search states for transport/canteen modals
+  const [transportSearch, setTransportSearch] = useState('');
+  const [selectedTransportEleveId, setSelectedTransportEleveId] = useState('');
+  const [isTransportDropdownOpen, setIsTransportDropdownOpen] = useState(false);
+
+  const [canteenSearch, setCanteenSearch] = useState('');
+  const [selectedCanteenEleveId, setSelectedCanteenEleveId] = useState('');
+  const [isCanteenDropdownOpen, setIsCanteenDropdownOpen] = useState(false);
+
+  // Reset search states on modal open/close
+  useEffect(() => {
+    if (!isTransportSubModalOpen) {
+      setTransportSearch('');
+      setSelectedTransportEleveId('');
+      setIsTransportDropdownOpen(false);
+    }
+  }, [isTransportSubModalOpen]);
+
+  useEffect(() => {
+    if (!isCanteenSubModalOpen) {
+      setCanteenSearch('');
+      setSelectedCanteenEleveId('');
+      setIsCanteenDropdownOpen(false);
+    }
+  }, [isCanteenSubModalOpen]);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -467,10 +493,57 @@ export default function LogisticsPage() {
               {!editingSub && (
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Élève *</label>
-                  <select required name="eleveId" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all text-sm">
-                    <option value="">Sélectionner un élève...</option>
-                    {eleves.map(e => <option key={e.id} value={e.id}>{e.name} ({e.class.name})</option>)}
-                  </select>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      placeholder="Rechercher un élève..." 
+                      value={transportSearch}
+                      onChange={(e) => {
+                        setTransportSearch(e.target.value);
+                        setIsTransportDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsTransportDropdownOpen(true)}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all text-sm font-medium"
+                    />
+                    <input type="hidden" name="eleveId" value={selectedTransportEleveId} required />
+                    
+                    {isTransportDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setIsTransportDropdownOpen(false)} />
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-50">
+                          {eleves
+                            .filter(e => {
+                              const q = transportSearch.toLowerCase();
+                              return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                            })
+                            .map(e => (
+                              <button
+                                key={e.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedTransportEleveId(e.id);
+                                  setTransportSearch(`${e.name} (${e.class.name})`);
+                                  setIsTransportDropdownOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm transition-colors flex justify-between items-center"
+                              >
+                                <div>
+                                  <span className="font-bold text-slate-800">{e.name}</span>
+                                  <span className="text-xs text-slate-500 ml-1.5">({e.class.name})</span>
+                                </div>
+                                {e.matricule && <span className="text-[10px] font-mono text-slate-400">{e.matricule}</span>}
+                              </button>
+                            ))}
+                          {eleves.filter(e => {
+                            const q = transportSearch.toLowerCase();
+                            return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                          }).length === 0 && (
+                            <div className="px-4 py-3 text-sm text-slate-500 text-center">Aucun élève trouvé</div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
               
@@ -527,10 +600,57 @@ export default function LogisticsPage() {
               {!editingSub && (
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Élève *</label>
-                  <select required name="eleveId" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-sm">
-                    <option value="">Sélectionner un élève...</option>
-                    {eleves.map(e => <option key={e.id} value={e.id}>{e.name} ({e.class.name})</option>)}
-                  </select>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      placeholder="Rechercher un élève..." 
+                      value={canteenSearch}
+                      onChange={(e) => {
+                        setCanteenSearch(e.target.value);
+                        setIsCanteenDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsCanteenDropdownOpen(true)}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-sm font-medium"
+                    />
+                    <input type="hidden" name="eleveId" value={selectedCanteenEleveId} required />
+                    
+                    {isCanteenDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setIsCanteenDropdownOpen(false)} />
+                        <div className="absolute z-20 w-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-50">
+                          {eleves
+                            .filter(e => {
+                              const q = canteenSearch.toLowerCase();
+                              return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                            })
+                            .map(e => (
+                              <button
+                                key={e.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCanteenEleveId(e.id);
+                                  setCanteenSearch(`${e.name} (${e.class.name})`);
+                                  setIsCanteenDropdownOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm transition-colors flex justify-between items-center"
+                              >
+                                <div>
+                                  <span className="font-bold text-slate-800">{e.name}</span>
+                                  <span className="text-xs text-slate-500 ml-1.5">({e.class.name})</span>
+                                </div>
+                                {e.matricule && <span className="text-[10px] font-mono text-slate-400">{e.matricule}</span>}
+                              </button>
+                            ))}
+                          {eleves.filter(e => {
+                            const q = canteenSearch.toLowerCase();
+                            return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                          }).length === 0 && (
+                            <div className="px-4 py-3 text-sm text-slate-500 text-center">Aucun élève trouvé</div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
