@@ -167,14 +167,14 @@ export default function RegisterPage() {
             <span className="font-extrabold text-white text-2xl tracking-tight">EduTrack</span>
           </Link>
           <div className="hidden md:flex items-center justify-center space-x-2">
-            <Link to="/#features" className="text-slate-300 font-semibold px-4 py-2 rounded-full hover:bg-slate-800 hover:text-amber-500 transition-colors text-sm">Fonctionnalités</Link>
-            <Link to="/about" className="text-slate-300 font-semibold px-4 py-2 rounded-full hover:bg-slate-800 hover:text-amber-500 transition-colors text-sm">À propos</Link>
-            <Link to="/pricing" className="text-slate-300 font-semibold px-4 py-2 rounded-full hover:bg-slate-800 hover:text-amber-500 transition-colors text-sm">Tarifs</Link>
+            <Link to="/#features" className="text-slate-300 font-semibold px-4 py-2 rounded-full hover:bg-slate-800 hover:text-amber-500 transition-colors text-sm">{isFr ? 'Fonctionnalités' : 'Features'}</Link>
+            <Link to="/about" className="text-slate-300 font-semibold px-4 py-2 rounded-full hover:bg-slate-800 hover:text-amber-500 transition-colors text-sm">{isFr ? 'À propos' : 'About'}</Link>
+            <Link to="/pricing" className="text-slate-300 font-semibold px-4 py-2 rounded-full hover:bg-slate-800 hover:text-amber-500 transition-colors text-sm">{isFr ? 'Tarifs' : 'Pricing'}</Link>
             <Link to="/contact" className="text-slate-300 font-semibold px-4 py-2 rounded-full hover:bg-slate-800 hover:text-amber-500 transition-colors text-sm">Contact</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-amber-500 px-4 py-2 border border-amber-500 rounded-xl font-semibold hover:bg-amber-500 hover:text-slate-900 transition-all hover:-translate-y-0.5 text-sm">Se connecter</Link>
-            <Link to="/register" className="hidden md:block bg-amber-500 text-slate-900 px-5 py-2 rounded-xl font-bold shadow-md hover:bg-amber-400 hover:-translate-y-0.5 transition-all text-sm">S'inscrire</Link>
+            <Link to="/login" className="text-amber-500 px-4 py-2 border border-amber-500 rounded-xl font-semibold hover:bg-amber-500 hover:text-slate-900 transition-all hover:-translate-y-0.5 text-sm">{isFr ? 'Se connecter' : 'Login'}</Link>
+            <Link to="/register" className="hidden md:block bg-amber-500 text-slate-900 px-5 py-2 rounded-xl font-bold shadow-md hover:bg-amber-400 hover:-translate-y-0.5 transition-all text-sm">{isFr ? "S'inscrire" : 'Register'}</Link>
           </div>
         </div>
       </header>
@@ -198,8 +198,8 @@ export default function RegisterPage() {
 
           <div className="text-center mb-8">
             <div className="mx-auto w-20 h-20 bg-slate-800 border border-slate-700 rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-lg">🎓</div>
-            <h2 className="text-3xl font-extrabold text-white">Créer mon école</h2>
-            <p className="mt-2 text-sm text-slate-400">Commencez gratuitement avec le plan GRATUIT</p>
+            <h2 className="text-3xl font-extrabold text-white">{isFr ? 'Créer mon école' : 'Register My School'}</h2>
+            <p className="mt-2 text-sm text-slate-400">{isFr ? 'Commencez gratuitement avec le plan GRATUIT' : 'Get started for free with the FREE plan'}</p>
           </div>
 
           {isSubmitted ? (
@@ -209,14 +209,15 @@ export default function RegisterPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-4">Inscription Réussie !</h3>
+              <h3 className="text-2xl font-bold text-white mb-4">{isFr ? 'Inscription Réussie !' : 'Registration Successful!'}</h3>
               <p className="text-slate-300 mb-8 max-w-md mx-auto">
-                Votre compte a été créé avec succès. Pour des raisons de sécurité, nous vous avons envoyé un e-mail de confirmation.
-                <br /><br />
-                Veuillez cliquer sur le lien contenu dans cet e-mail pour activer votre compte.
+                {isFr 
+                  ? "Votre compte a été créé avec succès. Pour des raisons de sécurité, nous vous avons envoyé un e-mail de confirmation. Veuillez cliquer sur le lien contenu dans cet e-mail pour activer votre compte." 
+                  : "Your account has been successfully created. For security reasons, we have sent you a confirmation email. Please click the link in that email to activate your account."
+                }
               </p>
               <Link to="/login" className="inline-block bg-amber-500 text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-amber-400 transition-colors">
-                Aller à la page de connexion
+                {isFr ? 'Aller à la page de connexion' : 'Go to Login Page'}
               </Link>
             </div>
           ) : (
@@ -238,20 +239,20 @@ export default function RegisterPage() {
               <form className="space-y-8" onSubmit={handleRegister}>
                 {/* Section 1: School Info */}
                 <div className="space-y-6">
-                  <h3 className="text-lg font-medium text-white border-b border-slate-700 pb-2">Informations de l'établissement</h3>
+                  <h3 className="text-lg font-medium text-white border-b border-slate-700 pb-2">{isFr ? "Informations de l'établissement" : "School Information"}</h3>
                   
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-slate-300">Nom de l'établissement<span className="text-red-500 ml-1">*</span></label>
-                    <input type="text" required value={schoolName} onChange={e => setSchoolName(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder="École Primaire de..." />
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Nom de l'établissement" : "School Name"}<span className="text-red-500 ml-1">*</span></label>
+                    <input type="text" required value={schoolName} onChange={e => setSchoolName(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder={isFr ? "École Primaire de..." : "Primary School of..."} />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-slate-300">Adresse<span className="text-red-500 ml-1">*</span></label>
-                    <input type="text" required value={address} onChange={e => setAddress(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder="Adresse complète" />
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Adresse" : "Address"}<span className="text-red-500 ml-1">*</span></label>
+                    <input type="text" required value={address} onChange={e => setAddress(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder={isFr ? "Adresse complète" : "Full Address"} />
                   </div>
 
                   <div className="space-y-1 relative">
-                    <label className="block text-sm font-medium text-slate-300">Pays *</label>
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Pays" : "Country"} *</label>
                     <div className="relative">
                       <select required value={country} onChange={handleCountryChange} className="appearance-none flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent cursor-pointer">
                         {africanCountries.map((c, index) => (
@@ -264,63 +265,63 @@ export default function RegisterPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-slate-300">Téléphone</label>
-                      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder="+237 numéro de téléphone" />
+                      <label className="block text-sm font-medium text-slate-300">{isFr ? "Téléphone" : "Phone"}</label>
+                      <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder={isFr ? "+237 numéro de téléphone" : "+237 phone number"} />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-slate-300">Secteur d'enseignement *</label>
+                      <label className="block text-sm font-medium text-slate-300">{isFr ? "Secteur d'enseignement *" : "School Type *"}</label>
                       <select required value={typeOfSchool} onChange={e => setTypeOfSchool(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
-                        <option value="">Sélectionnez le secteur</option>
-                        <option value="Public">Public</option>
-                        <option value="Privé">Privé</option>
+                        <option value="">{isFr ? "Sélectionnez le secteur" : "Select sector"}</option>
+                        <option value="Public">{isFr ? "Public" : "Public"}</option>
+                        <option value="Privé">{isFr ? "Privé" : "Private"}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Niveau d'enseignement * (sélectionnez un ou plusieurs)</label>
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Niveau d'enseignement * (sélectionnez un ou plusieurs)" : "Levels of Education * (select one or more)"}</label>
                     <div className="space-y-2 mt-2">
                       <label className="flex items-center cursor-pointer">
                         <input type="checkbox" checked={schoolTypes.includes('maternelle')} onChange={() => handleTypeToggle('maternelle')} className="rounded border-slate-700 bg-slate-900/50 text-amber-500 shadow-sm focus:ring-amber-500 w-4 h-4 cursor-pointer" />
-                        <span className="ml-2 text-sm text-slate-300">Maternelle</span>
+                        <span className="ml-2 text-sm text-slate-300">{isFr ? "Maternelle" : "Nursery"}</span>
                       </label>
                       <label className="flex items-center cursor-pointer">
                         <input type="checkbox" checked={schoolTypes.includes('primaire')} onChange={() => handleTypeToggle('primaire')} className="rounded border-slate-700 bg-slate-900/50 text-amber-500 shadow-sm focus:ring-amber-500 w-4 h-4 cursor-pointer" />
-                        <span className="ml-2 text-sm text-slate-300">Primaire</span>
+                        <span className="ml-2 text-sm text-slate-300">{isFr ? "Primaire" : "Primary"}</span>
                       </label>
                       <label className="flex items-center cursor-pointer">
                         <input type="checkbox" checked={schoolTypes.includes('secondaire')} onChange={() => handleTypeToggle('secondaire')} className="rounded border-slate-700 bg-slate-900/50 text-amber-500 shadow-sm focus:ring-amber-500 w-4 h-4 cursor-pointer" />
-                        <span className="ml-2 text-sm text-slate-300">Secondaire</span>
+                        <span className="ml-2 text-sm text-slate-300">{isFr ? "Secondaire" : "Secondary"}</span>
                       </label>
                       <label className="flex items-center cursor-pointer">
                         <input type="checkbox" checked={schoolTypes.includes('superieur')} onChange={() => handleTypeToggle('superieur')} className="rounded border-slate-700 bg-slate-900/50 text-amber-500 shadow-sm focus:ring-amber-500 w-4 h-4 cursor-pointer" />
-                        <span className="ml-2 text-sm text-slate-300">Supérieur</span>
+                        <span className="ml-2 text-sm text-slate-300">{isFr ? "Supérieur" : "Higher Education"}</span>
                       </label>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-slate-300">Ville<span className="text-red-500 ml-1">*</span></label>
-                      <input type="text" required value={city} onChange={e => setCity(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder="Ex: Douala" />
+                      <label className="block text-sm font-medium text-slate-300">{isFr ? "Ville" : "City"}<span className="text-red-500 ml-1">*</span></label>
+                      <input type="text" required value={city} onChange={e => setCity(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder={isFr ? "Ex: Douala" : "Ex: Douala"} />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-slate-300">Nombre d'élèves<span className="text-red-500 ml-1">*</span></label>
+                      <label className="block text-sm font-medium text-slate-300">{isFr ? "Nombre d'élèves" : "Student Count"}<span className="text-red-500 ml-1">*</span></label>
                       <input type="number" required min="1" value={studentCount} onChange={e => setStudentCount(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder="Ex: 100" />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-slate-300">Devise<span className="text-red-500 ml-1">*</span></label>
+                      <label className="block text-sm font-medium text-slate-300">{isFr ? "Devise" : "Currency"}<span className="text-red-500 ml-1">*</span></label>
                       <div className="relative">
                         <select value={currency} onChange={e => setCurrency(e.target.value)} required className="appearance-none flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
-                          <option value="XAF">FCFA (CEMAC)</option>
-                          <option value="XOF">FCFA (UEMOA)</option>
-                          <option value="NGN">Naira (NGN)</option>
-                          <option value="KES">Shilling Kényan (KES)</option>
-                          <option value="ZAR">Rand (ZAR)</option>
-                          <option value="MAD">Dirham Marocain (MAD)</option>
-                          <option value="CDF">Franc Congolais (CDF)</option>
-                          <option value="GHS">Cedi Ghanéen (GHS)</option>
-                          <option value="USD">Dollar US ($)</option>
+                          <option value="XAF">{isFr ? "FCFA (CEMAC)" : "FCFA (CEMAC)"}</option>
+                          <option value="XOF">{isFr ? "FCFA (UEMOA)" : "FCFA (UEMOA)"}</option>
+                          <option value="NGN">{isFr ? "Naira (NGN)" : "Naira (NGN)"}</option>
+                          <option value="KES">{isFr ? "Shilling Kényan (KES)" : "Kenyan Shilling (KES)"}</option>
+                          <option value="ZAR">{isFr ? "Rand (ZAR)" : "Rand (ZAR)"}</option>
+                          <option value="MAD">{isFr ? "Dirham Marocain (MAD)" : "Moroccan Dirham (MAD)"}</option>
+                          <option value="CDF">{isFr ? "Franc Congolais (CDF)" : "Congolese Franc (CDF)"}</option>
+                          <option value="GHS">{isFr ? "Cedi Ghanéen (GHS)" : "Ghanaian Cedi (GHS)"}</option>
+                          <option value="USD">{isFr ? "Dollar US ($)" : "US Dollar ($)"}</option>
                           <option value="EUR">Euro (€)</option>
                         </select>
                         <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-500 pointer-events-none" />
@@ -329,18 +330,18 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Logo de l'établissement (optionnel)</label>
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Logo de l'établissement (optionnel)" : "School Logo (optional)"}</label>
                     <div className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-xl p-8 text-center transition-colors cursor-pointer bg-slate-900/30">
                       <div className="flex justify-center mb-3">
                         <ImageIcon className="h-12 w-12 text-slate-500" />
                       </div>
-                      <h3 className="text-base font-medium text-white">Glissez-déposez votre image</h3>
-                      <p className="text-sm text-slate-400 mt-1">ou cliquez pour parcourir</p>
-                      <p className="text-xs text-slate-500 mt-2">Formats acceptés: JPG, PNG, WebP, GIF<br/>Taille maximale: 5.0MB</p>
+                      <h3 className="text-base font-medium text-white">{isFr ? "Glissez-déposez votre image" : "Drag & drop your image"}</h3>
+                      <p className="text-sm text-slate-400 mt-1">{isFr ? "ou cliquez pour parcourir" : "or click to browse"}</p>
+                      <p className="text-xs text-slate-500 mt-2">{isFr ? "Formats acceptés: JPG, PNG, WebP, GIF. Taille maximale: 5.0MB" : "Accepted formats: JPG, PNG, WebP, GIF. Max size: 5.0MB"}</p>
                     </div>
                     <div className="text-center mt-4">
                       <button type="button" className="inline-flex items-center justify-center rounded-lg border border-slate-600 bg-slate-800 text-white hover:bg-slate-700 shadow-sm px-4 py-2.5 text-sm font-medium transition-colors">
-                        <Upload className="h-4 w-4 mr-2" /> Parcourir les images
+                        <Upload className="h-4 w-4 mr-2" /> {isFr ? "Parcourir les images" : "Browse Images"}
                       </button>
                     </div>
                   </div>
@@ -348,26 +349,26 @@ export default function RegisterPage() {
 
                 {/* Section 2: Admin Info */}
                 <div className="space-y-6 pt-6 border-t border-slate-700">
-                  <h3 className="text-lg font-medium text-white">Votre compte administrateur</h3>
+                  <h3 className="text-lg font-medium text-white">{isFr ? "Votre compte administrateur" : "Your administrator account"}</h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-slate-300">Prénom<span className="text-red-500 ml-1">*</span></label>
+                      <label className="block text-sm font-medium text-slate-300">{isFr ? "Prénom" : "First Name"}<span className="text-red-500 ml-1">*</span></label>
                       <input type="text" required value={firstName} onChange={e => setFirstName(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-slate-300">Nom<span className="text-red-500 ml-1">*</span></label>
+                      <label className="block text-sm font-medium text-slate-300">{isFr ? "Nom" : "Last Name"}<span className="text-red-500 ml-1">*</span></label>
                       <input type="text" required value={lastName} onChange={e => setLastName(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <label className="block text-sm font-medium text-slate-300">Email<span className="text-red-500 ml-1">*</span></label>
-                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder="votre@email.com" />
+                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent placeholder:text-slate-500" placeholder="your@email.com" />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-slate-300">Mot de passe<span className="text-red-500 ml-1">*</span></label>
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Mot de passe" : "Password"}<span className="text-red-500 ml-1">*</span></label>
                     <div className="relative">
                       <input type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 pr-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 focus:outline-none">
@@ -377,7 +378,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-slate-300">Confirmer le mot de passe<span className="text-red-500 ml-1">*</span></label>
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Confirmer le mot de passe" : "Confirm password"}<span className="text-red-500 ml-1">*</span></label>
                     <div className="relative">
                       <input type={showConfirmPassword ? 'text' : 'password'} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 pr-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" />
                       <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 focus:outline-none">
@@ -387,29 +388,29 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-300">Langue préférée</label>
+                    <label className="block text-sm font-medium text-slate-300">{isFr ? "Langue préférée" : "Preferred Language"}</label>
                     <select value={lang} onChange={e => setLang(e.target.value)} className="flex h-10 w-full rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent">
-                      <option value="fr">Français</option>
-                      <option value="en">Anglais</option>
+                      <option value="fr">{isFr ? "Français" : "French"}</option>
+                      <option value="en">{isFr ? "Anglais" : "English"}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="pt-4">
                   <button type="submit" disabled={loading} className="w-full flex items-center justify-center bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-xl h-12 px-4 font-bold transition-all disabled:opacity-50 shadow-md hover:shadow-lg">
-                    {loading ? 'Création en cours...' : 'Créer mon école GRATUITEMENT'}
+                    {loading ? (isFr ? 'Création en cours...' : 'Creating School...') : (isFr ? 'Créer mon école GRATUITEMENT' : 'Create My School for FREE')}
                   </button>
                 </div>
                 
                 <div className="text-xs text-slate-500 text-center space-y-1 mt-4">
-                  <p>En créant votre compte, vous acceptez nos conditions d'utilisation</p>
-                  <p>Votre email sera vérifié avant l'activation du compte</p>
+                  <p>{isFr ? "En créant votre compte, vous acceptez nos conditions d'utilisation" : "By creating your account, you agree to our terms of use"}</p>
+                  <p>{isFr ? "Votre email sera vérifié avant l'activation du compte" : "Your email will be verified before account activation"}</p>
                 </div>
               </form>
 
               <div className="mt-8 text-center border-t border-slate-700 pt-6">
                 <Link to="/login" className="text-sm font-medium text-amber-500 hover:text-amber-400">
-                  Vous avez déjà un compte ? Connectez-vous
+                  {isFr ? "Vous avez déjà un compte ? Connectez-vous" : "Already have an account? Log in"}
                 </Link>
               </div>
             </div>
@@ -423,15 +424,15 @@ export default function RegisterPage() {
         <div className="max-w-[1200px] mx-auto px-5 grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 text-center md:text-left relative z-10">
           <div>
             <h4 className="text-lg font-medium mb-4 text-white">EduTrack Solutions</h4>
-            <p className="text-slate-400 text-sm leading-relaxed">Une plateforme de gestion scolaire conçue pour les écoles francophones, déployée en premier avec les écoles au Cameroun.</p>
+            <p className="text-slate-400 text-sm leading-relaxed">{isFr ? "Une plateforme de gestion scolaire conçue pour les écoles francophones, déployée en premier avec les écoles au Cameroun." : "A school management platform built for African schools, deployed first with schools in Cameroon."}</p>
           </div>
           <div>
-            <h4 className="text-lg font-medium mb-4 text-white">Liens rapides</h4>
+            <h4 className="text-lg font-medium mb-4 text-white">{isFr ? "Liens rapides" : "Quick Links"}</h4>
             <ul className="space-y-2 text-sm text-slate-400">
-              <li><Link to="/#demo" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">Démo gratuite</Link></li>
-              <li><Link to="/#how-it-works" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">Comment ça marche</Link></li>
-              <li><Link to="/#features" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">Fonctionnalités</Link></li>
-              <li><Link to="/login" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">Connexion</Link></li>
+              <li><Link to="/#demo" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">{isFr ? "Démo gratuite" : "Free Demo"}</Link></li>
+              <li><Link to="/#how-it-works" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">{isFr ? "Comment ça marche" : "How it works"}</Link></li>
+              <li><Link to="/#features" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">{isFr ? "Fonctionnalités" : "Features"}</Link></li>
+              <li><Link to="/login" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">{isFr ? "Connexion" : "Login"}</Link></li>
             </ul>
           </div>
           <div>
@@ -439,11 +440,11 @@ export default function RegisterPage() {
             <ul className="space-y-2 text-sm text-slate-400">
               <li><a href="tel:+237691003392" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">+237 691 00 33 92 / +237 681 62 55 20</a></li>
               <li><a href="mailto:contact@edutrack.com" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">contact@edutrack.com</a></li>
-              <li><a href="https://wa.me/237691003392" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">WhatsApp Direct</a></li>
+              <li><a href="https://wa.me/237691003392" target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 hover:translate-x-1 transition-all inline-block">{isFr ? "WhatsApp Direct" : "Direct WhatsApp"}</a></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-lg font-medium mb-4 text-white">Nos bureaux</h4>
+            <h4 className="text-lg font-medium mb-4 text-white">{isFr ? "Nos bureaux" : "Our Offices"}</h4>
             <p className="text-sm text-slate-400 leading-relaxed">
               Yaoundé, Cameroun<br />
               Emana
@@ -451,8 +452,8 @@ export default function RegisterPage() {
           </div>
         </div>
         <div className="max-w-[1200px] mx-auto px-5 border-t border-slate-800 pt-6 mt-6 text-center text-sm text-slate-500 relative z-10">
-          <p className="mb-2">© {new Date().getFullYear()} EduTrack. Tous droits réservés.</p>
-          <p className="italic">"Moins de travail manuel. Un suivi scolaire plus clair."</p>
+          <p className="mb-2">© {new Date().getFullYear()} EduTrack. {isFr ? "Tous droits réservés." : "All rights reserved."}</p>
+          <p className="italic">"{isFr ? "Moins de travail manuel. Un suivi scolaire plus clair." : "Less manual work. Clearer school tracking."}"</p>
         </div>
       </footer>
     </div>

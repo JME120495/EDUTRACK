@@ -102,7 +102,7 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-sm font-medium mb-6"
               >
                 <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                SaaS Éducatif · iOS & Android · Multilingue
+                {isFr ? 'SaaS Éducatif · iOS & Android · Multilingue' : 'Educational SaaS · iOS & Android · Multilingual'}
               </motion.div>
 
               <motion.h1 
@@ -111,9 +111,9 @@ export default function LandingPage() {
                 variants={fadeIn}
                 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-6 leading-tight"
               >
-                La gestion scolaire <br/>
+                {isFr ? 'La gestion scolaire' : 'School management'} <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">
-                  réinventée pour demain.
+                  {isFr ? 'réinventée pour demain.' : 'reinvented for tomorrow.'}
                 </span>
               </motion.h1>
               
@@ -139,7 +139,7 @@ export default function LandingPage() {
                   {t('landing.btnPricing')}
                 </a>
                 <Link to="/platform/login" className="w-full sm:w-auto bg-slate-900 text-amber-400 border border-amber-500/30 px-8 py-3 rounded-xl font-bold text-lg hover:bg-amber-500/10 transition-all flex items-center justify-center gap-2">
-                  Espace Partenaires
+                  {isFr ? 'Espace Partenaires' : 'Partners Area'}
                 </Link>
               </motion.div>
             </div>
@@ -724,9 +724,12 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="glass-panel p-8 md:p-12 flex flex-col md:flex-row gap-12 items-start">
             <div className="md:w-1/2 space-y-6">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white">Contactez-nous</h2>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-white">{isFr ? 'Contactez-nous' : 'Contact Us'}</h2>
               <p className="text-slate-400 text-lg">
-                Une question ? Besoin d'une démo personnalisée ? Notre équipe est là pour vous répondre rapidement.
+                {isFr 
+                  ? "Une question ? Besoin d'une démo personnalisée ? Notre équipe est là pour vous répondre rapidement." 
+                  : "Any questions? Need a customized demo? Our team is here to answer you quickly."
+                }
               </p>
               <div className="space-y-4 pt-4">
                 <div className="flex items-center gap-4 text-slate-300">
@@ -734,7 +737,7 @@ export default function LandingPage() {
                     <MessageCircle className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="text-sm text-slate-500">WhatsApp / Appel</div>
+                    <div className="text-sm text-slate-500">{isFr ? 'WhatsApp / Appel' : 'WhatsApp / Call'}</div>
                     <div className="font-bold">+237 691 00 33 92</div>
                   </div>
                 </div>
@@ -753,19 +756,19 @@ export default function LandingPage() {
             <div className="md:w-1/2 w-full bg-slate-800/50 p-6 md:p-8 rounded-2xl border border-slate-700">
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">Nom complet</label>
-                  <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder="Jean Dupont" />
+                  <label className="block text-sm font-medium text-slate-400 mb-1">{isFr ? 'Nom complet' : 'Full Name'}</label>
+                  <input type="text" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder={isFr ? "Jean Dupont" : "John Doe"} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1">Email</label>
-                  <input type="email" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder="jean@ecole.com" />
+                  <input type="email" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder="contact@school.com" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1">Message</label>
-                  <textarea rows="4" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder="Comment pouvons-nous vous aider ?"></textarea>
+                  <textarea rows="4" className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500" placeholder={isFr ? "Comment pouvons-nous vous aider ?" : "How can we help you?"}></textarea>
                 </div>
                 <button type="submit" className="w-full btn-glow text-center mt-2">
-                  Envoyer le message
+                  {isFr ? 'Envoyer le message' : 'Send Message'}
                 </button>
               </form>
             </div>
@@ -781,10 +784,10 @@ export default function LandingPage() {
             <span className="font-extrabold text-white text-lg">EduTrack</span>
           </div>
           <div className="flex gap-6 text-sm text-slate-400 flex-wrap justify-center">
-            <a href="#features" className="hover:text-amber-500 transition-colors">Fonctionnalités</a>
-            <a href="#pricing" className="hover:text-amber-500 transition-colors">Tarifs</a>
-            <Link to="/login" className="hover:text-amber-500 transition-colors">Connexion</Link>
-            <Link to="/platform/login" className="hover:text-amber-500 transition-colors">Portail Partenaires</Link>
+            <a href="#features" className="hover:text-amber-500 transition-colors">{isFr ? 'Fonctionnalités' : 'Features'}</a>
+            <a href="#pricing" className="hover:text-amber-500 transition-colors">{isFr ? 'Tarifs' : 'Pricing'}</a>
+            <Link to="/login" className="hover:text-amber-500 transition-colors">{isFr ? 'Connexion' : 'Login'}</Link>
+            <Link to="/platform/login" className="hover:text-amber-500 transition-colors">{isFr ? 'Portail Partenaires' : 'Partners Portal'}</Link>
           </div>
           <div className="flex gap-4">
             <a href="https://facebook.com/edutrack" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#1877F2] transition-colors">
@@ -792,7 +795,7 @@ export default function LandingPage() {
             </a>
           </div>
           <p className="text-slate-600 text-xs mt-4">
-            © {new Date().getFullYear()} EduTrack. Fabriqué avec passion pour l'éducation.
+            © {new Date().getFullYear()} EduTrack. {isFr ? "Fabriqué avec passion pour l'éducation." : "Made with passion for education."}
           </p>
         </div>
       </footer>
