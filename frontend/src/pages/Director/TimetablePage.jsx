@@ -115,7 +115,7 @@ export default function TimetablePage() {
   };
 
   const handleAutoGenerate = async () => {
-    const confirmMsg = i18n.language === 'FR' 
+    const confirmMsg = i18n.language?.toUpperCase().startsWith('FR') 
       ? "Êtes-vous sûr de vouloir générer automatiquement l'emploi du temps pour TOUTES les classes ? Cela écrasera les emplois du temps existants." 
       : "Are you sure you want to automatically generate the timetable for ALL classes? This will overwrite the existing timetables.";
       
@@ -124,7 +124,7 @@ export default function TimetablePage() {
     setGenerating(true);
     try {
       const result = await apiFetch('/timetable/generate', { method: 'POST' });
-      alert(i18n.language === 'FR' ? result.messageFr : result.messageEn);
+      alert(i18n.language?.toUpperCase().startsWith('FR') ? result.messageFr : result.messageEn);
       if (selectedClassId) {
         loadTimetable(selectedClassId);
       }
@@ -162,7 +162,7 @@ export default function TimetablePage() {
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#1E3A5F] hover:bg-[#152943] text-[#F5A623] rounded-xl text-sm font-bold transition-all shadow-md disabled:opacity-50 w-full sm:w-auto"
             >
               <RefreshCw className={`h-4.5 w-4.5 ${generating ? 'animate-spin' : ''}`} />
-              <span>{i18n.language === 'FR' ? 'Générer Auto' : 'Auto-Generate'}</span>
+              <span>{i18n.language?.toUpperCase().startsWith('FR') ? 'Générer Auto' : 'Auto-Generate'}</span>
             </button>
           )}
 

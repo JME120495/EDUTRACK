@@ -64,6 +64,7 @@ export default function RegisterPage() {
   const { register, updateLanguage } = useContext(AuthContext);
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const isFr = i18n.language ? i18n.language.toLowerCase().startsWith('fr') : true;
 
   // School Info
   const [schoolName, setSchoolName] = useState('');
@@ -121,7 +122,7 @@ export default function RegisterPage() {
     setSuccess('');
 
     if (password !== confirmPassword) {
-      setError(i18n.language.toUpperCase() === 'EN' ? 'Passwords do not match.' : 'Les mots de passe ne correspondent pas.');
+      setError(!isFr ? 'Passwords do not match.' : 'Les mots de passe ne correspondent pas.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -143,13 +144,13 @@ export default function RegisterPage() {
       if (res.requiresVerification) {
         setIsSubmitted(true);
       } else {
-        setSuccess(i18n.language.toUpperCase() === 'EN' ? 'Registration successful!' : 'Inscription réussie !');
+        setSuccess(!isFr ? 'Registration successful!' : 'Inscription réussie !');
         setTimeout(() => {
           navigate('/login');
         }, 2000);
       }
     } catch (err) {
-      setError(err.message || (i18n.language.toUpperCase() === 'EN' ? 'Registration error.' : "Erreur lors de l'inscription."));
+      setError(err.message || (!isFr ? 'Registration error.' : "Erreur lors de l'inscription."));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);

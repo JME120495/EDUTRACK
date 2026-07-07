@@ -16,8 +16,10 @@ export default function LandingPage() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
 
+  const isFr = i18n.language ? i18n.language.toLowerCase().startsWith('fr') : true;
+
   const toggleLanguage = () => {
-    const newLang = i18n.language === 'fr' ? 'en' : 'fr';
+    const newLang = isFr ? 'en' : 'fr';
     i18n.changeLanguage(newLang);
   };
 
@@ -67,17 +69,17 @@ export default function LandingPage() {
                 onClick={toggleLanguage} 
                 className="text-sm sm:text-base text-slate-300 font-bold hover:text-amber-500 transition-colors uppercase"
               >
-                {i18n.language === 'fr' ? 'EN' : 'FR'}
+                {isFr ? 'EN' : 'FR'}
               </button>
               <Link to="/platform/login" className="text-sm sm:text-base text-amber-500 font-bold hover:text-amber-400 transition-colors whitespace-nowrap">
-                {i18n.language === 'fr' ? 'Partenaires' : 'Partners'}
+                {isFr ? 'Partenaires' : 'Partners'}
               </Link>
               <Link to={user ? "/dashboard-redirect" : "/login"} className="text-sm sm:text-base text-slate-300 font-bold hover:text-white transition-colors whitespace-nowrap">
-                {user ? (i18n.language === 'fr' ? 'Tableau de bord' : 'Dashboard') : t('landing.login')}
+                {user ? (isFr ? 'Tableau de bord' : 'Dashboard') : t('landing.login')}
               </Link>
               <Link to="/register" className="btn-glow whitespace-nowrap text-sm sm:text-base">
                 <span className="hidden sm:inline">{t('landing.btnDemo')}</span>
-                <span className="sm:hidden">{i18n.language === 'fr' ? 'Démo' : 'Demo'}</span>
+                <span className="sm:hidden">{isFr ? 'Démo' : 'Demo'}</span>
               </Link>
             </div>
           </div>
@@ -161,24 +163,24 @@ export default function LandingPage() {
                 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm">
-                    <div className="text-slate-400 text-xs md:text-sm mb-1">{i18n.language === 'fr' ? 'Élèves' : 'Students'}</div>
+                    <div className="text-slate-400 text-xs md:text-sm mb-1">{isFr ? 'Élèves' : 'Students'}</div>
                     <div className="text-2xl md:text-3xl font-bold text-white">847</div>
                     <div className="text-emerald-400 text-xs flex items-center gap-1 mt-2">↑ 12%</div>
                   </div>
                   <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm">
-                    <div className="text-slate-400 text-xs md:text-sm mb-1">{i18n.language === 'fr' ? 'Présences' : 'Attendance'}</div>
+                    <div className="text-slate-400 text-xs md:text-sm mb-1">{isFr ? 'Présences' : 'Attendance'}</div>
                     <div className="text-2xl md:text-3xl font-bold text-white">94%</div>
                     <div className="text-emerald-400 text-xs flex items-center gap-1 mt-2">↑ 3%</div>
                   </div>
                   <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm hidden md:block">
-                    <div className="text-slate-400 text-xs md:text-sm mb-1">{i18n.language === 'fr' ? 'Paiements' : 'Payments'}</div>
+                    <div className="text-slate-400 text-xs md:text-sm mb-1">{isFr ? 'Paiements' : 'Payments'}</div>
                     <div className="text-2xl md:text-3xl font-bold text-white">98%</div>
                     <div className="text-emerald-400 text-xs flex items-center gap-1 mt-2">↑ 5%</div>
                   </div>
                 </div>
                 
                 <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 backdrop-blur-sm">
-                  <div className="text-slate-400 text-sm mb-6">{i18n.language === 'fr' ? 'Inscriptions par mois' : 'Enrollments per month'}</div>
+                  <div className="text-slate-400 text-sm mb-6">{isFr ? 'Inscriptions par mois' : 'Enrollments per month'}</div>
                   <div className="flex items-end gap-2 md:gap-3 h-32 md:h-40">
                     {[40, 60, 45, 80, 50, 90, 70, 100, 60, 110, 80, 120].map((h, i) => (
                       <div key={i} className="flex-1 bg-gradient-to-t from-amber-600 to-amber-400 rounded-t-sm hover:from-amber-400 hover:to-amber-300 transition-colors" style={{ height: `${h}%` }}></div>
@@ -232,7 +234,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: "-100px" }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
           >
-            {featuresList(i18n.language).map((feat, idx) => (
+            {featuresList(isFr).map((feat, idx) => (
               <motion.div key={idx} variants={fadeIn} className="glass-panel p-6 hover:border-amber-500/50 transition-all hover:-translate-y-1 transform duration-300 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]">
                 <div className="flex flex-col items-start gap-4 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 flex-shrink-0">
@@ -686,7 +688,7 @@ export default function LandingPage() {
             {t('landing.faqTitle')}
           </motion.h2>
           <div className="space-y-4">
-            {faqs(i18n.language).map((faq, idx) => (
+            {faqs(isFr).map((faq, idx) => (
               <motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -812,11 +814,11 @@ export default function LandingPage() {
   );
 }
 
-const featuresList = (lang) => [
+const featuresList = (isFr) => [
   {
-    title: lang === 'en' ? 'Security & Multi-Role Portals' : 'Sécurité & Portails multi-rôles',
-    desc: lang === 'en' ? 'Dedicated bilingual portals for Director, Censeur, Intendant, Teacher, Parent, and Student.' : 'Des espaces de travail dédiés et bilingues pour le Directeur, Censeur, Intendant, Enseignant, Parent et Élève.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Security & Multi-Role Portals' : 'Sécurité & Portails multi-rôles',
+    desc: !isFr ? 'Dedicated bilingual portals for Director, Censeur, Intendant, Teacher, Parent, and Student.' : 'Des espaces de travail dédiés et bilingues pour le Directeur, Censeur, Intendant, Enseignant, Parent et Élève.',
+    details: !isFr ? [
       'Strict role-based access control (RBAC). Parents only see their child, teachers only their classes.',
       'Instant toggle between French and English across the entire platform.',
       'Maximum data security and isolation per campus.'
@@ -828,9 +830,9 @@ const featuresList = (lang) => [
     icon: <ShieldCheck className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Discipline & Real-Time Parent Tracking' : 'Discipline & Suivi Parent en Temps Réel',
-    desc: lang === 'en' ? 'Immediate notification to parents of absences or penalties, establishing a direct connection between home and school.' : 'Notification immédiate aux parents en cas d\'absence, de retard ou de sanction, pour un lien école-famille renforcé.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Discipline & Real-Time Parent Tracking' : 'Discipline & Suivi Parent en Temps Réel',
+    desc: !isFr ? 'Immediate notification to parents of absences or penalties, establishing a direct connection between home and school.' : 'Notification immédiate aux parents en cas d\'absence, de retard ou de sanction, pour un lien école-famille renforcé.',
+    details: !isFr ? [
       'Fast electronic roll call in class by the teacher in just 3 clicks.',
       'Instant visibility of all student actions and discipline reports on the Parent portal.',
       'Free, secure internal messaging connecting parents directly with administration, avoiding costly SMS.'
@@ -842,9 +844,9 @@ const featuresList = (lang) => [
     icon: <MessageSquare className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Administration & Centralization' : 'Administration & Centralisation',
-    desc: lang === 'en' ? 'Simplify your enrollment process and keep track of your student body effortlessly.' : 'Simplifiez vos inscriptions et centralisez vos données (Finances + Pédagogie + RH).',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Administration & Centralization' : 'Administration & Centralisation',
+    desc: !isFr ? 'Simplify your enrollment process and keep track of your student body effortlessly.' : 'Simplifiez vos inscriptions et centralisez vos données (Finances + Pédagogie + RH).',
+    details: !isFr ? [
       'Fast student enrollment and massive CSV data import.',
       'Automatic generation of student ID cards with integrated QR codes.',
       'One-click generation of enrollment certificates and official documents.'
@@ -856,9 +858,9 @@ const featuresList = (lang) => [
     icon: <Users className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Pedagogy & Digital Report Cards' : 'Pédagogie & Bulletins',
-    desc: lang === 'en' ? 'Automate academic tracking (Sequences, Terms) from timetable creation to report cards.' : 'Automatisez le suivi académique (Séquences et Trimestres), des emplois du temps aux bulletins.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Pedagogy & Digital Report Cards' : 'Pédagogie & Bulletins',
+    desc: !isFr ? 'Automate academic tracking (Sequences, Terms) from timetable creation to report cards.' : 'Automatisez le suivi académique (Séquences et Trimestres), des emplois du temps aux bulletins.',
+    details: !isFr ? [
       'Conflict-free timetable creation and management.',
       'Grade entry by sequence via intuitive interface or Excel import.',
       'Automatic generation of term report cards with instant GPA calculations.'
@@ -870,9 +872,9 @@ const featuresList = (lang) => [
     icon: <GraduationCap className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Bursary & Fee Reminders' : 'Finances & Scolarité',
-    desc: lang === 'en' ? 'A robust system for the Intendant to track tuition fees and handle payments.' : 'Un système robuste pour l\'Intendant, permettant de suivre la scolarité et la comptabilité.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Bursary & Fee Reminders' : 'Finances & Scolarité',
+    desc: !isFr ? 'A robust system for the Intendant to track tuition fees and handle payments.' : 'Un système robuste pour l\'Intendant, permettant de suivre la scolarité et la comptabilité.',
+    details: !isFr ? [
       'Strict tracking of tuition installments and moratoriums (payment delays).',
       'Automatic reminders to parents for unpaid fees via internal messaging.',
       'Instantly printable professional payment receipts.'
@@ -884,9 +886,9 @@ const featuresList = (lang) => [
     icon: <Wallet className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'OHADA General Accounting' : 'Comptabilité Générale (Norme OHADA)',
-    desc: lang === 'en' ? 'Full school bookkeeping with double-entry ledgers, journals, and reports.' : 'Tenue de livre comptable complète avec plan comptable scolaire, journaux et balances.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'OHADA General Accounting' : 'Comptabilité Générale (Norme OHADA)',
+    desc: !isFr ? 'Full school bookkeeping with double-entry ledgers, journals, and reports.' : 'Tenue de livre comptable complète avec plan comptable scolaire, journaux et balances.',
+    details: !isFr ? [
       'Dedicated financial journals (Cash, Bank, Miscellaneous Operations).',
       'Structured chart of accounts aligned with general accounting rules.',
       'Double-entry accounting ensuring perfectly balanced debits and credits.'
@@ -898,9 +900,9 @@ const featuresList = (lang) => [
     icon: <Star className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Human Resources & Payroll' : 'Ressources Humaines & Paie',
-    desc: lang === 'en' ? 'Manage your teaching and support staff effectively.' : 'Gérez efficacement votre personnel enseignant et administratif.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Human Resources & Payroll' : 'Ressources Humaines & Paie',
+    desc: !isFr ? 'Manage your teaching and support staff effectively.' : 'Gérez efficacement votre personnel enseignant et administratif.',
+    details: !isFr ? [
       'Digital files for permanent and substitute teachers.',
       'Time tracking and automated payroll calculations.',
       'Management of leave requests and salary advances.'
@@ -912,9 +914,9 @@ const featuresList = (lang) => [
     icon: <Briefcase className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Logistics (Transport & Canteen)' : 'Services Logistiques (Transport & Cantine)',
-    desc: lang === 'en' ? 'Manage school bus routes, driver details, and canteen dietary restrictions.' : 'Gérez les lignes de bus scolaires, les informations des chauffeurs et la cantine.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Logistics (Transport & Canteen)' : 'Services Logistiques (Transport & Cantine)',
+    desc: !isFr ? 'Manage school bus routes, driver details, and canteen dietary restrictions.' : 'Gérez les lignes de bus scolaires, les informations des chauffeurs et la cantine.',
+    details: !isFr ? [
       'Bus route setup with driver phone numbers and monthly fees.',
       'Real-time student bus search for fast subscription enrollment.',
       'Canteen enrollment database tracking allergies and dietary notes.'
@@ -926,9 +928,9 @@ const featuresList = (lang) => [
     icon: <Truck className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Parental Consent (Loi 2024/017)' : 'Consentement Parental (Loi 2024/017 Cameroun)',
-    desc: lang === 'en' ? 'Complete compliance with personal data protection laws for minors.' : 'Conformité totale avec la loi sur la protection des données personnelles des élèves mineurs.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'Parental Consent (Loi 2024/017)' : 'Consentement Parental (Loi 2024/017 Cameroun)',
+    desc: !isFr ? 'Complete compliance with personal data protection laws for minors.' : 'Conformité totale avec la loi sur la protection des données personnelles des élèves mineurs.',
+    details: !isFr ? [
       'Explicit opt-in forms for data processing, photo rights, and health.',
       'Full electronic signature tracking (IP address, timestamps).',
       'Security audit logs recording every access to sensitive student records.'
@@ -940,9 +942,9 @@ const featuresList = (lang) => [
     icon: <Gavel className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'School Library' : 'Bibliothèque Scolaire',
-    desc: lang === 'en' ? 'A modern approach to managing your school\'s book inventory and loans.' : 'Une approche moderne pour gérer le catalogue de livres et les emprunts de votre établissement.',
-    details: lang === 'en' ? [
+    title: !isFr ? 'School Library' : 'Bibliothèque Scolaire',
+    desc: !isFr ? 'A modern approach to managing your school\'s book inventory and loans.' : 'Une approche moderne pour gérer le catalogue de livres et les emprunts de votre établissement.',
+    details: !isFr ? [
       'Fully digitized book inventory with advanced search.',
       'Loan and return tracking with deadline alerts.',
       'Student reading history shared directly with the administration.'
@@ -955,26 +957,26 @@ const featuresList = (lang) => [
   }
 ];
 
-const faqs = (lang) => [
+const faqs = (isFr) => [
   { 
-    q: lang === 'en' ? "How does setup work?" : "Comment se passe la mise en place ?", 
-    a: lang === 'en' ? "Our team helps you import your data (existing CSV files) and train key staff. In just a few days, your school is operational on EduTrack." : "Notre équipe vous accompagne pour importer vos données (fichiers CSV existants) et former votre personnel clé. En quelques jours, l'école est opérationnelle sur EduTrack." 
+    q: !isFr ? "How does setup work?" : "Comment se passe la mise en place ?", 
+    a: !isFr ? "Our team helps you import your data (existing CSV files) and train key staff. In just a few days, your school is operational on EduTrack." : "Notre équipe vous accompagne pour importer vos données (fichiers CSV existants) et former votre personnel clé. En quelques jours, l'école est opérationnelle sur EduTrack." 
   },
   { 
-    q: lang === 'en' ? "Is my data secure?" : "Mes données sont-elles sécurisées ?", 
-    a: lang === 'en' ? "Yes, data is stored on secure servers with regular backups. The role system ensures everyone only sees what they are allowed to see." : "Oui, les données sont stockées sur des serveurs sécurisés avec sauvegardes régulières. Le système de rôles garantit que chacun ne voit que ce qu'il a le droit de voir." 
+    q: !isFr ? "Is my data secure?" : "Mes données sont-elles sécurisées ?", 
+    a: !isFr ? "Yes, data is stored on secure servers with regular backups. The role system ensures everyone only sees what they are allowed to see." : "Oui, les données sont stockées sur des serveurs sécurisés avec sauvegardes régulières. Le système de rôles garantit que chacun ne voit que ce qu'il a le droit de voir." 
   },
   { 
-    q: lang === 'en' ? "Does it work without stable internet?" : "Le système fonctionne-t-il sans connexion internet stable ?", 
-    a: lang === 'en' ? "Yes, offline mode allows entering grades without a connection, syncing automatically when the network returns." : "Oui, le mode hors-ligne permet notamment la saisie des notes sans connexion, avec une synchronisation automatique dès que le réseau revient." 
+    q: !isFr ? "Does it work without stable internet?" : "Le système fonctionne-t-il sans connexion internet stable ?", 
+    a: !isFr ? "Yes, offline mode allows entering grades without a connection, syncing automatically when the network returns." : "Oui, le mode hors-ligne permet notamment la saisie des notes sans connexion, avec une synchronisation automatique dès que le réseau revient." 
   },
   { 
-    q: lang === 'en' ? "How do parents access the platform?" : "Comment les parents accèdent-ils à la plateforme ?", 
-    a: lang === 'en' ? "Parents receive a secure account to log in via phone or computer, letting them track their children's grades, absences, and payments." : "Les parents reçoivent un compte sécurisé pour se connecter via leur téléphone ou ordinateur, leur permettant de suivre notes, absences et paiements de leurs enfants." 
+    q: !isFr ? "How do parents access the platform?" : "Comment les parents accèdent-ils à la plateforme ?", 
+    a: !isFr ? "Parents receive a secure account to log in via phone or computer, letting them track their children's grades, absences, and payments." : "Les parents reçoivent un compte sécurisé pour se connecter via leur téléphone ou ordinateur, leur permettant de suivre notes, absences et paiements de leurs enfants." 
   },
   { 
-    q: lang === 'en' ? "What's the difference between monthly and annual payment?" : "Quelle est la différence entre payer au mois et payer à l'année ?", 
-    a: lang === 'en' ? "The annual subscription gives you 2 free months (pay 10 instead of 12), with access to the exact same features." : "L'abonnement annuel vous permet d'économiser 2 mois gratuits (vous payez 10 mois au lieu de 12), tout en accédant aux mêmes fonctionnalités." 
+    q: !isFr ? "What's the difference between monthly and annual payment?" : "Quelle est la différence entre payer au mois et payer à l'année ?", 
+    a: !isFr ? "The annual subscription gives you 2 free months (pay 10 instead of 12), with access to the exact same features." : "L'abonnement annuel vous permet d'économiser 2 mois gratuits (vous payez 10 mois au lieu de 12), tout en accédant aux mêmes fonctionnalités." 
   }
 ];
 

@@ -9,6 +9,7 @@ export default function LoginPage() {
   const { user, login, loginParentOtp, updateLanguage } = useContext(AuthContext);
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const isFr = i18n.language ? i18n.language.toLowerCase().startsWith('fr') : true;
 
   useEffect(() => {
     if (user) {
@@ -35,7 +36,7 @@ export default function LoginPage() {
   const [success, setSuccess] = useState('');
 
   const toggleLanguage = () => {
-    const nextLang = i18n.language.toUpperCase() === 'FR' ? 'EN' : 'FR';
+    const nextLang = isFr ? 'EN' : 'FR';
     updateLanguage(nextLang);
   };
 
@@ -45,7 +46,7 @@ export default function LoginPage() {
     setSuccess('');
 
     if (!navigator.onLine) {
-      setError(i18n.language.toUpperCase() === 'EN' ? 'No internet connection. Cannot login offline.' : 'Pas de connexion internet. Impossible de se connecter hors ligne.');
+      setError(!isFr ? 'No internet connection. Cannot login offline.' : 'Pas de connexion internet. Impossible de se connecter hors ligne.');
       return;
     }
 
@@ -90,7 +91,7 @@ export default function LoginPage() {
     setSuccess('');
 
     if (!navigator.onLine) {
-      setError(i18n.language.toUpperCase() === 'EN' ? 'No internet connection.' : 'Pas de connexion internet.');
+      setError(!isFr ? 'No internet connection.' : 'Pas de connexion internet.');
       return;
     }
 
@@ -133,7 +134,7 @@ export default function LoginPage() {
     setSuccess('');
 
     if (!navigator.onLine) {
-      setError(i18n.language.toUpperCase() === 'EN' ? 'No internet connection.' : 'Pas de connexion internet.');
+      setError(!isFr ? 'No internet connection.' : 'Pas de connexion internet.');
       return;
     }
 
@@ -162,7 +163,7 @@ export default function LoginPage() {
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 transition-all border border-white/10 text-xs font-semibold text-white"
         >
           <Globe className="h-3.5 w-3.5 text-amber-400" />
-          <span>{i18n.language.toUpperCase() === 'FR' ? '🇫🇷 FR' : '🇬🇧 EN'}</span>
+          <span>{isFr ? '🇫🇷 FR' : '🇬🇧 EN'}</span>
         </button>
       </div>
 
@@ -178,7 +179,7 @@ export default function LoginPage() {
           onClick={() => navigate('/pricing')}
           className="inline-flex items-center gap-2 bg-amber-400/10 text-amber-400 border border-amber-400/20 px-4 py-2 rounded-full text-xs font-bold hover:bg-amber-400/20 transition-colors"
         >
-          {i18n.language.toUpperCase() === 'EN' ? 'View pricing and offers' : 'Voir nos tarifs et offres'}
+          {!isFr ? 'View pricing and offers' : 'Voir nos tarifs et offres'}
         </button>
       </div>
 
@@ -283,7 +284,7 @@ export default function LoginPage() {
               {availableSchools && availableSchools.length > 1 && activeTab === 'staff' && (
                 <div className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                    {i18n.language.toUpperCase() === 'EN' ? 'Select institution' : 'Sélectionnez l\'établissement'}
+                    {!isFr ? 'Select institution' : 'Sélectionnez l\'établissement'}
                   </label>
                   <select
                     required
@@ -291,7 +292,7 @@ export default function LoginPage() {
                     onChange={(e) => setSelectedSchoolId(e.target.value)}
                     className="block w-full px-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm transition-all"
                   >
-                    <option value="">{i18n.language.toUpperCase() === 'EN' ? '-- Choose a school --' : '-- Choisir une école --'}</option>
+                    <option value="">{!isFr ? '-- Choose a school --' : '-- Choisir une école --'}</option>
                     {availableSchools.map(school => (
                       <option key={school.id} value={school.id}>
                         {school.name}
@@ -316,14 +317,14 @@ export default function LoginPage() {
                   onClick={() => navigate('/forgot-password')}
                   className="text-sm text-slate-400 hover:text-white font-medium transition-colors"
                 >
-                  {i18n.language.toUpperCase() === 'EN' ? 'Forgot password?' : 'Mot de passe oublié ?'}
+                  {!isFr ? 'Forgot password?' : 'Mot de passe oublié ?'}
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate('/register')}
                   className="text-sm text-amber-400 hover:text-amber-300 font-semibold"
                 >
-                  {i18n.language.toUpperCase() === 'EN' ? "Don't have an account? Register your school" : "Vous n'avez pas de compte ? Inscrire mon école"}
+                  {!isFr ? "Don't have an account? Register your school" : "Vous n'avez pas de compte ? Inscrire mon école"}
                 </button>
               </div>
             </form>
@@ -363,7 +364,7 @@ export default function LoginPage() {
                   {otpDevCode && (
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-center animate-in fade-in zoom-in duration-300">
                       <p className="text-sm text-slate-300 mb-1">
-                        {i18n.language.toUpperCase() === 'EN' ? "Your OTP Code is:" : "Votre code OTP est :"}
+                        {!isFr ? "Your OTP Code is:" : "Votre code OTP est :"}
                       </p>
                       <p className="text-3xl font-bold text-amber-400 tracking-widest">{otpDevCode}</p>
                     </div>
@@ -372,7 +373,7 @@ export default function LoginPage() {
                   {availableSchools && availableSchools.length > 1 && (
                     <div className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                       <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                        {i18n.language.toUpperCase() === 'EN' ? "Select the child's school" : "Sélectionnez l'école de l'enfant"}
+                        {!isFr ? "Select the child's school" : "Sélectionnez l'école de l'enfant"}
                       </label>
                       <select
                         required
@@ -380,7 +381,7 @@ export default function LoginPage() {
                         onChange={(e) => setSelectedSchoolId(e.target.value)}
                         className="block w-full px-3 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm transition-all"
                       >
-                        <option value="">{i18n.language.toUpperCase() === 'EN' ? '-- Choose a school --' : '-- Choisir une école --'}</option>
+                        <option value="">{!isFr ? '-- Choose a school --' : '-- Choisir une école --'}</option>
                         {availableSchools.map(school => (
                           <option key={school.id} value={school.id}>
                             {school.name}

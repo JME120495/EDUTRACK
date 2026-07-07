@@ -222,7 +222,7 @@ export default function PayrollPage() {
                             const rate = item.hourlyRate || 0;
                             const hours = item.hoursTaught || 0;
                             const due = rate * hours;
-                            const subjectName = i18n.language === 'FR' ? item.matiere.nameFr : item.matiere.nameEn;
+                            const subjectName = i18n.language?.toUpperCase().startsWith('FR') ? item.matiere.nameFr : item.matiere.nameEn;
                             return (
                               <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                                 <td className="px-6 py-3 font-bold text-slate-600">{item.class?.name}</td>
@@ -301,7 +301,7 @@ export default function PayrollPage() {
                   <input
                     type="text"
                     readOnly
-                    value={i18n.language === 'FR' ? selectedAssignment.matiere?.nameFr : selectedAssignment.matiere?.nameEn}
+                    value={i18n.language?.toUpperCase().startsWith('FR') ? selectedAssignment.matiere?.nameFr : selectedAssignment.matiere?.nameEn}
                     className="w-full px-3 py-2 text-sm border border-slate-100 bg-slate-50 rounded-xl text-slate-500 font-semibold focus:outline-none"
                   />
                 </div>
