@@ -174,7 +174,6 @@ router.post('/bulk', auth, requireRole(['TEACHER', 'DIRECTOR', 'CENSEUR', 'SURVE
         await prisma.message.createMany({ data: messageData });
       }
     }
-    }
 
     res.status(201).json({ message: 'Attendance recorded successfully', count: toCreate.length });
   } catch (err) {

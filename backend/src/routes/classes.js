@@ -12,8 +12,20 @@ router.get('/', auth, async (req, res) => {
     
     if (!activeYear) return res.json([]);
 
+    const whereClause = {
+      schoolId: req.user.schoolId,
+      anneeScolaireId: activeYear.id
+    };
+
+    if (req.user.role === 'TEACHER') {
+      whereClause.OR = [
+        { principalTeacherId: req.user.id },
+        { taughtSubjects: { some: { teacherId: req.user.id } } }
+      ];
+    }
+
     const classes = await prisma.classe.findMany({
-      where: { schoolId: req.user.schoolId, anneeScolaireId: activeYear.id },
+      where: whereClause,
       include: {
         principalTeacher: {
           select: { id: true, name: true, email: true }

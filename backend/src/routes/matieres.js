@@ -6,8 +6,18 @@ const { auth, requireRole } = require('../middlewares/authMiddleware');
 // Get all subjects
 router.get('/', auth, async (req, res) => {
   try {
+    const whereClause = {
+      schoolId: req.user.schoolId
+    };
+
+    if (req.user.role === 'TEACHER') {
+      whereClause.taughtBy = {
+        some: { teacherId: req.user.id }
+      };
+    }
+
     const matieres = await prisma.matiere.findMany({
-      where: { schoolId: req.user.schoolId }
+      where: whereClause
     });
     res.json(matieres);
   } catch (err) {

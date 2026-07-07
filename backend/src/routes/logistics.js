@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../db');
-const authMiddleware = require('../middlewares/authMiddleware');
-const requireRole = require('../middlewares/requireRole');
+const { auth, requireRole } = require('../middlewares/authMiddleware');
 
-router.use(authMiddleware);
+router.use(auth);
 router.use(requireRole(['DIRECTOR', 'INTENDANT', 'SUPER_ADMIN']));
 
 // --- TRANSPORT ROUTES ---
