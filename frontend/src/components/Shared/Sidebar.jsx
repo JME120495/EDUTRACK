@@ -46,20 +46,20 @@ export default function Sidebar({ mobileOpen, onClose }) {
     // 1. Configuration Académique
     {
       id: 'academic_config',
-      label: 'Configuration Académique',
+      label: t('nav.academicConfig') || 'Configuration Académique',
       icon: School,
       roles: ['DIRECTOR', 'CENSEUR'],
       subItems: [
         { path: '/classes', label: t('nav.classes'), roles: ['DIRECTOR', 'CENSEUR'] },
         { path: '/teachers', label: t('nav.teachers') || 'Gestion Enseignants', roles: ['DIRECTOR', 'CENSEUR'] },
         { path: '/students', label: t('nav.students'), roles: ['DIRECTOR', 'CENSEUR'] },
-        { path: '/director/timetable', label: 'Emplois du Temps', roles: ['DIRECTOR', 'CENSEUR'] }
+        { path: '/director/timetable', label: t('nav.timetableSub') || 'Emplois du Temps', roles: ['DIRECTOR', 'CENSEUR'] }
       ]
     },
     // 2. Opérations Académiques Journalières / Périodiques
     {
       id: 'vie_scolaire',
-      label: 'Vie Scolaire',
+      label: t('nav.vieScolaire') || 'Vie Scolaire',
       icon: ClipboardCheck,
       roles: ['DIRECTOR', 'CENSEUR', 'TEACHER', 'SURVEILLANT'],
       subItems: [
@@ -71,27 +71,27 @@ export default function Sidebar({ mobileOpen, onClose }) {
     // 3. Gestion Administrative & RH
     {
       id: 'admin_finance',
-      label: 'Administration & Finance',
+      label: t('nav.adminFinance') || 'Administration & Finance',
       icon: CreditCard,
       roles: ['DIRECTOR', 'INTENDANT'],
       subItems: [
         { path: '/payments', label: t('nav.payments'), roles: ['DIRECTOR', 'INTENDANT'], requiredPlans: ['STANDARD', 'PREMIUM', 'CUSTOM'] },
-        { path: '/accounting', label: 'Comptabilité (OHADA)', roles: ['DIRECTOR', 'INTENDANT'], requiredPlans: ['PREMIUM', 'CUSTOM'] },
+        { path: '/accounting', label: t('nav.accountingSub') || 'Comptabilité (OHADA)', roles: ['DIRECTOR', 'INTENDANT'], requiredPlans: ['PREMIUM', 'CUSTOM'] },
         { path: '/hr', label: t('nav.hr') || 'Ressources Humaines', roles: ['DIRECTOR', 'INTENDANT'], requiredPlans: ['PREMIUM', 'CUSTOM'] },
-        { path: '/payroll', label: 'Paie des Enseignants', roles: ['DIRECTOR', 'INTENDANT'] },
-        { path: '/admin-staff', label: 'Personnel Administratif', roles: ['DIRECTOR'] },
+        { path: '/payroll', label: t('nav.payrollSub') || 'Paie des Enseignants', roles: ['DIRECTOR', 'INTENDANT'] },
+        { path: '/admin-staff', label: t('nav.adminStaffSub') || 'Personnel Administratif', roles: ['DIRECTOR'] },
         { path: '/support-staff', label: t('supportStaff.title') || "Personnel d'Appui", roles: ['DIRECTOR'] }
       ]
     },
     // 4. Services Auxiliaires & Bibliothèque
     {
       id: 'services_logistics',
-      label: 'Services & Logistique',
+      label: t('nav.servicesLogistics') || 'Services & Logistique',
       icon: Truck,
       roles: ['DIRECTOR', 'INTENDANT', 'CENSEUR'],
       subItems: [
-        { path: '/logistics', label: 'Logistique (Bus & Cantine)', roles: ['DIRECTOR', 'INTENDANT'] },
-        { path: '/director/library', label: 'Bibliothèque', roles: ['DIRECTOR', 'CENSEUR'] },
+        { path: '/logistics', label: t('nav.logisticsSub') || 'Logistique (Bus & Cantine)', roles: ['DIRECTOR', 'INTENDANT'] },
+        { path: '/director/library', label: t('nav.librarySub') || 'Bibliothèque', roles: ['DIRECTOR', 'CENSEUR'] },
         { path: '/documents', label: t('nav.documents') || 'Documents & Badges', roles: ['DIRECTOR', 'CENSEUR'] }
       ]
     },
@@ -106,7 +106,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
     // 6. Communication & Messagerie
     {
       id: 'messages',
-      label: 'Messagerie',
+      label: t('nav.messages') || 'Messagerie',
       icon: MessageSquare,
       roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT'],
       path: '/messages'
@@ -114,7 +114,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
     // 7. Paramètres & Facturation
     {
       id: 'settings',
-      label: 'Paramètres',
+      label: t('nav.settings') || 'Paramètres',
       icon: Settings,
       roles: ['DIRECTOR'],
       subItems: [

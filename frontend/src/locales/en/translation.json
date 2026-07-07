@@ -17,7 +17,18 @@
     "portalTeacher": "Teacher Portal",
     "portalDirector": "Director's Office",
     "hr": "Human Resources",
-    "documents": "Documents & Badges"
+    "documents": "Documents & Badges",
+    "academicConfig": "Academic Configuration",
+    "vieScolaire": "School Life",
+    "adminFinance": "Administration & Finance",
+    "servicesLogistics": "Services & Logistics",
+    "messages": "Messaging",
+    "timetableSub": "Timetables",
+    "accountingSub": "Accounting (OHADA)",
+    "payrollSub": "Teacher Payroll",
+    "adminStaffSub": "Administrative Staff",
+    "logisticsSub": "Logistics (Bus & Canteen)",
+    "librarySub": "Library"
   },
   "teachers": {
     "title": "Teacher Management",

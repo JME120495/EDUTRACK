@@ -17,7 +17,18 @@
     "portalTeacher": "Espace Enseignant",
     "portalDirector": "Espace Direction",
     "hr": "Ressources Humaines",
-    "documents": "Documents & Badges"
+    "documents": "Documents & Badges",
+    "academicConfig": "Configuration Académique",
+    "vieScolaire": "Vie Scolaire",
+    "adminFinance": "Administration & Finance",
+    "servicesLogistics": "Services & Logistique",
+    "messages": "Messagerie",
+    "timetableSub": "Emplois du Temps",
+    "accountingSub": "Comptabilité (OHADA)",
+    "payrollSub": "Paie des Enseignants",
+    "adminStaffSub": "Personnel Administratif",
+    "logisticsSub": "Logistique (Bus & Cantine)",
+    "librarySub": "Bibliothèque"
   },
   "teachers": {
     "title": "Gestion des Enseignants",
