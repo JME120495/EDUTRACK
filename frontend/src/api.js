@@ -1,10 +1,34 @@
 export const API_BASE = 'https://edutrack-api-1du4.onrender.com/api';
 
+const apiCache = new Map();
+const CACHE_TTL = 30000; // 30 secondes de cache en mémoire
+
+export function clearApiCache() {
+  apiCache.clear();
+}
+
 export async function apiFetch(endpoint, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
   const token = options.usePlatformToken 
     ? localStorage.getItem('platform_token') 
     : localStorage.getItem('edutrack_token');
   const selectedYearId = localStorage.getItem('edutrack_selected_year_id');
+
+  // Invalider le cache sur toute modification (POST, PUT, DELETE, etc.)
+  if (method !== 'GET') {
+    apiCache.clear();
+  }
+
+  const cacheKey = `${token || ''}:${selectedYearId || ''}:${endpoint}`;
+
+  // Vérifier le cache si c'est un GET et pas de bypass explicite
+  if (method === 'GET' && !options.bypassCache) {
+    const cached = apiCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      // Retourner une copie pour éviter toute mutation accidentelle dans React
+      return JSON.parse(JSON.stringify(cached.data));
+    }
+  }
 
   const headers = {
     'Content-Type': 'application/json',
@@ -39,7 +63,17 @@ export async function apiFetch(endpoint, options = {}) {
   // Handle 204 No Content
   if (res.status === 204) return null;
 
-  return res.json();
+  const data = await res.json();
+
+  // Mettre en cache la réponse réussie
+  if (method === 'GET') {
+    apiCache.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  return data;
 }
 
 export async function openPdfInNewTab(url) {

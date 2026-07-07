@@ -37,6 +37,7 @@ import StudentPortal from './pages/Student/StudentPortal';
 import MessagesPage from './pages/Shared/MessagesPage';
 import PricingPage from './pages/Public/PricingPage';
 import BillingPage from './pages/Director/BillingPage';
+import LogisticsPage from './pages/Director/LogisticsPage';
 
 function HomeRedirect() {
   const { user } = useContext(AuthContext);
@@ -153,6 +154,7 @@ export default function App() {
             </RoleRoute>
           } />
           <Route path="/documents" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><DocumentsPage /></RoleRoute>} />
+          <Route path="/logistics" element={<RoleRoute roles={['DIRECTOR', 'INTENDANT']}><LogisticsPage /></RoleRoute>} />
           <Route path="/teacher/dashboard" element={<RoleRoute roles={['TEACHER']}><TeacherDashboard /></RoleRoute>} />
           <Route path="/teacher/payroll" element={<RoleRoute roles={['TEACHER']}><TeacherPayrollPage /></RoleRoute>} />
           <Route path="/teacher/cahier-textes" element={<RoleRoute roles={['TEACHER', 'DIRECTOR', 'CENSEUR']}><CahierDeTextesPage /></RoleRoute>} />

@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const { auth, requireRole } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../db');
 
 // Protect all accounting routes
 router.use(auth);

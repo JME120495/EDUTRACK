@@ -22,7 +22,8 @@ import {
   User,
   Shield,
   Book,
-  Lock
+  Lock,
+  Truck
 } from 'lucide-react';
 
 export default function Sidebar({ mobileOpen, onClose }) {
@@ -146,6 +147,12 @@ export default function Sidebar({ mobileOpen, onClose }) {
       label: t('nav.documents') || 'Documents & Badges',
       icon: QrCode,
       roles: ['DIRECTOR', 'CENSEUR']
+    },
+    {
+      path: '/logistics',
+      label: 'Logistique (Bus & Cantine)',
+      icon: Truck,
+      roles: ['DIRECTOR', 'INTENDANT']
     },
     {
       path: '/teacher/payroll',

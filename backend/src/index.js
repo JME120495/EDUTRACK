@@ -160,6 +160,7 @@ app.use('/api/discipline', disciplineRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/api/accounting', accountingRoutes);
 app.use('/api/platform', platformRoutes);
+app.use('/api/logistics', require('./routes/logistics'));
 app.use('/api/import', require('./routes/import'));
 
 // Health check

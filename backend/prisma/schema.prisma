@@ -50,6 +50,7 @@ model School {
   eleves                Eleve[]
   evaluationTypes       EvaluationType[]
   CahierTexte           CahierTexte[]
+  transportRoutes       TransportRoute[]
 }
 
 model EvaluationType {
@@ -182,6 +183,8 @@ model Eleve {
   isStudentCouncil    Boolean                  @default(false)
   parentalConsents    ParentalConsent[]
   sensitiveAccessLogs SensitiveDataAccessLog[]
+  transportSubscriptions TransportSubscription[]
+  canteenSubscriptions   CanteenSubscription[]
 
   @@unique([schoolId, matricule])
   @@index([classId])
@@ -760,4 +763,50 @@ model Homework {
   attachments   String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+// --- MODULE LOGISTIQUE (TRANSPORT ET CANTINE) ---
+
+model TransportRoute {
+  id          String   @id @default(uuid())
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  name        String   // e.g. "Ligne 1 - Centre Ville"
+  busNumber   String?  // e.g. "CE 1234 A"
+  driverName  String?
+  driverPhone String?
+  fee         Float    @default(0.0) // Monthly or annual fee
+  subscriptions TransportSubscription[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+}
+
+model TransportSubscription {
+  id          String   @id @default(uuid())
+  eleveId     String
+  eleve       Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  routeId     String
+  route       TransportRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  type        String   // "MORNING_ONLY", "AFTERNOON_ONLY", "BOTH"
+  pickupPoint String?
+  status      String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([eleveId])
+  @@index([routeId])
+}
+
+model CanteenSubscription {
+  id           String   @id @default(uuid())
+  eleveId      String
+  eleve        Eleve    @relation(fields: [eleveId], references: [id], onDelete: Cascade)
+  dietaryNotes String?  // e.g. "Allergy to peanuts", "Vegetarian"
+  status       String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([eleveId])
 }
