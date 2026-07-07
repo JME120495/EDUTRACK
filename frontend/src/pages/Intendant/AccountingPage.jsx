@@ -17,7 +17,9 @@ import {
 import { apiFetch } from '../../api';
 
 export default function AccountingPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isFr = i18n.language?.toLowerCase().startsWith('fr');
+  
   const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, entry, plan, reports
   
   // Data states
@@ -50,7 +52,7 @@ export default function AccountingPage() {
       setFiscalYears(fyData);
     } catch (err) {
       console.error(err);
-      setError("Erreur lors du chargement des données comptables.");
+      setError(isFr ? "Erreur lors du chargement des données comptables." : "Error loading accounting data.");
     } finally {
       setLoading(false);
     }
@@ -62,7 +64,7 @@ export default function AccountingPage() {
       const data = await apiFetch('/accounting/entries');
       setEntries(data);
     } catch (err) {
-      setError("Erreur lors du chargement des écritures.");
+      setError(isFr ? "Erreur lors du chargement des écritures." : "Error loading entries.");
     } finally {
       setLoading(false);
     }
@@ -74,7 +76,7 @@ export default function AccountingPage() {
       const data = await apiFetch('/accounting/reports/trial-balance');
       setTrialBalance(data);
     } catch (err) {
-      setError("Erreur lors de la génération de la balance.");
+      setError(isFr ? "Erreur lors de la génération de la balance." : "Error generating balance.");
     } finally {
       setLoading(false);
     }
@@ -86,14 +88,14 @@ export default function AccountingPage() {
   }, [activeTab]);
 
   const initOhada = async () => {
-    if (!window.confirm("Voulez-vous initialiser le Plan Comptable OHADA par défaut ?")) return;
+    if (!window.confirm(isFr ? "Voulez-vous initialiser le Plan Comptable OHADA par défaut ?" : "Do you want to initialize the default OHADA Chart of Accounts?")) return;
     try {
       setLoading(true);
       await apiFetch('/accounting/accounts/init-ohada', { method: 'POST' });
-      setSuccess("Plan comptable OHADA initialisé avec succès.");
+      setSuccess(isFr ? "Plan comptable OHADA initialisé avec succès." : "OHADA Chart of Accounts successfully initialized.");
       fetchData();
     } catch (err) {
-      setError("Erreur lors de l'initialisation.");
+      setError(isFr ? "Erreur lors de l'initialisation." : "Error during initialization.");
     } finally {
       setLoading(false);
     }
@@ -105,9 +107,9 @@ export default function AccountingPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Calculator className="h-6 w-6 text-indigo-600" />
-            Comptabilité
+            {isFr ? "Comptabilité" : "Accounting"}
           </h1>
-          <p className="text-slate-500 text-sm">Gestion comptable en partie double (Type Sage)</p>
+          <p className="text-slate-500 text-sm">{isFr ? "Gestion comptable en partie double (Type Sage)" : "Double-entry bookkeeping (Sage Type)"}</p>
         </div>
         <div className="flex gap-2">
           {accounts.length === 0 && (
@@ -116,7 +118,7 @@ export default function AccountingPage() {
               className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors flex items-center gap-2"
             >
               <Settings className="h-4 w-4" />
-              Initialiser Plan OHADA
+              {isFr ? "Initialiser Plan OHADA" : "Initialize OHADA Chart"}
             </button>
           )}
           <button
@@ -150,7 +152,7 @@ export default function AccountingPage() {
             activeTab === 'dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
-          <Calculator className="h-4 w-4" /> Tableau de Bord
+          <Calculator className="h-4 w-4" /> {isFr ? "Tableau de Bord" : "Dashboard"}
         </button>
         <button
           onClick={() => setActiveTab('entry')}
@@ -158,7 +160,7 @@ export default function AccountingPage() {
             activeTab === 'entry' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
-          <FileText className="h-4 w-4" /> Saisie Journal
+          <FileText className="h-4 w-4" /> {isFr ? "Saisie Journal" : "Journal Entries"}
         </button>
         <button
           onClick={() => setActiveTab('plan')}
@@ -166,7 +168,7 @@ export default function AccountingPage() {
             activeTab === 'plan' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
-          <BookOpen className="h-4 w-4" /> Plan Comptable
+          <BookOpen className="h-4 w-4" /> {isFr ? "Plan Comptable" : "Chart of Accounts"}
         </button>
         <button
           onClick={() => setActiveTab('reports')}
@@ -174,7 +176,7 @@ export default function AccountingPage() {
             activeTab === 'reports' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
-          <FileText className="h-4 w-4" /> Éditions (Balance)
+          <FileText className="h-4 w-4" /> {isFr ? "Éditions (Balance)" : "Reports (Trial Balance)"}
         </button>
       </div>
 
@@ -182,8 +184,8 @@ export default function AccountingPage() {
         {activeTab === 'dashboard' && (
           <div className="p-6 text-center text-slate-500 py-12">
             <Calculator className="h-12 w-12 mx-auto text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 mb-2">Résumé Financier</h3>
-            <p>Aperçu des indicateurs clés, de la trésorerie et du résultat.</p>
+            <h3 className="text-lg font-medium text-slate-900 mb-2">{isFr ? "Résumé Financier" : "Financial Summary"}</h3>
+            <p>{isFr ? "Aperçu des indicateurs clés, de la trésorerie et du résultat." : "Overview of key indicators, cash flow, and net income."}</p>
           </div>
         )}
 
@@ -198,6 +200,9 @@ export default function AccountingPage() {
 }
 
 function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
+  const { i18n } = useTranslation();
+  const isFr = i18n.language?.toLowerCase().startsWith('fr');
+
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({
     journalId: '',
@@ -243,7 +248,7 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
       });
       onEntryAdded();
     } catch (err) {
-      alert(err.message || 'Erreur de saisie');
+      alert(err.message || (isFr ? 'Erreur de saisie' : 'Entry error'));
     }
   };
 
@@ -254,12 +259,12 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-medium text-slate-800">Saisie des Écritures</h3>
+        <h3 className="text-lg font-medium text-slate-800">{isFr ? "Saisie des Écritures" : "Journal Entry"}</h3>
         <button 
           onClick={() => setIsAdding(!isAdding)}
           className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2"
         >
-          <Plus className="h-4 w-4" /> {isAdding ? 'Annuler' : 'Nouvelle Écriture'}
+          <Plus className="h-4 w-4" /> {isAdding ? (isFr ? 'Annuler' : 'Cancel') : (isFr ? 'Nouvelle Écriture' : 'New Entry')}
         </button>
       </div>
 
@@ -267,14 +272,14 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
         <form onSubmit={handleSubmit} className="mb-8 bg-slate-50 p-6 rounded-xl border border-slate-200">
           <div className="grid grid-cols-4 gap-4 mb-6">
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Journal</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">{isFr ? "Journal" : "Journal"}</label>
               <select 
                 required
                 value={formData.journalId}
                 onChange={e => setFormData({...formData, journalId: e.target.value})}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
               >
-                <option value="">Sélectionner</option>
+                <option value="">{isFr ? "Sélectionner" : "Select"}</option>
                 {journals.map(j => <option key={j.id} value={j.id}>{j.code} - {j.name}</option>)}
               </select>
             </div>
@@ -288,7 +293,7 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">N° Pièce</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">{isFr ? "N° Pièce" : "Ref / Doc No."}</label>
               <input 
                 type="text" required
                 value={formData.reference}
@@ -297,7 +302,7 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Libellé</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">{isFr ? "Libellé" : "Description"}</label>
               <input 
                 type="text" required
                 value={formData.description}
@@ -309,10 +314,10 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
 
           <div className="space-y-3 mb-6">
             <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider px-2">
-              <div className="col-span-4">Compte</div>
-              <div className="col-span-4">Libellé Ligne</div>
-              <div className="col-span-2 text-right">Débit</div>
-              <div className="col-span-2 text-right">Crédit</div>
+              <div className="col-span-4">{isFr ? "Compte" : "Account"}</div>
+              <div className="col-span-4">{isFr ? "Libellé Ligne" : "Line Description"}</div>
+              <div className="col-span-2 text-right">{isFr ? "Débit" : "Debit"}</div>
+              <div className="col-span-2 text-right">{isFr ? "Crédit" : "Credit"}</div>
             </div>
             {formData.lines.map((line, index) => (
               <div key={index} className="grid grid-cols-12 gap-2">
@@ -323,13 +328,13 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
                     onChange={e => handleLineChange(index, 'accountId', e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="">Sélectionner</option>
+                    <option value="">{isFr ? "Sélectionner" : "Select"}</option>
                     {accounts.map(a => <option key={a.id} value={a.id}>{a.number} - {a.name}</option>)}
                   </select>
                 </div>
                 <div className="col-span-4">
                   <input 
-                    type="text" placeholder="Optionnel"
+                    type="text" placeholder={isFr ? "Optionnel" : "Optional"}
                     value={line.description}
                     onChange={e => handleLineChange(index, 'description', e.target.value)}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
@@ -367,11 +372,11 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
               onClick={handleAddLine}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
             >
-              + Ajouter une ligne
+              {isFr ? "+ Ajouter une ligne" : "+ Add a line"}
             </button>
             <div className="flex gap-8 text-sm">
-              <div className="font-medium text-slate-700">Total Débit: <span className="font-bold text-slate-900">{totalDebit.toFixed(2)}</span></div>
-              <div className="font-medium text-slate-700">Total Crédit: <span className="font-bold text-slate-900">{totalCredit.toFixed(2)}</span></div>
+              <div className="font-medium text-slate-700">{isFr ? "Total Débit: " : "Total Debit: "}<span className="font-bold text-slate-900">{totalDebit.toFixed(2)}</span></div>
+              <div className="font-medium text-slate-700">{isFr ? "Total Crédit: " : "Total Credit: "}<span className="font-bold text-slate-900">{totalCredit.toFixed(2)}</span></div>
             </div>
             <button 
               type="submit"
@@ -380,7 +385,7 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
                 ${isBalanced ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}
               `}
             >
-              <Save className="h-4 w-4" /> Enregistrer
+              <Save className="h-4 w-4" /> {isFr ? "Enregistrer" : "Save"}
             </button>
           </div>
         </form>
@@ -393,15 +398,15 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
             <tr>
               <th className="px-4 py-3 rounded-tl-lg">Date</th>
               <th className="px-4 py-3">JRN</th>
-              <th className="px-4 py-3">N° Pièce</th>
-              <th className="px-4 py-3">Libellé</th>
-              <th className="px-4 py-3 text-right">Débit</th>
-              <th className="px-4 py-3 text-right rounded-tr-lg">Crédit</th>
+              <th className="px-4 py-3">{isFr ? "N° Pièce" : "Ref / Doc No."}</th>
+              <th className="px-4 py-3">{isFr ? "Libellé" : "Description"}</th>
+              <th className="px-4 py-3 text-right">{isFr ? "Débit" : "Debit"}</th>
+              <th className="px-4 py-3 text-right rounded-tr-lg">{isFr ? "Crédit" : "Credit"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {entries.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-8 text-slate-400">Aucune écriture comptable.</td></tr>
+              <tr><td colSpan="6" className="text-center py-8 text-slate-400">{isFr ? "Aucune écriture comptable." : "No journal entry recorded."}</td></tr>
             ) : (
               entries.map(entry => (
                 <React.Fragment key={entry.id}>
@@ -434,15 +439,18 @@ function EntrySaisieTab({ journals, accounts, entries, onEntryAdded }) {
 }
 
 function PlanComptableTab({ accounts }) {
+  const { i18n } = useTranslation();
+  const isFr = i18n.language?.toLowerCase().startsWith('fr');
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-medium text-slate-800">Plan Comptable</h3>
+        <h3 className="text-lg font-medium text-slate-800">{isFr ? "Plan Comptable" : "Chart of Accounts"}</h3>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Rechercher un compte..."
+            placeholder={isFr ? "Rechercher un compte..." : "Search account..."}
             className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-64 focus:ring-2 focus:ring-indigo-500"
           />
         </div>
@@ -452,8 +460,8 @@ function PlanComptableTab({ accounts }) {
         <table className="w-full text-left text-sm text-slate-600">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3 rounded-tl-lg">Numéro</th>
-              <th className="px-4 py-3">Intitulé</th>
+              <th className="px-4 py-3 rounded-tl-lg">{isFr ? "Numéro" : "Number"}</th>
+              <th className="px-4 py-3">{isFr ? "Intitulé" : "Title"}</th>
               <th className="px-4 py-3 rounded-tr-lg">Type</th>
             </tr>
           </thead>
@@ -477,13 +485,16 @@ function PlanComptableTab({ accounts }) {
 }
 
 function ReportsTab({ trialBalance }) {
+  const { i18n } = useTranslation();
+  const isFr = i18n.language?.toLowerCase().startsWith('fr');
+
   const totalDebit = trialBalance.reduce((sum, b) => sum + b.totalDebit, 0);
   const totalCredit = trialBalance.reduce((sum, b) => sum + b.totalCredit, 0);
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-medium text-slate-800">Balance Générale & Grand Livre</h3>
+        <h3 className="text-lg font-medium text-slate-800">{isFr ? "Balance Générale & Grand Livre" : "General Trial Balance & Ledger"}</h3>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => {
@@ -492,10 +503,10 @@ function ReportsTab({ trialBalance }) {
             }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 flex items-center gap-2"
           >
-            <Download className="h-4 w-4" /> Exporter Grand Livre (PDF)
+            <Download className="h-4 w-4" /> {isFr ? "Exporter Grand Livre (PDF)" : "Export General Ledger (PDF)"}
           </button>
           <button className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2">
-            <Filter className="h-4 w-4" /> Filtrer
+            <Filter className="h-4 w-4" /> {isFr ? "Filtrer" : "Filter"}
           </button>
         </div>
       </div>
@@ -504,17 +515,17 @@ function ReportsTab({ trialBalance }) {
         <table className="w-full text-left text-sm text-slate-600">
           <thead className="bg-slate-100 text-xs uppercase text-slate-700">
             <tr>
-              <th className="px-4 py-3 border-b">Compte</th>
-              <th className="px-4 py-3 border-b">Intitulé</th>
-              <th className="px-4 py-3 border-b text-right">Mouvements Débit</th>
-              <th className="px-4 py-3 border-b text-right">Mouvements Crédit</th>
-              <th className="px-4 py-3 border-b text-right text-indigo-700">Solde Débiteur</th>
-              <th className="px-4 py-3 border-b text-right text-indigo-700">Solde Créditeur</th>
+              <th className="px-4 py-3 border-b">{isFr ? "Compte" : "Account"}</th>
+              <th className="px-4 py-3 border-b">{isFr ? "Intitulé" : "Title"}</th>
+              <th className="px-4 py-3 border-b text-right">{isFr ? "Mouvements Débit" : "Debit Movements"}</th>
+              <th className="px-4 py-3 border-b text-right">{isFr ? "Mouvements Crédit" : "Credit Movements"}</th>
+              <th className="px-4 py-3 border-b text-right text-indigo-700">{isFr ? "Solde Débiteur" : "Debit Balance"}</th>
+              <th className="px-4 py-3 border-b text-right text-indigo-700">{isFr ? "Solde Créditeur" : "Credit Balance"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {trialBalance.length === 0 ? (
-              <tr><td colSpan="6" className="text-center py-8 text-slate-400">Aucune donnée pour la balance.</td></tr>
+              <tr><td colSpan="6" className="text-center py-8 text-slate-400">{isFr ? "Aucune donnée pour la balance." : "No data for trial balance."}</td></tr>
             ) : (
               trialBalance.map(b => (
                 <tr key={b.account.id} className="hover:bg-slate-50">
@@ -534,7 +545,7 @@ function ReportsTab({ trialBalance }) {
             {/* Totals */}
             {trialBalance.length > 0 && (
               <tr className="bg-slate-50 font-bold text-slate-800 border-t-2 border-slate-300">
-                <td colSpan="2" className="px-4 py-3 text-right uppercase">Total Général</td>
+                <td colSpan="2" className="px-4 py-3 text-right uppercase">{isFr ? "Total Général" : "General Total"}</td>
                 <td className="px-4 py-3 text-right">{totalDebit.toFixed(2)}</td>
                 <td className="px-4 py-3 text-right">{totalCredit.toFixed(2)}</td>
                 <td className="px-4 py-3 text-right text-indigo-600">
