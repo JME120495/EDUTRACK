@@ -56,23 +56,19 @@ export default function Sidebar({ mobileOpen, onClose }) {
       roles: ['TEACHER']
     },
     {
-      path: '/admin-staff',
-      label: 'Personnel Administratif',
-      icon: Briefcase,
-      roles: ['DIRECTOR']
+      path: '/parent',
+      label: t('nav.portalParent'),
+      icon: GraduationCap,
+      roles: ['PARENT']
     },
     {
-      path: '/support-staff',
-      label: t('supportStaff.title') || "Personnel d'Appui",
-      icon: Shield,
-      roles: ['DIRECTOR']
+      path: '/student',
+      label: 'Portail Élève',
+      icon: GraduationCap,
+      roles: ['STUDENT']
     },
-    {
-      path: '/students',
-      label: t('nav.students'),
-      icon: Users,
-      roles: ['DIRECTOR', 'CENSEUR']
-    },
+
+    // 1. Structure & Configuration Académique (Flow de création logique)
     {
       path: '/classes',
       label: t('nav.classes'),
@@ -86,16 +82,24 @@ export default function Sidebar({ mobileOpen, onClose }) {
       roles: ['DIRECTOR', 'CENSEUR']
     },
     {
+      path: '/students',
+      label: t('nav.students'),
+      icon: Users,
+      roles: ['DIRECTOR', 'CENSEUR']
+    },
+    {
       path: '/director/timetable',
       label: 'Emplois du Temps',
       icon: Calendar,
       roles: ['DIRECTOR', 'CENSEUR']
     },
+
+    // 2. Opérations Académiques Journalières / Périodiques
     {
-      path: '/director/library',
-      label: 'Bibliothèque',
-      icon: Book,
-      roles: ['DIRECTOR', 'CENSEUR']
+      path: '/absences',
+      label: t('nav.absences'),
+      icon: ClipboardCheck,
+      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER', 'SURVEILLANT']
     },
     {
       path: '/grades',
@@ -104,17 +108,13 @@ export default function Sidebar({ mobileOpen, onClose }) {
       roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
     },
     {
-      path: '/absences',
-      label: t('nav.absences'),
-      icon: ClipboardCheck,
-      roles: ['DIRECTOR', 'CENSEUR', 'TEACHER', 'SURVEILLANT']
-    },
-    {
       path: '/bulletins',
       label: t('nav.bulletins'),
       icon: FileText,
       roles: ['DIRECTOR', 'CENSEUR', 'TEACHER']
     },
+
+    // 3. Gestion Administrative & RH
     {
       path: '/payments',
       label: t('nav.payments'),
@@ -143,11 +143,19 @@ export default function Sidebar({ mobileOpen, onClose }) {
       roles: ['DIRECTOR', 'INTENDANT']
     },
     {
-      path: '/documents',
-      label: t('nav.documents') || 'Documents & Badges',
-      icon: QrCode,
-      roles: ['DIRECTOR', 'CENSEUR']
+      path: '/admin-staff',
+      label: 'Personnel Administratif',
+      icon: Briefcase,
+      roles: ['DIRECTOR']
     },
+    {
+      path: '/support-staff',
+      label: t('supportStaff.title') || "Personnel d'Appui",
+      icon: Shield,
+      roles: ['DIRECTOR']
+    },
+
+    // 4. Services Auxiliaires & Bibliothèque
     {
       path: '/logistics',
       label: 'Logistique (Bus & Cantine)',
@@ -155,11 +163,35 @@ export default function Sidebar({ mobileOpen, onClose }) {
       roles: ['DIRECTOR', 'INTENDANT']
     },
     {
+      path: '/director/library',
+      label: 'Bibliothèque',
+      icon: Book,
+      roles: ['DIRECTOR', 'CENSEUR']
+    },
+    {
+      path: '/documents',
+      label: t('nav.documents') || 'Documents & Badges',
+      icon: QrCode,
+      roles: ['DIRECTOR', 'CENSEUR']
+    },
+
+    // 5. Rôles Spécifiques
+    {
       path: '/teacher/payroll',
       label: t('nav.teacherPayroll') || 'Ma Paie',
       icon: Coins,
       roles: ['TEACHER']
     },
+
+    // 6. Communication & Messagerie
+    {
+      path: '/messages',
+      label: 'Messagerie',
+      icon: MessageSquare,
+      roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT']
+    },
+
+    // 7. Paramètres & Facturation
     {
       path: '/billing',
       label: t('billing.title') || 'Abonnement & Facturation',
@@ -171,24 +203,6 @@ export default function Sidebar({ mobileOpen, onClose }) {
       label: t('nav.settings'),
       icon: Settings,
       roles: ['DIRECTOR']
-    },
-    {
-      path: '/parent',
-      label: t('nav.portalParent'),
-      icon: GraduationCap,
-      roles: ['PARENT']
-    },
-    {
-      path: '/student',
-      label: 'Portail Élève',
-      icon: GraduationCap,
-      roles: ['STUDENT']
-    },
-    {
-      path: '/messages',
-      label: 'Messagerie',
-      icon: MessageSquare,
-      roles: ['DIRECTOR', 'CENSEUR', 'INTENDANT', 'TEACHER', 'PARENT', 'STUDENT', 'SURVEILLANT']
     }
   ];
 
