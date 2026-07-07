@@ -828,7 +828,21 @@ const featuresList = (lang) => [
     icon: <ShieldCheck className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Administration' : 'Administration & Centralisation',
+    title: lang === 'en' ? 'Discipline & Real-Time Parent Tracking' : 'Discipline & Suivi Parent en Temps Réel',
+    desc: lang === 'en' ? 'Immediate notification to parents of absences or penalties, establishing a direct connection between home and school.' : 'Notification immédiate aux parents en cas d\'absence, de retard ou de sanction, pour un lien école-famille renforcé.',
+    details: lang === 'en' ? [
+      'Fast electronic roll call in class by the teacher in just 3 clicks.',
+      'Instant visibility of all student actions and discipline reports on the Parent portal.',
+      'Free, secure internal messaging connecting parents directly with administration, avoiding costly SMS.'
+    ] : [
+      'Appel électronique rapide en classe directement par l\'enseignant en 3 clics.',
+      'Visibilité instantanée de tous les agissements, absences ou retards sur le portail Parent.',
+      'Messagerie interne gratuite et sécurisée reliant les parents à l\'école, évitant les frais de SMS.'
+    ],
+    icon: <MessageSquare className="w-6 h-6" />
+  },
+  {
+    title: lang === 'en' ? 'Administration & Centralization' : 'Administration & Centralisation',
     desc: lang === 'en' ? 'Simplify your enrollment process and keep track of your student body effortlessly.' : 'Simplifiez vos inscriptions et centralisez vos données (Finances + Pédagogie + RH).',
     details: lang === 'en' ? [
       'Fast student enrollment and massive CSV data import.',
@@ -836,13 +850,13 @@ const featuresList = (lang) => [
       'One-click generation of enrollment certificates and official documents.'
     ] : [
       'Inscription rapide des élèves et importation massive de données via CSV.',
-      'Génération automatique des cartes scolaires avec QR code intégré.',
+      'Génération automatique des cartes scolaires avec QR code de sécurité intégré.',
       'Édition en un clic des certificats de scolarité et autres documents officiels.'
     ],
     icon: <Users className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Pedagogy' : 'Pédagogie',
+    title: lang === 'en' ? 'Pedagogy & Digital Report Cards' : 'Pédagogie & Bulletins',
     desc: lang === 'en' ? 'Automate academic tracking (Sequences, Terms) from timetable creation to report cards.' : 'Automatisez le suivi académique (Séquences et Trimestres), des emplois du temps aux bulletins.',
     details: lang === 'en' ? [
       'Conflict-free timetable creation and management.',
@@ -851,26 +865,12 @@ const featuresList = (lang) => [
     ] : [
       'Création et gestion des emplois du temps sans conflits.',
       'Saisie des notes par Séquence sur interface intuitive ou import Excel.',
-      'Génération automatique des bulletins trimestriels avec calcul instantané des moyennes.'
+      'Génération automatique des bulletins trimestriels et annuels avec calcul de moyenne.'
     ],
     icon: <GraduationCap className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Discipline' : 'Discipline',
-    desc: lang === 'en' ? 'Maintain order and track student behavior meticulously under the Censeur.' : 'Maintenez l\'ordre et suivez le comportement des élèves de manière rigoureuse sous l\'œil du Censeur.',
-    details: lang === 'en' ? [
-      'Fast electronic roll call in class by the teacher.',
-      'Absence justification system directly accessible by parents.',
-      'Tracking of sanctions (warnings, reprimands) and disciplinary councils.'
-    ] : [
-      'Appel électronique rapide en classe directement par l\'enseignant.',
-      'Système de justification des absences accessible par les parents.',
-      'Saisie et suivi des sanctions (avertissements, blâmes) et conseils de discipline.'
-    ],
-    icon: <Gavel className="w-6 h-6" />
-  },
-  {
-    title: lang === 'en' ? 'Finances & Bursary' : 'Finances & Intendance',
+    title: lang === 'en' ? 'Bursary & Fee Reminders' : 'Finances & Scolarité',
     desc: lang === 'en' ? 'A robust system for the Intendant to track tuition fees and handle payments.' : 'Un système robuste pour l\'Intendant, permettant de suivre la scolarité et la comptabilité.',
     details: lang === 'en' ? [
       'Strict tracking of tuition installments and moratoriums (payment delays).',
@@ -884,7 +884,21 @@ const featuresList = (lang) => [
     icon: <Wallet className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Human Resources' : 'Ressources Humaines',
+    title: lang === 'en' ? 'OHADA General Accounting' : 'Comptabilité Générale (Norme OHADA)',
+    desc: lang === 'en' ? 'Full school bookkeeping with double-entry ledgers, journals, and reports.' : 'Tenue de livre comptable complète avec plan comptable scolaire, journaux et balances.',
+    details: lang === 'en' ? [
+      'Dedicated financial journals (Cash, Bank, Miscellaneous Operations).',
+      'Structured chart of accounts aligned with general accounting rules.',
+      'Double-entry accounting ensuring perfectly balanced debits and credits.'
+    ] : [
+      'Journaux comptables dédiés (Caisse, Banque, Opérations Diverses).',
+      'Plan comptable scolaire structuré et paramétrable.',
+      'Enregistrement à double entrée garantissant l\'équilibre Débit/Crédit des écritures.'
+    ],
+    icon: <Star className="w-6 h-6" />
+  },
+  {
+    title: lang === 'en' ? 'Human Resources & Payroll' : 'Ressources Humaines & Paie',
     desc: lang === 'en' ? 'Manage your teaching and support staff effectively.' : 'Gérez efficacement votre personnel enseignant et administratif.',
     details: lang === 'en' ? [
       'Digital files for permanent and substitute teachers.',
@@ -892,27 +906,41 @@ const featuresList = (lang) => [
       'Management of leave requests and salary advances.'
     ] : [
       'Dossiers numériques complets pour les enseignants titulaires et vacataires.',
-      'Pointage des heures et calcul automatisé de la paie.',
-      'Gestion simplifiée des demandes de congés et des avances sur salaire.'
+      'Pointage des heures de cours et calcul automatisé de la paie.',
+      'Gestion simplifiée des demandes de congés et des bulletins de salaire.'
     ],
     icon: <Briefcase className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Communication' : 'Communication',
-    desc: lang === 'en' ? 'Bridge the gap between the school and parents without relying on expensive SMS.' : 'Rapprochez l\'école et les parents sans dépendre des SMS groupés coûteux.',
+    title: lang === 'en' ? 'Logistics (Transport & Canteen)' : 'Services Logistiques (Transport & Cantine)',
+    desc: lang === 'en' ? 'Manage school bus routes, driver details, and canteen dietary restrictions.' : 'Gérez les lignes de bus scolaires, les informations des chauffeurs et la cantine.',
     details: lang === 'en' ? [
-      'Secure, two-way internal messaging system for all stakeholders.',
-      'Targeted broadcast of circulars to specific classes or roles.',
-      'Exclusive module for the Student Council to post announcements.'
+      'Bus route setup with driver phone numbers and monthly fees.',
+      'Real-time student bus search for fast subscription enrollment.',
+      'Canteen enrollment database tracking allergies and dietary notes.'
     ] : [
-      'Système de messagerie interne bidirectionnelle et sécurisée pour tous les acteurs.',
-      'Diffusion de circulaires ciblées (par classe ou par rôle).',
-      'Module exclusif pour le Bureau des Élèves pour publier des annonces.'
+      'Configuration des lignes de bus (chauffeurs, tarifs, numéros).',
+      'Recherche d\'élèves en temps réel pour une inscription rapide au transport.',
+      'Suivi de la cantine avec prise en compte des allergies et régimes spécifiques.'
     ],
-    icon: <MessageSquare className="w-6 h-6" />
+    icon: <Truck className="w-6 h-6" />
   },
   {
-    title: lang === 'en' ? 'Library' : 'Bibliothèque',
+    title: lang === 'en' ? 'Parental Consent (Loi 2024/017)' : 'Consentement Parental (Loi 2024/017 Cameroun)',
+    desc: lang === 'en' ? 'Complete compliance with personal data protection laws for minors.' : 'Conformité totale avec la loi sur la protection des données personnelles des élèves mineurs.',
+    details: lang === 'en' ? [
+      'Explicit opt-in forms for data processing, photo rights, and health.',
+      'Full electronic signature tracking (IP address, timestamps).',
+      'Security audit logs recording every access to sensitive student records.'
+    ] : [
+      'Cases d\'opt-in explicites pour le traitement des données, le droit à l\'image et la santé.',
+      'Traçabilité complète des signatures électroniques (IP, Horodatage).',
+      'Registre d\'audit enregistrant chaque accès aux informations privées de l\'élève.'
+    ],
+    icon: <Gavel className="w-6 h-6" />
+  },
+  {
+    title: lang === 'en' ? 'School Library' : 'Bibliothèque Scolaire',
     desc: lang === 'en' ? 'A modern approach to managing your school\'s book inventory and loans.' : 'Une approche moderne pour gérer le catalogue de livres et les emprunts de votre établissement.',
     details: lang === 'en' ? [
       'Fully digitized book inventory with advanced search.',
