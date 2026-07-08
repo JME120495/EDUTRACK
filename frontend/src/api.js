@@ -25,7 +25,6 @@ export async function apiFetch(endpoint, options = {}) {
   if (method === 'GET' && !options.bypassCache) {
     const cached = apiCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      // Retourner une copie pour éviter toute mutation accidentelle dans React
       return JSON.parse(JSON.stringify(cached.data));
     }
   }
@@ -46,34 +45,71 @@ export async function apiFetch(endpoint, options = {}) {
     config.body = JSON.stringify(options.body);
   }
 
-  const res = await fetch(`${API_BASE}${endpoint}`, config);
+  // Timer pour la gestion du Cold Start (avertir l'UI après 3 secondes)
+  let wakeUpTimer = null;
+  if (!options.silent) {
+    wakeUpTimer = setTimeout(() => {
+      window.dispatchEvent(new Event('server_waking_up'));
+    }, 3000);
+  }
 
-  if (!res.ok) {
-    if (res.status === 401) {
-      // Dispatch event to AuthContext to handle logout automatically
-      window.dispatchEvent(new Event('edutrack_unauthorized'));
+  let attempt = 0;
+  const maxRetries = 2;
+
+  while (attempt <= maxRetries) {
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, config);
+      
+      if (wakeUpTimer) clearTimeout(wakeUpTimer);
+      if (!options.silent) window.dispatchEvent(new Event('server_online'));
+
+      if (!res.ok) {
+        // Retry logic pour les erreurs typiques d'un serveur qui démarre ou sature (502, 503, 504)
+        if ((res.status === 502 || res.status === 503 || res.status === 504) && attempt < maxRetries) {
+          attempt++;
+          await new Promise(r => setTimeout(r, 2000 * attempt)); // Délai croissant
+          continue;
+        }
+
+        if (res.status === 401) {
+          window.dispatchEvent(new Event('edutrack_unauthorized'));
+        }
+        const err = await res.json().catch(() => ({}));
+        const error = new Error(err.message || `API Error ${res.status}`);
+        error.status = res.status;
+        error.data = err;
+        throw error;
+      }
+
+      // Handle 204 No Content
+      if (res.status === 204) return null;
+
+      const data = await res.json();
+
+      // Mettre en cache la réponse réussie
+      if (method === 'GET') {
+        apiCache.set(cacheKey, {
+          data,
+          timestamp: Date.now()
+        });
+      }
+
+      return data;
+    } catch (err) {
+      // Retry logic pour les erreurs de réseau (ex: Failed to fetch)
+      if ((err.name === 'TypeError' || err.message === 'Failed to fetch') && attempt < maxRetries) {
+        attempt++;
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+        continue;
+      }
+      
+      if (wakeUpTimer) clearTimeout(wakeUpTimer);
+      if (!options.silent && (err.name === 'TypeError' || err.message === 'Failed to fetch')) {
+        window.dispatchEvent(new Event('server_offline'));
+      }
+      throw err;
     }
-    const err = await res.json().catch(() => ({}));
-    const error = new Error(err.message || `API Error ${res.status}`);
-    error.status = res.status;
-    error.data = err;
-    throw error;
   }
-
-  // Handle 204 No Content
-  if (res.status === 204) return null;
-
-  const data = await res.json();
-
-  // Mettre en cache la réponse réussie
-  if (method === 'GET') {
-    apiCache.set(cacheKey, {
-      data,
-      timestamp: Date.now()
-    });
-  }
-
-  return data;
 }
 
 export async function openPdfInNewTab(url) {

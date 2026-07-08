@@ -25,10 +25,17 @@ async function getFinancialReportData(schoolId) {
       where: { anneeScolaireId: activeYear.id }
     });
     
+    const classStudentCounts = await prisma.eleve.groupBy({
+      by: ['classId'],
+      where: { status: 'ACTIVE', classId: { in: fees.map(f => f.classId) } },
+      _count: { id: true }
+    });
+    
+    const countsMap = new Map();
+    classStudentCounts.forEach(g => countsMap.set(g.classId, g._count.id));
+
     for (const fee of fees) {
-      const studentCount = await prisma.eleve.count({
-        where: { classId: fee.classId, status: 'ACTIVE' }
-      });
+      const studentCount = countsMap.get(fee.classId) || 0;
       totalTuitionExpected += studentCount * fee.totalAmount;
     }
 

@@ -89,6 +89,7 @@ function PlatformRoute({ roles, children }) {
 
 // Route guard to enforce plan restrictions (for Director)
 import UpgradeOverlay from './components/Shared/UpgradeOverlay';
+import { ColdStartLoader } from './components/Shared/ServerStatus';
 
 function PlanRoute({ allowedPlans, title, description, requiredPlan, children }) {
   const { user } = useContext(AuthContext);
@@ -106,6 +107,7 @@ function PlanRoute({ allowedPlans, title, description, requiredPlan, children })
 export default function App() {
   return (
     <AuthProvider>
+      <ColdStartLoader />
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />

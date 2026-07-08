@@ -160,6 +160,12 @@ async function generateSequenceBulletins(classId, sequenceId) {
   });
 
   // Write to DB sequentially to avoid connection pool exhaustion
+  const existingBulletins = await prisma.bulletin.findMany({
+    where: { eleveId: { in: students.map(s => s.id) }, sequenceId, type: "SEQUENCE" }
+  });
+  const bulletinMap = new Map();
+  for (const b of existingBulletins) bulletinMap.set(b.eleveId, b);
+
   for (const student of students) {
     const studentAvg = overallAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
@@ -170,13 +176,7 @@ async function generateSequenceBulletins(classId, sequenceId) {
     const unjustified = studentAbs.filter(a => !a.justified).reduce((acc, curr) => acc + curr.hours, 0);
 
     // Create or update Bulletin
-    let bulletin = await prisma.bulletin.findFirst({
-        where: {
-          eleveId: student.id,
-          sequenceId,
-          type: "SEQUENCE"
-        }
-      });
+    let bulletin = bulletinMap.get(student.id);
 
       if (bulletin) {
       bulletin = await prisma.bulletin.update({
@@ -378,6 +378,13 @@ async function generateTermBulletins(classId, term) {
     }
   });
 
+  // Pre-fetch existing term bulletins
+  const existingTermBulletins = await prisma.bulletin.findMany({
+    where: { eleveId: { in: students.map(s => s.id) }, term, type: "TERM" }
+  });
+  const termBulletinMap = new Map();
+  for (const b of existingTermBulletins) termBulletinMap.set(b.eleveId, b);
+
   // Save term bulletins sequentially
   for (const student of students) {
     const studentAvg = overallTermAverages.find(a => a.eleveId === student.id).average;
@@ -394,13 +401,7 @@ async function generateTermBulletins(classId, term) {
       }
     });
 
-    let bulletin = await prisma.bulletin.findFirst({
-        where: {
-          eleveId: student.id,
-          term,
-          type: "TERM"
-        }
-      });
+    let bulletin = termBulletinMap.get(student.id);
 
     if (bulletin) {
       bulletin = await prisma.bulletin.update({
@@ -586,6 +587,13 @@ async function generateAnnualBulletins(classId) {
     }
   });
 
+  // Pre-fetch existing annual bulletins
+  const existingAnnualBulletins = await prisma.bulletin.findMany({
+    where: { eleveId: { in: students.map(s => s.id) }, type: "ANNUAL" }
+  });
+  const annualBulletinMap = new Map();
+  for (const b of existingAnnualBulletins) annualBulletinMap.set(b.eleveId, b);
+
   // Save annual bulletins sequentially
   for (const student of students) {
     const studentAvg = overallAnnualAverages.find(a => a.eleveId === student.id).average;
@@ -599,12 +607,7 @@ async function generateAnnualBulletins(classId) {
     // Auto-decision for Annual Bulletin
     const decision = studentAvg >= 10 ? "Admis(e) en classe supérieure" : "Redouble";
 
-    let bulletin = await prisma.bulletin.findFirst({
-        where: {
-          eleveId: student.id,
-          type: "ANNUAL"
-        }
-      });
+    let bulletin = annualBulletinMap.get(student.id);
 
     if (bulletin) {
       bulletin = await prisma.bulletin.update({

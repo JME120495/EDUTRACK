@@ -37,6 +37,11 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalStudents, setTotalStudents] = useState(0);
+
   const isCenseurAllowed = (classObj) => {
     if (user.role === 'DIRECTOR') return true;
     if (user.role === 'CENSEUR') {
@@ -148,9 +153,15 @@ export default function StudentsPage() {
   };
 
   useEffect(() => {
-    loadData();
     loadParentsData();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData(1, false);
+    }, 400); // debounce search
+    return () => clearTimeout(timer);
+  }, [search, selectedClass, selectedStatus]);
 
   const loadParentsData = async () => {
     try {
@@ -259,14 +270,33 @@ export default function StudentsPage() {
     }
   };
 
-  async function loadData() {
+  async function loadData(currentPage = 1, append = false) {
     try {
       setLoading(true);
+      
+      const queryParams = new URLSearchParams({ page: currentPage, limit: 50 });
+      if (search) queryParams.append('search', search);
+      if (selectedClass) queryParams.append('classId', selectedClass);
+      if (selectedStatus) queryParams.append('status', selectedStatus);
+
       const [studentsData, classesData] = await Promise.all([
-        apiFetch('/eleves'),
+        apiFetch(`/eleves?${queryParams.toString()}`),
         apiFetch('/classes')
       ]);
-      setStudents(studentsData);
+      
+      if (studentsData && studentsData.data) {
+        if (append) {
+          setStudents(prev => [...prev, ...studentsData.data]);
+        } else {
+          setStudents(studentsData.data);
+        }
+        setTotalPages(studentsData.totalPages || 1);
+        setTotalStudents(studentsData.total || 0);
+        setPage(currentPage);
+      } else {
+        setStudents(studentsData || []);
+      }
+      
       setClasses(classesData);
       if (classesData.length > 0) {
         setNewClassId(classesData[0].id);
@@ -496,14 +526,8 @@ export default function StudentsPage() {
     photoInputRef.current.click();
   };
 
-  // Filter logic
-  const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
-                          s.matricule.toLowerCase().includes(search.toLowerCase());
-    const matchesClass = selectedClass ? s.classId === selectedClass : true;
-    const matchesStatus = selectedStatus ? s.status === selectedStatus : true;
-    return matchesSearch && matchesClass && matchesStatus;
-  });
+  // Filter logic moved to backend, students is already filtered
+  const filteredStudents = students;
 
   return (
     <div className="space-y-6">

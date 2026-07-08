@@ -22,6 +22,13 @@ export default function LoginPage() {
     }
   }, [user, navigate]);
 
+  // Ping de réveil (Cold Start) au chargement de la page de login
+  useEffect(() => {
+    apiFetch('/health', { silent: true }).catch(() => {
+      // Ignorer l'erreur, le but est juste de réveiller le serveur
+    });
+  }, []);
+
   const [activeTab, setActiveTab] = useState('staff'); // 'staff' | 'parent'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

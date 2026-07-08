@@ -58,20 +58,50 @@ const uploadPhoto = multer({
   }
 });
 
-// Get all students
+// Get all students (Paginated)
 router.get('/', auth, async (req, res) => {
   try {
     const activeYear = await prisma.anneeScolaire.findFirst({
       where: req.selectedYearId ? { schoolId: req.user.schoolId, id: req.selectedYearId } : { schoolId: req.user.schoolId, active: true }
     });
     
-    if (!activeYear) return res.json([]);
+    if (!activeYear) return res.json({ data: [], total: 0, page: 1, totalPages: 0 });
 
-    const eleves = await prisma.eleve.findMany({
-      where: { class: { schoolId: req.user.schoolId, anneeScolaireId: activeYear.id } },
-      include: { class: true, user: { select: { email: true } } }
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const skip = (page - 1) * limit;
+
+    const { search, classId, status } = req.query;
+
+    const whereClause = {
+      class: { schoolId: req.user.schoolId, anneeScolaireId: activeYear.id }
+    };
+    if (classId) whereClause.classId = classId;
+    if (status) whereClause.status = status;
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { matricule: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const [eleves, total] = await Promise.all([
+      prisma.eleve.findMany({
+        where: whereClause,
+        include: { class: true, user: { select: { email: true } } },
+        skip,
+        take: limit,
+        orderBy: { name: 'asc' }
+      }),
+      prisma.eleve.count({ where: whereClause })
+    ]);
+
+    res.json({
+      data: eleves,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
     });
-    res.json(eleves);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -329,7 +359,10 @@ router.post('/import-csv', auth, requireRole(['DIRECTOR', 'CENSEUR']), async (re
       // --- Subscription Plan Check ---
       const schoolId = req.user.schoolId;
       const currentPlan = req.user.school?.subscriptionPlan || 'PREMIUM';
-      const currentStudentsCount = await prisma.eleve.count({ where: { class: { schoolId } } });
+      
+      // Calculate real-time count without hitting DB each time
+      let currentStudentsCount = await prisma.eleve.count({ where: { class: { schoolId } } });
+      currentStudentsCount += imported.length;
 
       if (currentPlan === 'ESSENTIAL' && currentStudentsCount >= 300) {
         skipped.push({ name, matricule, reason: 'Quota Essentiel atteint (Max 300)' });

@@ -64,12 +64,22 @@ router.get('/classe/:classId', auth, async (req, res) => {
 // V-007 FIX: Parents can only see their own children's payments
 router.get('/eleve/:eleveId', auth, ensureParentAccess('eleveId'), async (req, res) => {
   const { eleveId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
   try {
+    const total = await prisma.paiement.count({ where: { eleveId } });
     const payments = await prisma.paiement.findMany({
       where: { eleveId },
-      orderBy: { paymentDate: 'desc' }
+      orderBy: { paymentDate: 'desc' },
+      skip,
+      take: limit
     });
-    res.json(payments);
+    res.json({
+      data: payments,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

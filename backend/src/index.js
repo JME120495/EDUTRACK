@@ -131,6 +131,11 @@ app.use('/api/auth/parent/request-otp', otpLimiter);
 app.use('/api/auth/parent/verify-otp', authLimiter);
 app.use('/api/paiements/webhook', webhookLimiter);
 
+// Wake-up endpoint for Cold Start management
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/schools', schoolRoutes);
 app.use('/api/users', userRoutes);

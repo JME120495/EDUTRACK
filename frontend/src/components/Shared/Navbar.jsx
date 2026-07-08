@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../context/AuthContext';
 import { Globe, LogOut, Menu, X, User } from 'lucide-react';
+import { ServerStatusIndicator } from './ServerStatus';
 
 export default function Navbar({ onMobileMenuToggle }) {
   const { user, logout, updateLanguage, academicYears, selectedYear, changeAcademicYear } = useContext(AuthContext);
@@ -48,6 +49,9 @@ export default function Navbar({ onMobileMenuToggle }) {
 
       {/* Right side controls */}
       <div className="flex items-center gap-4">
+        {/* Server Status Indicator */}
+        <ServerStatusIndicator />
+
         {/* Language switcher */}
         <button
           onClick={toggleLanguage}

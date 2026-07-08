@@ -221,6 +221,8 @@ model Matiere {
   notes           Note[]
   bulletinDetails BulletinDetail[]
   CahierTexte     CahierTexte[]
+
+  @@index([schoolId])
 }
 
 model EnseignantMatiereClasse {
@@ -236,6 +238,10 @@ model EnseignantMatiereClasse {
   hoursTaught Float    @default(0.0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([teacherId])
+  @@index([matiereId])
+  @@index([classId])
 }
 
 model CreneauHoraire {
@@ -249,6 +255,8 @@ model CreneauHoraire {
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
   timetables EmploiDuTemps[]
+
+  @@index([schoolId])
 }
 
 model EmploiDuTemps {
@@ -265,6 +273,11 @@ model EmploiDuTemps {
   room      String?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
+
+  @@index([classId])
+  @@index([teacherId])
+  @@index([matiereId])
+  @@index([creneauId])
 }
 
 model Sequence {
@@ -305,6 +318,8 @@ model Note {
   @@index([eleveId])
   @@index([sequenceId])
   @@index([evaluationTypeId])
+  @@index([matiereId])
+  @@index([teacherId])
 }
 
 model Absence {
@@ -320,6 +335,9 @@ model Absence {
   isLateness Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([eleveId])
+  @@index([sequenceId])
 }
 
 model Bulletin {
@@ -345,6 +363,10 @@ model Bulletin {
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   details              BulletinDetail[]
+
+  @@index([eleveId])
+  @@index([sequenceId])
+  @@index([type])
 }
 
 model BulletinDetail {
@@ -363,6 +385,9 @@ model BulletinDetail {
   coefficient  Float
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([bulletinId])
+  @@index([matiereId])
 }
 
 model FraisScolarite {
@@ -375,6 +400,9 @@ model FraisScolarite {
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   installments    InstallmentConfig[]
+
+  @@index([classId])
+  @@index([anneeScolaireId])
 }
 
 model Paiement {
@@ -407,6 +435,8 @@ model InstallmentConfig {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   payments         Paiement[]
+
+  @@index([fraisScolariteId])
 }
 
 model Moratoire {
@@ -419,6 +449,8 @@ model Moratoire {
   remarks   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([eleveId])
 }
 
 model Transaction {
@@ -436,6 +468,8 @@ model Transaction {
   updatedAt     DateTime @updatedAt
 
   @@index([schoolId])
+  @@index([type])
+  @@index([date])
 }
 
 model Contract {
@@ -451,6 +485,8 @@ model Contract {
   terms      String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 model Payslip {
@@ -473,6 +509,8 @@ model Payslip {
   remarks          String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 model SalaryAdvance {
@@ -537,6 +575,9 @@ model Message {
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([senderId])
+  @@index([receiverId])
 }
 
 model Sanction {
@@ -553,6 +594,8 @@ model Sanction {
   date         DateTime @default(now())
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([eleveId])
 }
 
 model Book {

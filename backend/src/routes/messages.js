@@ -5,17 +5,27 @@ const { auth, requireRole } = require('../middlewares/authMiddleware');
 
 // Get all received messages for the logged-in user
 router.get('/', auth, async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
   try {
+    const total = await prisma.message.count({ where: { receiverId: req.user.id } });
     const messages = await prisma.message.findMany({
       where: { receiverId: req.user.id },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
       include: {
         sender: {
           select: { name: true, role: true }
         }
       }
     });
-    res.json(messages);
+    res.json({
+      data: messages,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
+    });
   } catch (err) {
     console.error('[Messages] Fetch error:', err);
     res.status(500).json({ error: err.message });
@@ -24,17 +34,27 @@ router.get('/', auth, async (req, res) => {
 
 // Get all sent messages for the logged-in user
 router.get('/sent', auth, async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
   try {
+    const total = await prisma.message.count({ where: { senderId: req.user.id } });
     const messages = await prisma.message.findMany({
       where: { senderId: req.user.id },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
       include: {
         receiver: {
           select: { name: true, role: true }
         }
       }
     });
-    res.json(messages);
+    res.json({
+      data: messages,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
+    });
   } catch (err) {
     console.error('[Messages] Fetch sent error:', err);
     res.status(500).json({ error: err.message });
