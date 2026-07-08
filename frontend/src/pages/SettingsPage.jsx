@@ -6,6 +6,7 @@ import { Settings, Save, Clock, BookOpen, CheckCircle, Plus, Edit2, Trash2, X, P
 import * as XLSX from 'xlsx';
 import SettingsEvaluations from '../components/Shared/SettingsEvaluations';
 import SettingsSequences from '../components/Shared/SettingsSequences';
+import SettingsMatieres from '../components/Shared/SettingsMatieres';
 
 export default function SettingsPage() {
   const { user } = useContext(AuthContext);
@@ -993,6 +994,9 @@ export default function SettingsPage() {
 
           {/* Subjects coefficients metadata panel */}
           <SettingsEvaluations />
+
+          {/* Subjects Management */}
+          <SettingsMatieres />
 
           {/* Sequences & Terms configuration */}
           <SettingsSequences annees={annees} />

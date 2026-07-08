@@ -338,7 +338,7 @@ export default function ClassesPage() {
                         >
                           <option value="">Sélectionner une matière...</option>
                           {matieres.map(m => (
-                            <option key={m.id} value={m.id}>{m.name}</option>
+                            <option key={m.id} value={m.id}>{m.nameFr} ({m.code})</option>
                           ))}
                         </select>
                         <select
