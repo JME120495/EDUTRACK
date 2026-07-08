@@ -245,11 +245,9 @@ async function generateTermBulletins(classId, term) {
     where: { term, anneeScolaire: { classes: { some: { id: classId } } } }
   });
 
-  if (sequences.length !== 2) {
-    return { success: false, message: `Le trimestre ${term} doit avoir exactement 2 séquences configurées dans le système.` };
+  if (sequences.length === 0) {
+    return { success: false, message: `Le trimestre ${term} n'a aucune séquence configurée dans le système.` };
   }
-
-  const [seqA, seqB] = sequences;
 
   // Get active students and subjects
   const students = await prisma.eleve.findMany({
@@ -275,37 +273,36 @@ async function generateTermBulletins(classId, term) {
   });
   const subjects = Object.values(subjectsMap);
 
-  // Fetch sequence bulletins
-  const bulletinsSeqA = await prisma.bulletin.findMany({
-    where: { sequenceId: seqA.id, eleve: { classId }, type: "SEQUENCE" },
-    include: { details: true }
-  });
-
-  const bulletinsSeqB = await prisma.bulletin.findMany({
-    where: { sequenceId: seqB.id, eleve: { classId }, type: "SEQUENCE" },
-    include: { details: true }
-  });
+  const sequencesBulletinsList = [];
+  for (const seq of sequences) {
+    const bulls = await prisma.bulletin.findMany({
+      where: { sequenceId: seq.id, eleve: { classId }, type: "SEQUENCE" },
+      include: { details: true }
+    });
+    sequencesBulletinsList.push({ bulls, coefficient: seq.coefficient || 1 });
+  }
 
   // Calculate term subject grades for each student
   const studentTermGrades = {}; // eleveId -> { matiereId -> termGrade }
   students.forEach(student => {
     studentTermGrades[student.id] = {};
-    const bA = bulletinsSeqA.find(b => b.eleveId === student.id);
-    const bB = bulletinsSeqB.find(b => b.eleveId === student.id);
-
+    
     subjects.forEach(subject => {
-      const gA = bA ? bA.details.find(d => d.matiereId === subject.id) : null;
-      const gB = bB ? bB.details.find(d => d.matiereId === subject.id) : null;
+      let totalGradeWeighted = 0;
+      let sumCoeffs = 0;
 
-      let termGrade = null;
-      if (gA && gB) {
-        termGrade = (gA.noteValue + gB.noteValue) / 2;
-      } else if (gA) {
-        termGrade = gA.noteValue;
-      } else if (gB) {
-        termGrade = gB.noteValue;
-      }
-      studentTermGrades[student.id][subject.id] = termGrade;
+      sequencesBulletinsList.forEach(({ bulls, coefficient }) => {
+        const studentBulletin = bulls.find(b => b.eleveId === student.id);
+        if (studentBulletin) {
+          const detail = studentBulletin.details.find(d => d.matiereId === subject.id);
+          if (detail && detail.noteValue !== null && detail.noteValue !== undefined) {
+            totalGradeWeighted += detail.noteValue * coefficient;
+            sumCoeffs += coefficient;
+          }
+        }
+      });
+
+      studentTermGrades[student.id][subject.id] = sumCoeffs > 0 ? (totalGradeWeighted / sumCoeffs) : null;
     });
   });
 
@@ -386,12 +383,16 @@ async function generateTermBulletins(classId, term) {
     const studentAvg = overallTermAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
 
-    // Cumulate absences across sequence A & B
-    const bA = bulletinsSeqA.find(b => b.eleveId === student.id);
-    const bB = bulletinsSeqB.find(b => b.eleveId === student.id);
-
-    const justified = (bA ? bA.absencesJustified : 0) + (bB ? bB.absencesJustified : 0);
-    const unjustified = (bA ? bA.absencesUnjustified : 0) + (bB ? bB.absencesUnjustified : 0);
+    // Cumulate absences across sequences
+    let justified = 0;
+    let unjustified = 0;
+    sequencesBulletinsList.forEach(({ bulls }) => {
+      const b = bulls.find(x => x.eleveId === student.id);
+      if (b) {
+        justified += b.absencesJustified || 0;
+        unjustified += b.absencesUnjustified || 0;
+      }
+    });
 
     let bulletin = await prisma.bulletin.findFirst({
         where: {
@@ -485,31 +486,34 @@ async function generateAnnualBulletins(classId) {
   });
   const subjects = Object.values(subjectsMap);
 
-  // Fetch all term bulletins for this class
-  const termBulletins = await prisma.bulletin.findMany({
+  // Fetch all sequence bulletins for this class (not term bulletins, so it works even without terms)
+  const sequenceBulletins = await prisma.bulletin.findMany({
     where: {
-      type: "TERM",
+      type: "SEQUENCE",
       eleve: { classId }
     },
-    include: { details: true }
+    include: { details: true, sequence: true }
   });
 
   // Calculate annual subject grades for each student
   const studentAnnualGrades = {}; // eleveId -> { matiereId -> annualGrade }
   students.forEach(student => {
     studentAnnualGrades[student.id] = {};
-    const sBulletins = termBulletins.filter(b => b.eleveId === student.id);
+    const sBulletins = sequenceBulletins.filter(b => b.eleveId === student.id);
 
     subjects.forEach(subject => {
-      const grades = [];
+      let totalGradeWeighted = 0;
+      let sumCoeffs = 0;
       sBulletins.forEach(b => {
         const d = b.details.find(det => det.matiereId === subject.id);
         if (d && d.noteValue !== null && d.noteValue !== undefined) {
-          grades.push(d.noteValue);
+          const coeff = b.sequence.coefficient || 1;
+          totalGradeWeighted += d.noteValue * coeff;
+          sumCoeffs += coeff;
         }
       });
 
-      studentAnnualGrades[student.id][subject.id] = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
+      studentAnnualGrades[student.id][subject.id] = sumCoeffs > 0 ? (totalGradeWeighted / sumCoeffs) : null;
     });
   });
 
@@ -538,12 +542,18 @@ async function generateAnnualBulletins(classId) {
     };
   });
 
-  // Student overall annual averages: average of their term averages
+  // Student overall annual averages: average of all their sequence averages
   const overallAnnualAverages = [];
   students.forEach(student => {
-    const sBulletins = termBulletins.filter(b => b.eleveId === student.id);
-    const termAverages = sBulletins.map(b => b.average);
-    const average = termAverages.length > 0 ? termAverages.reduce((a, b) => a + b, 0) / termAverages.length : 0;
+    const sBulletins = sequenceBulletins.filter(b => b.eleveId === student.id);
+    let totalWeighted = 0;
+    let sumCoeff = 0;
+    sBulletins.forEach(b => {
+      const coeff = b.sequence.coefficient || 1;
+      totalWeighted += b.average * coeff;
+      sumCoeff += coeff;
+    });
+    const average = sumCoeff > 0 ? (totalWeighted / sumCoeff) : 0;
     overallAnnualAverages.push({ eleveId: student.id, average });
   });
 
@@ -581,10 +591,10 @@ async function generateAnnualBulletins(classId) {
     const studentAvg = overallAnnualAverages.find(a => a.eleveId === student.id).average;
     const studentRank = ranks[student.id];
 
-    // Cumulate absences across all terms
-    const sBulletins = termBulletins.filter(b => b.eleveId === student.id);
-    const justified = sBulletins.reduce((sum, b) => sum + b.absencesJustified, 0);
-    const unjustified = sBulletins.reduce((sum, b) => sum + b.absencesUnjustified, 0);
+    // Cumulate absences across all sequences
+    const sBulletins = sequenceBulletins.filter(b => b.eleveId === student.id);
+    const justified = sBulletins.reduce((sum, b) => sum + (b.absencesJustified || 0), 0);
+    const unjustified = sBulletins.reduce((sum, b) => sum + (b.absencesUnjustified || 0), 0);
     
     // Auto-decision for Annual Bulletin
     const decision = studentAvg >= 10 ? "Admis(e) en classe supérieure" : "Redouble";

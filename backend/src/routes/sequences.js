@@ -120,6 +120,9 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
       where: { id },
       data: {
         active,
+        name: req.body.name || undefined,
+        term: req.body.term ? parseInt(req.body.term) : undefined,
+        coefficient: req.body.coefficient !== undefined ? parseFloat(req.body.coefficient) : undefined,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined
       }
@@ -127,6 +130,50 @@ router.put('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
 
     res.json(updated);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create a new sequence manually (Director only)
+router.post('/', auth, requireRole(['DIRECTOR']), async (req, res) => {
+  const { name, term, coefficient, anneeScolaireId, startDate, endDate } = req.body;
+  try {
+    if (!name || !term || !anneeScolaireId) {
+      return res.status(400).json({ message: 'Name, term and anneeScolaireId are required' });
+    }
+
+    const newSeq = await prisma.sequence.create({
+      data: {
+        name,
+        term: parseInt(term),
+        coefficient: coefficient !== undefined ? parseFloat(coefficient) : 1.0,
+        anneeScolaireId,
+        active: false,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null
+      }
+    });
+
+    res.status(201).json(newSeq);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a sequence (Director only)
+router.delete('/:id', auth, requireRole(['DIRECTOR']), async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Note: Deleting a sequence might fail if there are foreign key constraints (like Notes or Bulletins).
+    // In a real scenario, we should handle this gracefully.
+    await prisma.sequence.delete({
+      where: { id }
+    });
+    res.json({ message: 'Sequence deleted successfully' });
+  } catch (err) {
+    if (err.code === 'P2003') {
+      return res.status(400).json({ message: 'Impossible de supprimer cette séquence car elle contient des notes ou des bulletins.' });
+    }
     res.status(500).json({ error: err.message });
   }
 });

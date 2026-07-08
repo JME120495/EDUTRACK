@@ -273,6 +273,7 @@ model Sequence {
   anneeScolaire   AnneeScolaire @relation(fields: [anneeScolaireId], references: [id], onDelete: Cascade)
   name            String // e.g. "Séquence 1"
   term            Int // 1, 2, or 3
+  coefficient     Float         @default(1.0)
   startDate       DateTime?
   endDate         DateTime?
   active          Boolean       @default(false)
