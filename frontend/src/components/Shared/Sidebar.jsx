@@ -51,6 +51,7 @@ export default function Sidebar({ mobileOpen, onClose }) {
       roles: ['DIRECTOR', 'CENSEUR'],
       subItems: [
         { path: '/classes', label: t('nav.classes'), roles: ['DIRECTOR', 'CENSEUR'] },
+        { path: '/matieres', label: t('nav.matieres') || 'Gestion des Matières', roles: ['DIRECTOR', 'CENSEUR'] },
         { path: '/teachers', label: t('nav.teachers') || 'Gestion Enseignants', roles: ['DIRECTOR', 'CENSEUR'] },
         { path: '/students', label: t('nav.students'), roles: ['DIRECTOR', 'CENSEUR'] },
         { path: '/director/timetable', label: t('nav.timetableSub') || 'Emplois du Temps', roles: ['DIRECTOR', 'CENSEUR'] }

@@ -12,6 +12,7 @@ const LandingPage = lazy(() => import('./pages/Public/LandingPage'));
 const DirectorDashboard = lazy(() => import('./pages/Director/Dashboard'));
 const StudentsPage = lazy(() => import('./pages/Director/StudentsPage'));
 const ClassesPage = lazy(() => import('./pages/Director/ClassesPage'));
+const MatieresPage = lazy(() => import('./pages/Director/MatieresPage'));
 const TeachersPage = lazy(() => import('./pages/Director/TeachersPage'));
 const TimetablePage = lazy(() => import('./pages/Director/TimetablePage'));
 const GradeEntryPage = lazy(() => import('./pages/Teacher/GradeEntryPage'));
@@ -129,6 +130,7 @@ export default function App() {
             <Route path="/support-staff" element={<RoleRoute roles={['DIRECTOR', 'INTENDANT']}><SupportStaffPage /></RoleRoute>} />
             <Route path="/students" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><StudentsPage /></RoleRoute>} />
             <Route path="/classes" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><ClassesPage /></RoleRoute>} />
+            <Route path="/matieres" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><MatieresPage /></RoleRoute>} />
             <Route path="/teachers" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><TeachersPage /></RoleRoute>} />
             <Route path="/timetable" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR']}><TimetablePage /></RoleRoute>} />
             <Route path="/grades" element={<RoleRoute roles={['DIRECTOR', 'CENSEUR', 'TEACHER']}><GradeEntryPage /></RoleRoute>} />
