@@ -9,6 +9,24 @@ export default defineConfig(({ command }) => {
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['hero.png', 'edutrack-icon.svg'],
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/api'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 jours
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
+      },
       manifest: {
         name: 'EduTrack',
         short_name: 'EduTrack',
@@ -51,6 +69,7 @@ export default defineConfig(({ command }) => {
       force: true,
     },
     server: {
+      host: true, // Permet d'exposer le serveur sur le réseau local (et de faire fonctionner l'HMR sur mobile)
       port: 3000,
       // Améliorer les performances HMR lors des longues sessions
       hmr: {

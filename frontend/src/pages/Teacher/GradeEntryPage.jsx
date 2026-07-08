@@ -219,8 +219,8 @@ export default function GradeEntryPage() {
               offlineGrades = parsed; // Old format
               offlineRemarks = {};
             } else {
-              offlineGrades = parsed.grades || {};
-              offlineRemarks = parsed.remarks || {};
+              offlineGrades = parsed.gradesObj || parsed.grades || {};
+              offlineRemarks = parsed.remarksObj || parsed.remarks || {};
             }
           }
         } catch (e) {
@@ -307,14 +307,6 @@ export default function GradeEntryPage() {
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
-      // Offline mode simulation
-      if (!isOnline) {
-        localStorage.setItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}_${selectedEvalTypeId}`, JSON.stringify({ grades, remarks }));
-        alert('Offline mode: Saved drafts locally in the browser storage!');
-        setSaving(false);
-        return;
-      }
-
       const gradesPayload = Object.keys(grades)
         .filter(studentId => grades[studentId] !== originalGrades[studentId] || remarks[studentId] !== originalRemarks[studentId])
         .map(studentId => ({
@@ -323,6 +315,27 @@ export default function GradeEntryPage() {
           isDraft: true,
           remarks: remarks[studentId] || ''
         }));
+
+      // Offline mode handling
+      if (!isOnline) {
+        localStorage.setItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}_${selectedEvalTypeId}`, JSON.stringify({ 
+          gradesObj: grades, 
+          remarksObj: remarks,
+          classId: selectedClassId,
+          matiereId: selectedSubjectId,
+          sequenceId: selectedSequenceId,
+          evaluationTypeId: selectedEvalTypeId,
+          grades: gradesPayload 
+        }));
+        
+        // Remove manual alert and silently save, showing toast or indicator.
+        // Alert can be kept short, but the background sync will take over when online.
+        setHasUnsavedChanges(false);
+        setSaving(false);
+        return;
+      }
+
+
 
       if (gradesPayload.length === 0) {
         setSaving(false);
@@ -363,6 +376,21 @@ export default function GradeEntryPage() {
           isDraft: false, // validated
           remarks: remarks[studentId] || ''
         }));
+
+      if (!isOnline) {
+        localStorage.setItem(`offline_grades_${selectedClassId}_${selectedSubjectId}_${selectedSequenceId}_${selectedEvalTypeId}`, JSON.stringify({ 
+          gradesObj: grades, 
+          remarksObj: remarks,
+          classId: selectedClassId,
+          matiereId: selectedSubjectId,
+          sequenceId: selectedSequenceId,
+          evaluationTypeId: selectedEvalTypeId,
+          grades: gradesPayload 
+        }));
+        setHasUnsavedChanges(false);
+        setSaving(false);
+        return;
+      }
 
       if (gradesPayload.length === 0) {
         setSaving(false);
