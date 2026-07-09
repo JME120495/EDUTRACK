@@ -78,9 +78,9 @@ export default function AbsencesPage() {
       setLoading(true);
       setSuccessMsg('');
       
-      const studentsData = await apiFetch(`/eleves?classId=${classId}`);
+      const rawStudents = await apiFetch(`/eleves?classId=${classId}`);
+      const studentsData = rawStudents.data || rawStudents;
       setStudents(studentsData);
-
       const absencesData = await apiFetch(`/absences/classe/${classId}/date/${dateString}?sequenceId=${sequenceId}`);
       
       let currentTeacherHours = 2;

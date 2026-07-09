@@ -189,7 +189,8 @@ export default function GradeEntryPage() {
     try {
       setLoading(true);
       // Fetch students in this class
-      const studentsData = await apiFetch(`/eleves?classId=${classId}`);
+      const rawStudents = await apiFetch(`/eleves?classId=${classId}`);
+      const studentsData = rawStudents.data || rawStudents;
       setStudents(studentsData);
 
       // Fetch grades for this class, subject, sequence and evaluation type
