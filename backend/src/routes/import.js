@@ -4,13 +4,21 @@ const multer = require('multer');
 const xlsx = require('xlsx');
 const bcrypt = require('bcryptjs');
 const prisma = require('../db');
+const path = require("path");
 const { auth, requireRole } = require('../middlewares/authMiddleware');
+
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit to allow massive Excel files
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext !== '.xlsx' && ext !== '.xls' && ext !== '.csv') {
+      return cb(new Error('Seuls les fichiers .xlsx, .xls ou .csv sont autorisés'));
+    }
+    cb(null, true);
+  }
 });
-
 function getCountrySlug(countryName) {
   if (!countryName) return 'cm';
   const name = countryName.toLowerCase().trim();
