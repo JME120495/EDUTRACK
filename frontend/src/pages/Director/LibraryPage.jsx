@@ -45,8 +45,8 @@ export default function LibraryPage() {
   async function loadStudents() {
     try {
       // Fetch all students (you might want to filter by active or limit in a real large DB)
-      const data = await apiFetch('/eleves');
-      setStudents(data);
+      const result = await apiFetch('/eleves');
+      setStudents(result.data || result || []);
     } catch (e) {
       console.error(e);
     }

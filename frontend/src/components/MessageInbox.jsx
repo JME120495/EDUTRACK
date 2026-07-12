@@ -21,8 +21,8 @@ export default function MessageInbox() {
         apiFetch('/messages'),
         apiFetch('/messages/sent')
       ]);
-      setMessages(inboxData);
-      setSentMessages(sentData);
+      setMessages(inboxData.data || inboxData || []);
+      setSentMessages(sentData.data || sentData || []);
     } catch (e) {
       console.error('Failed to load messages', e);
     } finally {

@@ -68,7 +68,7 @@ export default function LogisticsPage() {
       setRoutes(rRes || []);
       setTransportSubs(tsRes || []);
       setCanteenSubs(csRes || []);
-      setEleves(eRes || []);
+      setEleves(eRes.data || eRes || []);
     } catch (err) {
       console.error(err);
       alert(isFr ? "Erreur lors du chargement des données logistiques." : "Error loading logistics data.");
@@ -345,7 +345,7 @@ export default function LogisticsPage() {
                           <div className="font-bold text-slate-800">{s.eleve.name}</div>
                           <div className="text-[10px] font-mono text-slate-400 mt-0.5">{s.eleve.matricule}</div>
                         </td>
-                        <td className="px-6 py-4 text-slate-600 font-medium">{s.eleve.class.name}</td>
+                        <td className="px-6 py-4 text-slate-600 font-medium">{s.eleve.class?.name}</td>
                         <td className="px-6 py-4 font-bold text-indigo-700">{s.route.name}</td>
                         <td className="px-6 py-4">
                           <div className="text-xs font-bold text-slate-700">
@@ -407,7 +407,7 @@ export default function LogisticsPage() {
                         <div className="font-bold text-slate-800">{s.eleve.name}</div>
                         <div className="text-[10px] font-mono text-slate-400 mt-0.5">{s.eleve.matricule}</div>
                       </td>
-                      <td className="px-6 py-4 text-slate-600 font-medium">{s.eleve.class.name}</td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">{s.eleve.class?.name}</td>
                       <td className="px-6 py-4">
                         {s.dietaryNotes ? (
                           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold">
@@ -517,7 +517,7 @@ export default function LogisticsPage() {
                           {eleves
                             .filter(e => {
                               const q = transportSearch.toLowerCase();
-                              return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                              return e.name?.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class?.name && e.class.name.toLowerCase().includes(q));
                             })
                             .map(e => (
                               <button
@@ -525,21 +525,21 @@ export default function LogisticsPage() {
                                 type="button"
                                 onClick={() => {
                                   setSelectedTransportEleveId(e.id);
-                                  setTransportSearch(`${e.name} (${e.class.name})`);
+                                  setTransportSearch(`${e.name} (${e.class?.name || ''})`);
                                   setIsTransportDropdownOpen(false);
                                 }}
                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm transition-colors flex justify-between items-center"
                               >
                                 <div>
                                   <span className="font-bold text-slate-800">{e.name}</span>
-                                  <span className="text-xs text-slate-500 ml-1.5">({e.class.name})</span>
+                                  <span className="text-xs text-slate-500 ml-1.5">({e.class?.name || 'N/A'})</span>
                                 </div>
                                 {e.matricule && <span className="text-[10px] font-mono text-slate-400">{e.matricule}</span>}
                               </button>
                             ))}
                           {eleves.filter(e => {
                             const q = transportSearch.toLowerCase();
-                            return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                            return e.name?.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class?.name && e.class.name.toLowerCase().includes(q));
                           }).length === 0 && (
                             <div className="px-4 py-3 text-sm text-slate-500 text-center">{isFr ? "Aucun élève trouvé" : "No student found"}</div>
                           )}
@@ -624,7 +624,7 @@ export default function LogisticsPage() {
                           {eleves
                             .filter(e => {
                               const q = canteenSearch.toLowerCase();
-                              return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                              return e.name?.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class?.name && e.class.name.toLowerCase().includes(q));
                             })
                             .map(e => (
                               <button
@@ -632,21 +632,21 @@ export default function LogisticsPage() {
                                 type="button"
                                 onClick={() => {
                                   setSelectedCanteenEleveId(e.id);
-                                  setCanteenSearch(`${e.name} (${e.class.name})`);
+                                  setCanteenSearch(`${e.name} (${e.class?.name || ''})`);
                                   setIsCanteenDropdownOpen(false);
                                 }}
                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 text-sm transition-colors flex justify-between items-center"
                               >
                                 <div>
                                   <span className="font-bold text-slate-800">{e.name}</span>
-                                  <span className="text-xs text-slate-500 ml-1.5">({e.class.name})</span>
+                                  <span className="text-xs text-slate-500 ml-1.5">({e.class?.name || 'N/A'})</span>
                                 </div>
                                 {e.matricule && <span className="text-[10px] font-mono text-slate-400">{e.matricule}</span>}
                               </button>
                             ))}
                           {eleves.filter(e => {
                             const q = canteenSearch.toLowerCase();
-                            return e.name.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class.name && e.class.name.toLowerCase().includes(q));
+                            return e.name?.toLowerCase().includes(q) || (e.matricule && e.matricule.toLowerCase().includes(q)) || (e.class?.name && e.class.name.toLowerCase().includes(q));
                           }).length === 0 && (
                             <div className="px-4 py-3 text-sm text-slate-500 text-center">{isFr ? "Aucun élève trouvé" : "No student found"}</div>
                           )}
