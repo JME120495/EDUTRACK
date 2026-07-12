@@ -65,9 +65,9 @@ export default function LogisticsPage() {
         apiFetch('/logistics/canteen/subscriptions'),
         apiFetch('/eleves')
       ]);
-      setRoutes(rRes || []);
-      setTransportSubs(tsRes || []);
-      setCanteenSubs(csRes || []);
+      setRoutes(rRes.data || rRes || []);
+      setTransportSubs(tsRes.data || tsRes || []);
+      setCanteenSubs(csRes.data || csRes || []);
       setEleves(eRes.data || eRes || []);
     } catch (err) {
       console.error(err);
@@ -552,7 +552,8 @@ export default function LogisticsPage() {
               
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{isFr ? "Ligne de Bus *" : "Bus Route *"}</label>
-                <select required name="routeId" defaultValue={editingSub?.routeId} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all font-bold text-indigo-700">
+                <select required name="routeId" defaultValue={editingSub?.routeId || ""} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-600 outline-none transition-all font-bold text-indigo-700">
+                  <option value="" disabled hidden>{isFr ? "Sélectionnez une ligne..." : "Select a route..."}</option>
                   {routes.map(r => <option key={r.id} value={r.id}>{r.name} - {r.fee} FCFA</option>)}
                 </select>
               </div>
