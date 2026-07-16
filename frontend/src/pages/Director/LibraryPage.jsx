@@ -24,6 +24,7 @@ export default function LibraryPage() {
   const [students, setStudents] = useState([]);
   const [selectedEleveId, setSelectedEleveId] = useState('');
   const [dateRetour, setDateRetour] = useState('');
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
 
   useEffect(() => {
     loadBooks();
@@ -99,6 +100,10 @@ export default function LibraryPage() {
   const filteredBooks = books.filter(b => 
     b.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (b.author && b.author.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const filteredStudents = students.filter(s => 
+    s.name.toLowerCase().includes(studentSearchTerm.toLowerCase())
   );
 
   return (
@@ -252,9 +257,19 @@ export default function LibraryPage() {
             <form onSubmit={handleCreateLoan} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Élève Emprunteur</label>
+                <div className="relative mb-2">
+                  <Search className="h-4 w-4 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Rechercher un élève..."
+                    value={studentSearchTerm}
+                    onChange={(e) => setStudentSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]"
+                  />
+                </div>
                 <select required value={selectedEleveId} onChange={e => setSelectedEleveId(e.target.value)} className="w-full p-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] bg-white">
                   <option value="">Sélectionnez un élève...</option>
-                  {students.map(s => (
+                  {filteredStudents.map(s => (
                     <option key={s.id} value={s.id}>{s.name} ({s.class?.name})</option>
                   ))}
                 </select>
